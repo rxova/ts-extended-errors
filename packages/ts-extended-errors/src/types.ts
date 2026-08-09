@@ -1,0 +1,35 @@
+/**
+ * Structured data attached to an error — the fields you would otherwise
+ * interpolate into the message and then have to parse back out.
+ *
+ * Keep it serializable: {@link SerializedError} is what ends up in a log line.
+ */
+export type ErrorContext = Readonly<Record<string, unknown>>
+
+/** Second argument of every {@link ExtendedError} constructor. */
+export interface ExtendedErrorOptions<Context extends ErrorContext = ErrorContext> {
+  /**
+   * The error (or value) that caused this one. Forwarded to the native
+   * `Error` `cause`, so it is visible to anything that already understands it.
+   */
+  readonly cause?: unknown
+  /** Structured data describing *this* failure, not the one below it. */
+  readonly context?: Context
+}
+
+/**
+ * The plain-object form of an error: what `JSON.stringify` produces for an
+ * {@link ExtendedError}, and what {@link serializeError} produces for anything
+ * else.
+ */
+export interface SerializedError {
+  readonly name: string
+  readonly message: string
+  /** Present only when the error carries one. */
+  readonly code?: string | undefined
+  /** Omitted when `includeStack` is false. */
+  readonly stack?: string | undefined
+  readonly context?: ErrorContext | undefined
+  /** The serialized `cause`, recursively, up to the configured depth. */
+  readonly cause?: SerializedError | undefined
+}
