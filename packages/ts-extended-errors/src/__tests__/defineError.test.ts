@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import { defineError } from '../defineError'
 import { ExtendedError } from '../ExtendedError'
+import { serializeError } from '../serialize'
 
 const HttpError = defineError('HttpError', { code: 'HTTP' })
 const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
@@ -61,5 +62,33 @@ describe('defineError', () => {
     expect(error).toBeInstanceOf(HttpError)
     expect(error.name).toBe('TeapotError')
     expect(error.code).toBe('HTTP')
+  })
+
+  it('keeps sibling classes apart', () => {
+    expect(new NotFoundError('no such user')).not.toBeInstanceOf(GoneError)
+    expect(new GoneError('gone')).not.toBeInstanceOf(NotFoundError)
+  })
+
+  it('starts the stack at the throw site, under the defined name', () => {
+    const error = new NotFoundError('no such user')
+
+    expect(error.stack?.split('\n')[0]).toBe('NotFoundError: no such user')
+    expect(error.stack).not.toContain('at new ExtendedError')
+  })
+
+  it('serializes with its own name and code', () => {
+    expect(serializeError(new NotFoundError('no such user'), { includeStack: false })).toEqual({
+      name: 'NotFoundError',
+      message: 'no such user',
+      code: 'HTTP_NOT_FOUND',
+    })
+  })
+
+  it('types context from its parameter', () => {
+    const ParseError = defineError<{ line: number }>('ParseError')
+
+    expectTypeOf(new ParseError('bad token', { context: { line: 3 } }).context).toEqualTypeOf<
+      { line: number } | undefined
+    >()
   })
 })

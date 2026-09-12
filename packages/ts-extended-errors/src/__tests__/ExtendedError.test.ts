@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import { ExtendedError, isExtendedError } from '../ExtendedError'
+import { serializeError } from '../serialize'
+import type { ErrorContext } from '../types'
 
 class ConfigError extends ExtendedError<{ file: string }> {
   static override readonly code = 'CONFIG'
@@ -100,6 +102,41 @@ describe('ExtendedError', () => {
 
   it('has an empty context when none was given', () => {
     expect(new ExtendedError('boom').context).toBeUndefined()
+  })
+
+  it('reports through toJSON exactly what serializeError reports', () => {
+    const error = new ConfigError('boom', {
+      context: { file: 'a.json' },
+      cause: new Error('inner'),
+    })
+
+    expect(error.toJSON()).toEqual(serializeError(error))
+  })
+
+  it('serializes when nested inside a plain object, the way a logger receives it', () => {
+    const line = JSON.parse(JSON.stringify({ level: 'error', error: new ConfigError('boom') })) as {
+      error: unknown
+    }
+
+    expect(line.error).toMatchObject({ name: 'ConfigError', message: 'boom', code: 'CONFIG' })
+  })
+
+  it('keeps cause non-enumerable, like the native property it forwards to', () => {
+    const error = new ConfigError('boom', {
+      context: { file: 'a.json' },
+      cause: new Error('inner'),
+    })
+
+    expect(new Set(Object.keys(error))).toEqual(new Set(['name', 'code', 'context']))
+  })
+
+  it('types context from the class parameter', () => {
+    expectTypeOf(new ConfigError('boom').context).toEqualTypeOf<{ file: string } | undefined>()
+    expectTypeOf(new ExtendedError('boom').context).toEqualTypeOf<ErrorContext | undefined>()
+
+    // @ts-expect-error: `file` is declared as a string
+    const wrong = new ConfigError('boom', { context: { file: 1 } })
+    expect(wrong).toBeInstanceOf(ConfigError)
   })
 })
 

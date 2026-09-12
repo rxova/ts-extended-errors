@@ -33,3 +33,12 @@ export interface SerializedError {
   /** The serialized `cause`, recursively, up to the configured depth. */
   readonly cause?: SerializedError | undefined
 }
+
+/**
+ * What {@link serializeError} returns with `includeOwnProperties`: the fixed
+ * fields, plus whatever other fields the error carried, down the whole chain.
+ */
+export interface SerializedErrorWithProperties extends SerializedError {
+  readonly cause?: SerializedErrorWithProperties | undefined
+  readonly [field: string]: unknown
+}

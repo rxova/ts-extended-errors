@@ -88,7 +88,18 @@ report a failure. Cycles terminate.
 ```ts
 serializeError(error) // → SerializedError, JSON-safe, cause chain included
 serializeError(error, { includeStack: false, maxDepth: 3 })
+serializeError(error, { includeOwnProperties: true }) // …plus the error's own fields
 ```
+
+By default only the fixed fields are read — `name`, `message`, `code`, `stack`, `context` and
+`cause` — which is everything an `ExtendedError` carries. An error class you did not write usually
+keeps its useful data in fields of its own (`this.sortKey = sortKey`, `statusCode`, `errno`), and
+those are lost. `includeOwnProperties: true` copies them too. An error in such a field is serialized
+like a `cause`, under the same depth limit and cycle guard. Anything else is copied through a JSON
+round trip, or described when it cannot survive one. Functions, `undefined` and getters that throw
+are skipped. It is opt-in because those fields hold whatever the thrower put there — a request, a
+token, a user — so turn it on for logs you control, not for a response body. The return type widens
+to `SerializedErrorWithProperties` only when you do.
 
 `serializeError` works on anything, not just `Error`: it reads fields structurally, so it also
 handles errors from a worker, a `vm` context or a second bundled copy of a library — the ones where
@@ -100,14 +111,14 @@ the stack that says where it came from), anything else is wrapped with the origi
 
 ## API
 
-| Export                                                                                                                          | What it is                   |
-| ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `ExtendedError`                                                                                                                 | the base class               |
-| `isExtendedError(value)`                                                                                                        | `instanceof` narrowing guard |
-| `defineError(name, options?)`                                                                                                   | class factory                |
-| `causeChain` `rootCause` `findCause` `findCauseOf` `hasCauseOf`                                                                 | chain helpers                |
-| `serializeError` `isErrorLike` `describeValue`                                                                                  | serialization                |
-| `toError(value)`                                                                                                                | `unknown` → `Error`          |
-| `ErrorContext` `ExtendedErrorOptions` `SerializedError` `SerializeErrorOptions` `DefineErrorOptions` `ExtendedErrorConstructor` | types                        |
+| Export                                                                                                                                                          | What it is                   |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `ExtendedError`                                                                                                                                                 | the base class               |
+| `isExtendedError(value)`                                                                                                                                        | `instanceof` narrowing guard |
+| `defineError(name, options?)`                                                                                                                                   | class factory                |
+| `causeChain` `rootCause` `findCause` `findCauseOf` `hasCauseOf`                                                                                                 | chain helpers                |
+| `serializeError` `isErrorLike` `describeValue`                                                                                                                  | serialization                |
+| `toError(value)`                                                                                                                                                | `unknown` → `Error`          |
+| `ErrorContext` `ExtendedErrorOptions` `SerializedError` `SerializedErrorWithProperties` `SerializeErrorOptions` `DefineErrorOptions` `ExtendedErrorConstructor` | types                        |
 
 MIT.
