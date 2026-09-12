@@ -2,6 +2,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import * as api from '../index'
 import type {
   DefineErrorOptions,
+  DeserializeErrorOptions,
   ErrorClass,
   ErrorContext,
   ExtendedErrorConstructor,
@@ -27,6 +28,7 @@ describe('the package entry point', () => {
         'findCauseOf',
         'hasCauseOf',
         'serializeError',
+        'deserializeError',
         'isErrorLike',
         'describeValue',
         'toError',
@@ -42,6 +44,7 @@ describe('the package entry point', () => {
     expectTypeOf<typeof RangeError>().toExtend<ErrorClass<RangeError>>()
     expectTypeOf<ExtendedErrorMembers>().toHaveProperty('toJSON')
     expectTypeOf<SerializeErrorOptions>().toHaveProperty('includeOwnProperties')
+    expectTypeOf<DeserializeErrorOptions>().toHaveProperty('classes')
     expectTypeOf<ErrorContext>().toEqualTypeOf<Readonly<Record<string, unknown>>>()
   })
 })

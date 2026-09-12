@@ -124,16 +124,36 @@ than dropped, because `throw 'nope'` is rare but real and `{}` in a log is not a
 `toError(value)` is the `catch` companion: errors pass through untouched (wrapping one would bury
 the stack that says where it came from), anything else is wrapped with the original kept as `cause`.
 
+## Deserializing
+
+```ts
+const error = deserializeError(JSON.parse(line), { classes: [HttpError, NotFoundError] })
+
+error instanceof NotFoundError // true
+findCauseOf(error, TimeoutError) // the rebuilt cause, typed
+```
+
+The way back from `serializeError`, after a JSON round trip, a `postMessage` or a queue. Each error
+is rebuilt as the class its `name` names — one from `classes`, or a built-in such as `TypeError` —
+by calling that class's constructor, so the result is a real error and `instanceof`, `findCauseOf`
+and `hasCauseOf` work on it. Then `code`, `context`, `stack` and any fields `includeOwnProperties`
+carried are put back as they were, and the `cause` chain is rebuilt the same way, down to
+`maxDepth`. A name that matches no class comes back as an `ExtendedError` that keeps it. With no
+serialized stack the result has none, rather than one that points at `deserializeError`.
+
+The name comes from the payload, so `classes` is also the list of constructors a payload can reach:
+pass the ones you expect, not every class you have.
+
 ## API
 
-| Export                                                                                                                                                                                              | What it is                   |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `ExtendedError`                                                                                                                                                                                     | the base class               |
-| `isExtendedError(value)`                                                                                                                                                                            | `instanceof` narrowing guard |
-| `defineError(name, options?)`                                                                                                                                                                       | class factory                |
-| `causeChain` `rootCause` `findCause` `findCauseOf` `hasCauseOf`                                                                                                                                     | chain helpers                |
-| `serializeError` `isErrorLike` `describeValue`                                                                                                                                                      | serialization                |
-| `toError(value)`                                                                                                                                                                                    | `unknown` → `Error`          |
-| `ErrorContext` `ExtendedErrorOptions` `SerializedError` `SerializedErrorWithProperties` `SerializeErrorOptions` `DefineErrorOptions` `ExtendedErrorConstructor` `ExtendedErrorMembers` `ErrorClass` | types                        |
+| Export                                                                                                                                                                                                                        | What it is                   |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `ExtendedError`                                                                                                                                                                                                               | the base class               |
+| `isExtendedError(value)`                                                                                                                                                                                                      | `instanceof` narrowing guard |
+| `defineError(name, options?)`                                                                                                                                                                                                 | class factory                |
+| `causeChain` `rootCause` `findCause` `findCauseOf` `hasCauseOf`                                                                                                                                                               | chain helpers                |
+| `serializeError` `deserializeError` `isErrorLike` `describeValue`                                                                                                                                                             | serialization                |
+| `toError(value)`                                                                                                                                                                                                              | `unknown` → `Error`          |
+| `ErrorContext` `ExtendedErrorOptions` `SerializedError` `SerializedErrorWithProperties` `SerializeErrorOptions` `DeserializeErrorOptions` `DefineErrorOptions` `ExtendedErrorConstructor` `ExtendedErrorMembers` `ErrorClass` | types                        |
 
 MIT.

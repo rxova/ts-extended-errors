@@ -9,6 +9,8 @@ export type {
 export { causeChain, rootCause, findCause, findCauseOf, hasCauseOf } from './chain'
 export { serializeError, isErrorLike, describeValue } from './serialize'
 export type { SerializeErrorOptions } from './serialize'
+export { deserializeError } from './deserialize'
+export type { DeserializeErrorOptions } from './deserialize'
 export { toError } from './toError'
 export type {
   ErrorContext,
