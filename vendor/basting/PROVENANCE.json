@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/rxova/basting",
+  "source_commit": "0e348936dbc5450c1985515c89e0c014dc81cb3d",
+  "version": "0.1.0",
+  "build": "71349463aa3284c6b5040d44be8bb0c519ea8a744fb1ea668e2ee5770c5941c7",
+  "build_command": "pnpm --filter basting build",
+  "packaging": "Copied dist JavaScript/declarations, license, README and llms.txt. Source maps omitted; development dependencies and scripts removed from package.json.",
+  "sha256": {
+    "dist/chunk-LUGDFQHK.js": "76be78c95960aaf01d399bf7b8739bd181571a6cb88dd9df3efd28bd8df59bfc",
+    "dist/cli.d.ts": "a59c47872b71f12589942892464e764c0db350c20b72228645615cc36e0a0725",
+    "dist/cli.js": "1c53c313a1a0b705cd55f4869ce06dc0e21fb3bf02cc4bf6e86457e1e130b091",
+    "dist/index.d.ts": "c4ff945e8e49e496a1afe93d7239b537ee43efad29afdaac6a1e1984821acbb1",
+    "dist/index.js": "bfa37123f036cba78caa613059ee20ea7a14d36adcd1b24a4672c8385ac6d9e7"
+  }
+}

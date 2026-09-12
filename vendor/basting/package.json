@@ -1,0 +1,48 @@
+{
+  "name": "basting",
+  "version": "0.1.0",
+  "description": "Deterministic, zero-dependency gate on a git patch: reports implementations that pass by hardcoding the test's answer, and checks switched off rather than satisfied.",
+  "keywords": [
+    "coding-agent",
+    "guardrails",
+    "reward-hacking",
+    "claude-code",
+    "codex",
+    "cursor",
+    "copilot",
+    "hooks",
+    "ci"
+  ],
+  "license": "MIT",
+  "author": "Jonatan Kruszewski",
+  "type": "module",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "bin": {
+    "basting": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist",
+    "llms.txt"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rxova/basting.git"
+  },
+  "homepage": "https://github.com/rxova/basting#readme",
+  "bugs": {
+    "url": "https://github.com/rxova/basting/issues"
+  }
+}

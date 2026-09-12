@@ -1,0 +1,56 @@
+{
+  "name": "template-private",
+  "private": true,
+  "description": "Template for rxova private TypeScript projects.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rxova/template-private.git"
+  },
+  "type": "module",
+  "packageManager": "pnpm@11.26.0",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run eslint:check",
+    "lint:fix": "eslint . --fix --cache --cache-location node_modules/.cache/eslint/.eslintcache",
+    "eslint:check": "eslint . --cache --cache-location node_modules/.cache/eslint/.eslintcache",
+    "format": "prettier --write . --cache --cache-location node_modules/.cache/prettier/.prettiercache",
+    "format:check": "turbo run prettier:check",
+    "prettier:check": "prettier --check . --cache --cache-location node_modules/.cache/prettier/.prettiercache",
+    "audit:check": "pnpm audit --audit-level=high --ignore-registry-errors",
+    "dedupe:check": "pnpm dedupe --check",
+    "check:exports": "turbo run check:exports",
+    "check:integrity": "overlock check --compact",
+    "check:faking": "basting check --compact",
+    "verify": "node --import tsx ./packages/tooling/src/verify.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{json,jsonc,css,md,mdx,yaml,yml}": "prettier --write"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.5.0",
+    "basting": "file:vendor/basting",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "overlock": "^0.9.0",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.13",
+    "turbo": "^2.10.12",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.70.0"
+  }
+}

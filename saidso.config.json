@@ -1,0 +1,4 @@
+{
+  "failOn": "high",
+  "extractor": "patterns"
+}

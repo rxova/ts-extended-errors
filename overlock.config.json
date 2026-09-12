@@ -1,0 +1,8 @@
+{
+  "base": "origin/main",
+  "failOn": "high",
+  "severity": {
+    "TEST_AND_IMPL_TOGETHER": "off"
+  },
+  "exclude": [".basting", ".saidso", "vendor"]
+}
