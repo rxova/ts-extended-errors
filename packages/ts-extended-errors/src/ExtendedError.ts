@@ -2,6 +2,37 @@ import { serializeError } from './serialize'
 import type { ErrorContext, ExtendedErrorOptions, SerializedError } from './types'
 
 /**
+ * What an extended error's constructor passes to `super`.
+ *
+ * `cause` is forwarded only when the caller actually passed one.
+ * `super(message, { cause: undefined })` still *defines* the property, which
+ * makes `'cause' in error` true for an error that has none — and that is
+ * exactly the check a chain walker uses to decide where to stop.
+ *
+ * Internal: shared with the classes {@link defineError} builds on a base that
+ * is not an ExtendedError, which is why it is not exported from the package.
+ */
+export const superOptions = (options: { readonly cause?: unknown }): ErrorOptions | undefined =>
+  'cause' in options ? { cause: options.cause } : undefined
+
+/**
+ * Starts `error`'s stack at the line that threw rather than inside its
+ * constructor.
+ *
+ * V8 only, hence the guard — JavaScriptCore and SpiderMonkey have no such
+ * method. Passing the constructor omits its own frames from the trace, so the
+ * top frame is the throw site. Internal, like {@link superOptions}.
+ */
+export const captureStack = (
+  error: Error,
+  constructedBy: abstract new (...args: never[]) => unknown,
+): void => {
+  if (typeof Error.captureStackTrace === 'function') {
+    Error.captureStackTrace(error, constructedBy)
+  }
+}
+
+/**
  * The base class every error here extends.
  *
  * Subclassing `Error` in TypeScript is a pile of small traps — a `name` that
@@ -44,11 +75,7 @@ export class ExtendedError<Context extends ErrorContext = ErrorContext> extends 
   readonly context: Context | undefined
 
   constructor(message: string, options: ExtendedErrorOptions<Context> = {}) {
-    // `cause` is forwarded only when the caller actually passed one.
-    // `super(message, { cause: undefined })` still *defines* the property, which
-    // makes `'cause' in error` true for an error that has none — and that is
-    // exactly the check a chain walker uses to decide where to stop.
-    super(message, 'cause' in options ? { cause: options.cause } : undefined)
+    super(message, superOptions(options))
 
     // The class that was actually constructed, which for `new ConfigError(…)`
     // is ConfigError even though this code lives on the base.
@@ -64,12 +91,7 @@ export class ExtendedError<Context extends ErrorContext = ErrorContext> extends 
     this.code = constructedBy.code
     this.context = options.context
 
-    // V8 only, hence the guard — JavaScriptCore and SpiderMonkey have no such
-    // method. Passing the constructor omits this constructor's own frames from
-    // the trace, so the top frame is the line that threw rather than this file.
-    if (typeof Error.captureStackTrace === 'function') {
-      Error.captureStackTrace(this, constructedBy)
-    }
+    captureStack(this, constructedBy)
   }
 
   /**
