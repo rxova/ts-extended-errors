@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import { causeChain, findCause, findCauseOf, hasCauseOf, rootCause } from '../chain'
 import { defineError } from '../defineError'
 import { ExtendedError } from '../ExtendedError'
@@ -52,6 +52,16 @@ describe('causeChain', () => {
     expect(causeChain(undefined)).toEqual([])
     expect(causeChain(null)).toEqual([])
   })
+
+  it('yields a thrown primitive on its own', () => {
+    expect(causeChain('boom')).toEqual(['boom'])
+  })
+
+  it('ends at a null cause', () => {
+    const error = new ExtendedError('wrapper', { cause: null })
+
+    expect(causeChain(error)).toEqual([error])
+  })
 })
 
 describe('rootCause', () => {
@@ -67,6 +77,14 @@ describe('rootCause', () => {
 
   it('passes through a value with no chain', () => {
     expect(rootCause(undefined)).toBeUndefined()
+  })
+
+  it('settles on the last distinct error of a cycle', () => {
+    const a = new ExtendedError('a')
+    const b = new ExtendedError('b', { cause: a })
+    Object.defineProperty(a, 'cause', { value: b, configurable: true })
+
+    expect(rootCause(b)).toBe(a)
   })
 })
 
@@ -100,6 +118,15 @@ describe('findCauseOf', () => {
 
   it('returns undefined when the class is absent', () => {
     expect(findCauseOf(new ExtendedError('alone'), TimeoutError)).toBeUndefined()
+  })
+
+  it('works with the built-in error classes and narrows to them', () => {
+    const error = new Error('request failed', { cause: new TypeError('not a function') })
+
+    const found = findCauseOf(error, TypeError)
+
+    expectTypeOf(found).toEqualTypeOf<TypeError | undefined>()
+    expect(found?.message).toBe('not a function')
   })
 })
 

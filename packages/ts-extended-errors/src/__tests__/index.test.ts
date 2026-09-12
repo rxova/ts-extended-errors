@@ -1,0 +1,43 @@
+import { describe, expect, expectTypeOf, it } from 'vitest'
+import * as api from '../index'
+import type {
+  DefineErrorOptions,
+  ErrorContext,
+  ExtendedErrorConstructor,
+  ExtendedErrorOptions,
+  SerializedError,
+  SerializedErrorWithProperties,
+  SerializeErrorOptions,
+} from '../index'
+
+// The barrel is excluded from coverage, so nothing else notices an export that
+// goes missing from it — or one that leaks into it.
+describe('the package entry point', () => {
+  it('exports the documented runtime API, and nothing else', () => {
+    expect(new Set(Object.keys(api))).toEqual(
+      new Set([
+        'ExtendedError',
+        'isExtendedError',
+        'defineError',
+        'causeChain',
+        'rootCause',
+        'findCause',
+        'findCauseOf',
+        'hasCauseOf',
+        'serializeError',
+        'isErrorLike',
+        'describeValue',
+        'toError',
+      ]),
+    )
+  })
+
+  it('exports the documented types', () => {
+    expectTypeOf<SerializedErrorWithProperties>().toExtend<SerializedError>()
+    expectTypeOf<ExtendedErrorOptions>().toHaveProperty('context')
+    expectTypeOf<ExtendedErrorConstructor>().toHaveProperty('code')
+    expectTypeOf<DefineErrorOptions>().toHaveProperty('base')
+    expectTypeOf<SerializeErrorOptions>().toHaveProperty('includeOwnProperties')
+    expectTypeOf<ErrorContext>().toEqualTypeOf<Readonly<Record<string, unknown>>>()
+  })
+})

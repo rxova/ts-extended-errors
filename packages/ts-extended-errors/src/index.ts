@@ -5,4 +5,9 @@ export { causeChain, rootCause, findCause, findCauseOf, hasCauseOf } from './cha
 export { serializeError, isErrorLike, describeValue } from './serialize'
 export type { SerializeErrorOptions } from './serialize'
 export { toError } from './toError'
-export type { ErrorContext, ExtendedErrorOptions, SerializedError } from './types'
+export type {
+  ErrorContext,
+  ExtendedErrorOptions,
+  SerializedError,
+  SerializedErrorWithProperties,
+} from './types'

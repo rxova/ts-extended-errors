@@ -1,3 +1,4 @@
+import { runInNewContext } from 'node:vm'
 import { describe, expect, it } from 'vitest'
 import { toError } from '../toError'
 import { ExtendedError } from '../ExtendedError'
@@ -54,5 +55,28 @@ describe('toError', () => {
     expect(error.name).toBe('ExtendedError')
     expect(error.message).toBe('bare')
     expect(error.stack).toBeTypeOf('string')
+  })
+
+  it('rebuilds a real error from another realm, which fails instanceof', () => {
+    const foreign: unknown = runInNewContext('new RangeError("from a vm")')
+
+    const error = toError(foreign)
+
+    expect(error).toBeInstanceOf(Error)
+    expect(error.name).toBe('RangeError')
+    expect(error.message).toBe('from a vm')
+    expect(error.stack).toContain('RangeError: from a vm')
+    expect(error.cause).toBe(foreign)
+  })
+
+  it('keeps the default name when the error-shaped value has a non-string one', () => {
+    expect(toError({ message: 'boom', name: 42 }).name).toBe('ExtendedError')
+  })
+
+  it('wraps null', () => {
+    const error = toError(null)
+
+    expect(error.message).toBe('null')
+    expect(error.cause).toBeNull()
   })
 })
