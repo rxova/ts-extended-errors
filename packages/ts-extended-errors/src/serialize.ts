@@ -39,10 +39,13 @@ export interface SerializeErrorOptions {
   readonly includeOwnProperties?: boolean
 }
 
-const DEFAULT_MAX_DEPTH = 8
+// The internals below are exported for deserializeError, which reads the same
+// shapes back; the package entry point does not re-export them.
+
+export const DEFAULT_MAX_DEPTH = 8
 
 /** The fields serializeError reads by name, which an own field must not overwrite. */
-const FIXED_FIELDS: ReadonlySet<string> = new Set([
+export const FIXED_FIELDS: ReadonlySet<string> = new Set([
   'name',
   'message',
   'code',
@@ -51,7 +54,8 @@ const FIXED_FIELDS: ReadonlySet<string> = new Set([
   'cause',
 ])
 
-const isObject = (value: unknown): value is object => typeof value === 'object' && value !== null
+export const isObject = (value: unknown): value is object =>
+  typeof value === 'object' && value !== null
 
 /**
  * Reads a property off a value without asserting anything about its shape.
@@ -62,9 +66,9 @@ const isObject = (value: unknown): value is object => typeof value === 'object' 
  * library) where `instanceof Error` is false but every field you care about is
  * present.
  */
-const read = (value: object, key: string): unknown => (value as Record<string, unknown>)[key]
+export const read = (value: object, key: string): unknown => (value as Record<string, unknown>)[key]
 
-const readString = (value: object, key: string): string | undefined => {
+export const readString = (value: object, key: string): string | undefined => {
   const property = read(value, key)
   return typeof property === 'string' ? property : undefined
 }
