@@ -1,0 +1,39 @@
+name: PR title
+
+# The squash-merge subject is the PR *title*: no commit in the branch contains
+# it, and it can be changed after CI has gone green. It lives here rather than in
+# CI because `edited` also fires on *body* edits, and re-running the whole verify
+# job because a description gained a link is a billed minute for nothing. Here a
+# body edit is skipped by the `if:` below and costs no runner at all.
+#
+# Its own concurrency group, so re-titling can never cancel a CI run.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: commit message (PR title)
+    # `changes.title` is only present when the edit touched the title.
+    if: github.event.action != 'edited' || github.event.changes.title
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Through the environment, never interpolated into the shell — a title is
+      # attacker-controlled text.
+      - name: Lint the PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: echo "$PR_TITLE" | pnpm exec commitlint --verbose

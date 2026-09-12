@@ -1,0 +1,113 @@
+name: CI
+
+# Private repositories pay for every Actions minute, and GitHub bills each job
+# rounded *up* to the whole minute, each one paying for its own checkout, Node
+# setup and `pnpm install`. So this is one job: the setup once, the rounding
+# once, and the same `pnpm run verify` the pre-push hook runs, in the same order.
+#
+# Turbo's remote cache lives in this repository's Actions cache, so a push that
+# touched one package replays every other package's tasks instead of re-running
+# them. The cost of one job is one red check instead of four when something
+# fails; split it out if parallel feedback ever matters more than the bill.
+
+on:
+  push:
+    branches: [main]
+    # Nothing a check reads. Push only: on `pull_request` a skipped workflow
+    # never reports, so a required check would wait forever.
+    paths-ignore:
+      - '**/CHANGELOG.md'
+      - 'LICENSE'
+  pull_request:
+    # No `edited`: it fires on body edits too, and would re-run this whole job
+    # because a description gained a link. The title check is pr-title.yml.
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+# A superseded run is cancelled rather than finished: its verdict is about a
+# commit nobody is going to merge, and its minutes are billed all the same.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Full history: commitlint reads the pull request's range.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-pnpm
+      - uses: ./.github/actions/turbo-cache
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint the branch commits
+        if: github.event_name == 'pull_request'
+        run: >-
+          pnpm exec commitlint --verbose
+          --from ${{ github.event.pull_request.base.sha }}
+          --to ${{ github.event.pull_request.head.sha }}
+
+      - name: Lint the pushed commit
+        if: github.event_name == 'push'
+        run: pnpm exec commitlint --last --verbose
+
+      # Turbo only runs suites it knows about. A package with a vitest config
+      # but no `test` script would be skipped without a word, so look for the
+      # config rather than trusting the task graph.
+      - name: Every package with tests is in the task graph
+        run: |
+          set -eu
+          missing=''
+          for config in packages/*/vitest.config.* apps/*/vitest.config.*; do
+            [ -e "$config" ] || continue
+            pkg=$(dirname "$config")
+            node -e "process.exit(require('./$pkg/package.json').scripts?.test ? 0 : 1)" \
+              || missing="$missing $pkg"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::these packages have a vitest config but no test script:$missing"
+            exit 1
+          fi
+
+      - run: pnpm run verify
+
+      # Not in verify, and not a Turbo task: its verdict changes with the
+      # advisory database, not with this tree. `--ignore-registry-errors` keeps
+      # an unreachable advisory endpoint from turning the build red.
+      - name: Audit dependencies
+        timeout-minutes: 5
+        run: pnpm run audit:check
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: |
+            packages/*/coverage
+            apps/*/coverage
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # The single context branch protection (and the org ruleset) requires. It
+  # does no work of its own, so its billed minute is the one exception to "one
+  # job" above: it exists so the required name stays the same when `verify` is
+  # split or joined by other jobs. Every job that runs on a pull request belongs
+  # in `needs`. `skipped` is accepted; `failure` and `cancelled` are not.
+  all-checks:
+    name: all checks
+    if: always()
+    needs: [verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+      - run: echo "Every job passed or was skipped."
