@@ -34,7 +34,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@repo/config": "workspace:*",
-    "@types/node": "^26.5.0",
+    "@types/node": "^26.5.1",
     "@vitest/coverage-v8": "^5.0.0",
     "publint": "^0.3.24",
     "tsdown": "^0.23.0",
