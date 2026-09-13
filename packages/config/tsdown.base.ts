@@ -3,8 +3,8 @@ import type { UserConfig } from 'tsdown'
 /**
  * Dual ESM + CJS build for every package.
  *
- * Nothing here is published, so the dual format is not about a consumer's
- * toolchain: it gives `check:exports` two independent resolutions to prove. An
+ * Whatever a consumer's toolchain needs, the dual format also gives
+ * `check:exports` two independent resolutions to prove. An
  * exports map that resolves under a bundler but not under plain Node is the
  * classic silent breakage, and a `require()` path is the cheapest way to catch
  * it. Drop `cjs` in a package that will only ever be imported.

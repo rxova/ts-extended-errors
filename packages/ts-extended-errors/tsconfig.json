@@ -1,10 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["node"],
-    "paths": {
-      "ts-extended-errors": ["./src/index.ts"]
-    }
+    "types": ["node"]
   },
   "include": ["src", "tsdown.config.ts", "vitest.config.ts"]
 }
