@@ -13,6 +13,7 @@
     "typed-errors"
   ],
   "license": "MIT",
+  "author": "Jonatan Kruszewski",
   "sideEffects": false,
   "files": [
     "dist"
@@ -42,6 +43,7 @@
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "check:exports": "publint --strict && attw --pack .",
+    "pack:smoke": "node --import tsx ../tooling/src/pack-smoke.ts",
     "prepack": "pnpm build"
   },
   "devDependencies": {
