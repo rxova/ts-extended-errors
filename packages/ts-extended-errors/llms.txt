@@ -115,7 +115,7 @@ which also finds an error wrapped in another error's `cause`.
 | `findCause` | function | The first value in the chain that a predicate accepts |
 | `findCauseOf` | function | The first instance of a class in the chain, typed as that class |
 | `hasCauseOf` | function | Whether the chain contains an instance of a class |
-| `serializeError` | function | A JSON-safe object: `name`, `message`, `code`, `stack`, `context`, `cause` |
+| `serializeError` | function | A JSON-safe object: `name`, `message`, `code`, `stack`, `context`, `cause`, and an `AggregateError`'s `errors` |
 | `deserializeError` | function | Rebuilds `serializeError` output as instances of the original classes |
 | `toError` | function | An `Error` for any value; errors are returned unchanged |
 | `isErrorLike` | function | Whether a value is an object with a string `message` |
@@ -124,7 +124,7 @@ which also finds an error wrapped in another error's `cause`.
 | `ExtendedErrorOptions` | type | `{ cause?: unknown; context?: Context }` |
 | `SerializedError` | type | The object `serializeError` returns |
 | `SerializedErrorWithProperties` | type | `SerializedError` plus other fields, from `includeOwnProperties: true` |
-| `SerializeErrorOptions` | type | `{ maxDepth?, includeStack?, includeOwnProperties? }` |
+| `SerializeErrorOptions` | type | `{ maxDepth?, includeStack?, includeOwnProperties?, maxAggregatedErrors? }` |
 | `DeserializeErrorOptions` | type | `{ classes?, maxDepth? }` |
 | `DefineErrorOptions` | type | `{ code?, base? }` |
 | `ExtendedErrorConstructor` | type | The class `defineError` returns |
@@ -142,6 +142,9 @@ which also finds an error wrapped in another error's `cause`.
   `instanceof ExtendedError` and `isExtendedError` return `false`.
 - **Depth is limited.** `serializeError` and `deserializeError` process 8
   `cause` levels by default; set `maxDepth` to change it.
+- **Width is limited too.** `serializeError` keeps 10 of the `errors` of
+  `AggregateError`s across the whole output and counts the rest in
+  `errorsOmitted`; set `maxAggregatedErrors` to change it.
 - **`context` is copied through JSON.** A `Date` in it is serialized as a
   string and a `BigInt` as `'10n'`, and changing the result does not change the
   error.

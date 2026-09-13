@@ -430,6 +430,138 @@ describe('serializeError and context', () => {
   })
 })
 
+describe('serializeError with an AggregateError', () => {
+  it('serializes its errors like causes, each with its own chain', () => {
+    const error = new AggregateError(
+      [new TypeError('a', { cause: new Error('a0') }), 'not an error'],
+      'all failed',
+    )
+
+    expect(serializeError(error, { includeStack: false })).toEqual({
+      name: 'AggregateError',
+      message: 'all failed',
+      errors: [
+        { name: 'TypeError', message: 'a', cause: { name: 'Error', message: 'a0' } },
+        { name: 'string', message: 'not an error' },
+      ],
+    })
+  })
+
+  it('keeps the empty list Promise.any rejects with when it is given nothing', async () => {
+    const rejection: unknown = await Promise.any([]).catch((error: unknown) => error)
+
+    expect(serializeError(rejection, { includeStack: false })).toEqual({
+      name: 'AggregateError',
+      message: 'All promises were rejected',
+      errors: [],
+    })
+  })
+
+  it('reads a subclass by instanceof, whatever its name', () => {
+    class BatchError extends AggregateError {
+      override readonly name = 'BatchError'
+    }
+
+    const serialized = serializeError(new BatchError([new Error('a')], 'batch failed'))
+
+    expect(serialized.errors?.map((error) => error.message)).toEqual(['a'])
+  })
+
+  it('reads an AggregateError from another realm by its name', () => {
+    const foreign: unknown = runInNewContext('new AggregateError([new Error("a")], "all failed")')
+
+    expect(serializeError(foreign, { includeStack: false }).errors).toEqual([
+      { name: 'Error', message: 'a' },
+    ])
+  })
+
+  it('keeps 10 errors by default and counts the rest', () => {
+    const errors = Array.from({ length: 25 }, (_, index) => new Error(`attempt ${String(index)}`))
+
+    const serialized = serializeError(new AggregateError(errors, 'all failed'))
+
+    expect(serialized.errors).toHaveLength(10)
+    expect(serialized.errors?.[9]?.message).toBe('attempt 9')
+    expect(serialized.errorsOmitted).toBe(15)
+  })
+
+  it('spends one budget across the whole output, so nesting cannot multiply it', () => {
+    const inner = new AggregateError([new Error('a'), new Error('b'), new Error('c')], 'inner')
+    const outer = new AggregateError([inner, new Error('d')], 'outer')
+
+    expect(serializeError(outer, { includeStack: false, maxAggregatedErrors: 2 })).toEqual({
+      name: 'AggregateError',
+      message: 'outer',
+      errors: [
+        {
+          name: 'AggregateError',
+          message: 'inner',
+          errors: [{ name: 'Error', message: 'a' }],
+          errorsOmitted: 2,
+        },
+      ],
+      errorsOmitted: 1,
+    })
+  })
+
+  it('adds the errors cut on an earlier hop to those it cuts, and copies neither as a field', () => {
+    const relayed = {
+      name: 'AggregateError',
+      message: 'all failed',
+      errors: [
+        { name: 'Error', message: 'a' },
+        { name: 'Error', message: 'b' },
+      ],
+      errorsOmitted: 3,
+    }
+
+    expect(withOwn(relayed, { maxAggregatedErrors: 1 })).toEqual({
+      name: 'AggregateError',
+      message: 'all failed',
+      errors: [{ name: 'Error', message: 'a' }],
+      errorsOmitted: 4,
+    })
+  })
+
+  it.each([
+    ['a string', 'x'],
+    ['a negative', -1],
+    ['a fractional', 1.5],
+  ])('ignores %s errorsOmitted', (_, errorsOmitted) => {
+    const relayed = { name: 'AggregateError', message: 'all failed', errors: [], errorsOmitted }
+
+    expect('errorsOmitted' in serializeError(relayed)).toBe(false)
+  })
+
+  it('stops at maxDepth as a cause does, rather than writing an empty list', () => {
+    const error = new AggregateError([new Error('a')], 'all failed')
+
+    expect('errors' in serializeError(error, { maxDepth: 0 })).toBe(false)
+  })
+
+  it('drops an AggregateError that lists itself, without spending the budget on it', () => {
+    const error = new AggregateError([], 'loop')
+    error.errors.push(error, new Error('a'))
+
+    expect(serializeError(error, { includeStack: false, maxAggregatedErrors: 1 })).toEqual({
+      name: 'AggregateError',
+      message: 'loop',
+      errors: [{ name: 'Error', message: 'a' }],
+    })
+  })
+
+  it('reads errors as errors on an AggregateError only', () => {
+    // Shaped like yup's ValidationError, which keeps its messages there.
+    const invalid = Object.assign(new Error('invalid'), {
+      name: 'ValidationError',
+      errors: ['email is required'],
+    })
+
+    expect('errors' in serializeError(invalid)).toBe(false)
+    expect(withOwn(invalid).errors).toEqual(['email is required'])
+  })
+})
+
 describe('isErrorLike', () => {
   it('accepts anything with a string message', () => {
     expect(isErrorLike(new Error('boom'))).toBe(true)

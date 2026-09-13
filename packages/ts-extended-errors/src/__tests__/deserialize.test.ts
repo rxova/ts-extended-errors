@@ -262,3 +262,88 @@ describe('deserializeError', () => {
     expect(deserializeError({}, { classes: [StatusError] })).toBeInstanceOf(ExtendedError)
   })
 })
+
+describe('deserializeError with an AggregateError', () => {
+  it('rebuilds it with its errors, each as its own class', () => {
+    const original = new AggregateError(
+      [new TypeError('a'), new NotFoundError('b', { context: { id: 7 } })],
+      'all failed',
+      { cause: new Error('c') },
+    )
+
+    const back = expectInstance(roundTrip(original, { classes }), AggregateError)
+
+    expect(back.errors[0]).toBeInstanceOf(TypeError)
+    expect(findCauseOf(back.errors[1], NotFoundError)?.context).toEqual({ id: 7 })
+    expect(back.cause).toBeInstanceOf(Error)
+    expect(back.stack).toBe(original.stack)
+    expect(serializeError(back)).toEqual(serializeError(original))
+  })
+
+  it('carries errorsOmitted through a relay without listing it among the fields', () => {
+    const original = new AggregateError(
+      Array.from({ length: 5 }, (_, index) => new Error(`attempt ${String(index)}`)),
+      'all failed',
+    )
+    const payload = serializeError(original, { maxAggregatedErrors: 2 })
+
+    const back = deserializeError(JSON.parse(JSON.stringify(payload)))
+
+    expect(Reflect.get(back, 'errorsOmitted')).toBe(3)
+    expect(Object.keys(back)).toEqual([])
+    expect(serializeError(back)).toEqual(payload)
+  })
+
+  it('leaves a payload without errors, from a sender that did not write them, an ExtendedError', () => {
+    const back = deserializeError({ name: 'AggregateError', message: 'all failed' })
+
+    expect(Object.getPrototypeOf(back)).toBe(ExtendedError.prototype)
+    expect(back.name).toBe('AggregateError')
+  })
+
+  it('gives the errors to a class of your own by that name', () => {
+    const OwnAggregateError = defineError('AggregateError')
+
+    const back = expectInstance(
+      deserializeError(
+        {
+          name: 'AggregateError',
+          message: 'all failed',
+          errors: [{ name: 'TypeError', message: 'a' }],
+        },
+        { classes: [OwnAggregateError] },
+      ),
+      OwnAggregateError,
+    )
+
+    const [first] = Reflect.get(back, 'errors') as unknown[]
+    expect(first).toBeInstanceOf(TypeError)
+    expect(Object.keys(back)).not.toContain('errors')
+  })
+
+  it('leaves errors below maxDepth as they came', () => {
+    const inner = { name: 'Error', message: 'a' }
+
+    const back = expectInstance(
+      deserializeError(
+        { name: 'AggregateError', message: 'all failed', errors: [inner] },
+        {
+          maxDepth: 0,
+        },
+      ),
+      AggregateError,
+    )
+
+    expect(back.errors[0]).toBe(inner)
+  })
+
+  it('keeps errors as data under any other name', () => {
+    const back = deserializeError({
+      name: 'ValidationError',
+      message: 'invalid',
+      errors: ['email is required'],
+    })
+
+    expect(Reflect.get(back, 'errors')).toEqual(['email is required'])
+  })
+})

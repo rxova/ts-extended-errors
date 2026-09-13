@@ -1,6 +1,7 @@
 import type { ErrorClass } from './defineError'
 import { ExtendedError } from './ExtendedError'
 import {
+  AGGREGATE_FIELDS,
   DEFAULT_MAX_DEPTH,
   FIXED_FIELDS,
   isErrorLike,
@@ -21,8 +22,12 @@ export interface DeserializeErrorOptions {
    *
    * An error whose name matches nothing comes back as an {@link ExtendedError}
    * that keeps the serialized name, so it still reads right in a log but is
-   * not `instanceof` anything more specific. `AggregateError` is one of those:
-   * its constructor takes the errors first.
+   * not `instanceof` anything more specific.
+   *
+   * `AggregateError`, whose constructor takes the errors first, is rebuilt as
+   * one when the payload lists its `errors`. A payload without that list —
+   * from a sender that did not write it — falls back like an unknown name,
+   * rather than becoming an AggregateError that claims there were none.
    */
   readonly classes?: readonly ErrorClass[]
   /**
@@ -74,7 +79,8 @@ const restore = (error: Error, key: string, value: unknown, enumerable: boolean)
  * constructed, so `instanceof` and `findCauseOf` work on the result. Then the
  * serialized fields are put back as they were: `name`, `code`, `context`,
  * `stack` and any own fields `includeOwnProperties` carried. The cause chain is
- * rebuilt the same way, down to `maxDepth`.
+ * rebuilt the same way, down to `maxDepth`, and so are an AggregateError's
+ * `errors`, with the `errorsOmitted` count kept for the next serializer.
  *
  * With no serialized stack the result has none either, rather than one that
  * points at this function instead of the failure.
@@ -116,7 +122,12 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
     path.add(current)
 
     const name = readString(current, 'name') ?? 'Error'
-    const Class = classes.get(name) ?? ExtendedError
+    const Class = classes.get(name)
+
+    // An AggregateError's `errors`, rebuilt the way a cause is. Read under that
+    // name only: other classes keep other things there.
+    const listed = name === 'AggregateError' ? read(current, 'errors') : undefined
+    const errors = Array.isArray(listed) ? (listed as readonly unknown[]).map(descend) : undefined
 
     // Handed to the constructor, so the class sets them the way it would for
     // any other throw; `cause` only when there was one, for the reason
@@ -126,7 +137,12 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
     const context = read(current, 'context')
     if (isObject(context)) constructorOptions.context = context as ErrorContext
 
-    const error = new Class(current.message, constructorOptions)
+    const error =
+      Class !== undefined
+        ? new Class(current.message, constructorOptions)
+        : errors !== undefined
+          ? new AggregateError(errors, current.message, constructorOptions)
+          : new ExtendedError(current.message, constructorOptions)
 
     if (error.name !== name) restore(error, 'name', name, false)
 
@@ -140,8 +156,17 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
     if (stack === undefined) Reflect.deleteProperty(error, 'stack')
     else restore(error, 'stack', stack, false)
 
+    if (errors !== undefined) {
+      // Already in place on an AggregateError; a class of your own by that name
+      // gets it the same way, as a field that is not enumerable.
+      restore(error, 'errors', errors, false)
+      const omitted = read(current, 'errorsOmitted')
+      if (typeof omitted === 'number') restore(error, 'errorsOmitted', omitted, false)
+    }
+
+    const fixed = errors === undefined ? FIXED_FIELDS : AGGREGATE_FIELDS
     for (const key of Object.keys(current)) {
-      if (FIXED_FIELDS.has(key)) continue
+      if (fixed.has(key)) continue
       const field = read(current, key)
       // serializeError always writes a name for an error it walked, so a field
       // without one is data — `{ message: 'Not found', status: 404 }` — and

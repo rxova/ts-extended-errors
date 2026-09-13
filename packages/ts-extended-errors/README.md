@@ -260,7 +260,8 @@ causeChain(null) // []
 ## `serializeError(value, options?)`
 
 Returns a plain, JSON-safe object: `name`, `message`, and `code`, `stack`, `context` and `cause`
-when present. `cause` is serialized the same way, recursively.
+when present. `cause` is serialized the same way, recursively, and so are the `errors` of an
+`AggregateError`.
 
 ```ts
 import { ExtendedError, defineError, serializeError } from '@rxova/ts-extended-errors'
@@ -285,15 +286,43 @@ serializeError('timeout') // { name: 'string', message: 'timeout' }
 serializeError(null) // { name: 'object', message: 'null' }
 ```
 
-| Option                 | Type      | Default | Description                                        |
-| ---------------------- | --------- | ------- | -------------------------------------------------- |
-| `maxDepth`             | `number`  | `8`     | How many `cause` levels to include below the top   |
-| `includeStack`         | `boolean` | `true`  | Include `stack`                                    |
-| `includeOwnProperties` | `boolean` | `false` | Also copy the error's other own fields (see below) |
+| Option                 | Type      | Default | Description                                                          |
+| ---------------------- | --------- | ------- | -------------------------------------------------------------------- |
+| `maxDepth`             | `number`  | `8`     | How many `cause` levels to include below the top                     |
+| `includeStack`         | `boolean` | `true`  | Include `stack`                                                      |
+| `includeOwnProperties` | `boolean` | `false` | Also copy the error's other own fields (see below)                   |
+| `maxAggregatedErrors`  | `number`  | `10`    | How many `AggregateError` errors to include, across the whole output |
 
 `context` is copied field by field through a JSON round trip, so the result shares nothing with the
 error: a `Date` becomes a string, a `BigInt` becomes `'10n'`, and a field that cannot be written
 (a cycle, a `toJSON` that throws) is described with `describeValue` without losing the others.
+
+An `AggregateError`'s `errors` are serialized like a `cause`. `maxAggregatedErrors` bounds their
+number across the whole output, nested `AggregateError`s included, and `errorsOmitted` counts the
+ones it cut:
+
+```ts
+import { serializeError } from '@rxova/ts-extended-errors'
+
+const error = new AggregateError(
+  [new Error('mirror 1 timed out'), new Error('mirror 2 timed out'), new Error('mirror 3 refused')],
+  'every mirror failed',
+)
+
+serializeError(error, { includeStack: false, maxAggregatedErrors: 2 })
+// {
+//   name: 'AggregateError',
+//   message: 'every mirror failed',
+//   errors: [
+//     { name: 'Error', message: 'mirror 1 timed out' },
+//     { name: 'Error', message: 'mirror 2 timed out' },
+//   ],
+//   errorsOmitted: 1
+// }
+```
+
+`errors` is read as a list of errors on an `AggregateError` only; on any other error it is an
+ordinary own field.
 
 By default only the fields above are read. `includeOwnProperties: true` also copies any other own
 field of each error in the chain, and widens the return type to `SerializedErrorWithProperties`:
@@ -360,6 +389,9 @@ error.stack === sent.stack // true
 - A name that matches no class produces an `ExtendedError` with that name.
 - `code`, `context`, `stack` and any fields from `includeOwnProperties` are restored. Without a
   serialized `stack`, the result has no `stack`.
+- A payload named `AggregateError` with an `errors` list becomes an `AggregateError` whose `errors`
+  are rebuilt like a `cause`; `errorsOmitted` is kept as a non-enumerable field. Without the list it
+  becomes an `ExtendedError`, like an unknown name.
 - An `Error` instance is returned unchanged. Other values that are not error-like go through
   `toError`.
 
@@ -436,18 +468,18 @@ describeValue(undefined) // 'undefined'
 
 ## Types
 
-| Type                                          | Description                                                              |
-| --------------------------------------------- | ------------------------------------------------------------------------ |
-| `ErrorContext`                                | `Readonly<Record<string, unknown>>`, the constraint on `context`         |
-| `ExtendedErrorOptions<Context>`               | `{ cause?: unknown; context?: Context }`                                 |
-| `SerializedError`                             | `{ name; message; code?; stack?; context?; cause?: SerializedError }`    |
-| `SerializedErrorWithProperties`               | `SerializedError` plus other fields, from `includeOwnProperties: true`   |
-| `SerializeErrorOptions`                       | Options of `serializeError`                                              |
-| `DeserializeErrorOptions`                     | Options of `deserializeError`                                            |
-| `DefineErrorOptions<Context>`                 | Options of `defineError`                                                 |
-| `ExtendedErrorConstructor<Context, Instance>` | The class `defineError` returns                                          |
-| `ExtendedErrorMembers<Context>`               | `name`, `code`, `context` and `toJSON`, added to any `defineError` class |
-| `ErrorClass<Instance>`                        | An error class whose constructor takes `(message, options)`              |
+| Type                                          | Description                                                                   |
+| --------------------------------------------- | ----------------------------------------------------------------------------- |
+| `ErrorContext`                                | `Readonly<Record<string, unknown>>`, the constraint on `context`              |
+| `ExtendedErrorOptions<Context>`               | `{ cause?: unknown; context?: Context }`                                      |
+| `SerializedError`                             | `{ name; message; code?; stack?; context?; cause?; errors?; errorsOmitted? }` |
+| `SerializedErrorWithProperties`               | `SerializedError` plus other fields, from `includeOwnProperties: true`        |
+| `SerializeErrorOptions`                       | Options of `serializeError`                                                   |
+| `DeserializeErrorOptions`                     | Options of `deserializeError`                                                 |
+| `DefineErrorOptions<Context>`                 | Options of `defineError`                                                      |
+| `ExtendedErrorConstructor<Context, Instance>` | The class `defineError` returns                                               |
+| `ExtendedErrorMembers<Context>`               | `name`, `code`, `context` and `toJSON`, added to any `defineError` class      |
+| `ErrorClass<Instance>`                        | An error class whose constructor takes `(message, options)`                   |
 
 ## For coding agents
 
