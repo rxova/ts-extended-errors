@@ -37,12 +37,26 @@ export interface SerializeErrorOptions {
    * @defaultValue false
    */
   readonly includeOwnProperties?: boolean
+  /**
+   * How many errors to keep from the `errors` of AggregateErrors, counted
+   * across the whole output. `Promise.any` over a thousand requests rejects
+   * with a thousand errors, each of which may carry a chain of its own, so this
+   * bounds the width of a log line the way `maxDepth` bounds its depth. A limit
+   * per AggregateError would not: nested ones would multiply it.
+   *
+   * The errors it cuts are counted in `errorsOmitted`.
+   *
+   * @defaultValue 10
+   */
+  readonly maxAggregatedErrors?: number
 }
 
 // The internals below are exported for deserializeError, which reads the same
 // shapes back; the package entry point does not re-export them.
 
 export const DEFAULT_MAX_DEPTH = 8
+
+const DEFAULT_MAX_AGGREGATED_ERRORS = 10
 
 /** The fields serializeError reads by name, which an own field must not overwrite. */
 export const FIXED_FIELDS: ReadonlySet<string> = new Set([
@@ -52,6 +66,13 @@ export const FIXED_FIELDS: ReadonlySet<string> = new Set([
   'stack',
   'context',
   'cause',
+])
+
+/** The fixed fields of an AggregateError, which has its `errors` read by name as well. */
+export const AGGREGATE_FIELDS: ReadonlySet<string> = new Set([
+  ...FIXED_FIELDS,
+  'errors',
+  'errorsOmitted',
 ])
 
 const NO_FIELDS: ReadonlySet<string> = new Set()
@@ -92,6 +113,26 @@ export const isErrorLike = (value: unknown): value is Error =>
  */
 const isRealError = (value: unknown): boolean =>
   value instanceof Error || Object.prototype.toString.call(value) === '[object Error]'
+
+/**
+ * True for an AggregateError, from this realm or another.
+ *
+ * By name as well as by `instanceof`, since its string tag is `[object Error]`
+ * like any other error's. Only an AggregateError's `errors` is read as a list
+ * of errors: other classes keep other things under that name, such as the
+ * messages of a validation error.
+ */
+const isAggregateError = (value: object): boolean =>
+  value instanceof AggregateError || readString(value, 'name') === 'AggregateError'
+
+/**
+ * The errors an AggregateError lost before it reached this serializer: one on
+ * an earlier hop wrote `errorsOmitted`, and deserializeError put it back.
+ */
+const omittedEarlier = (error: object): number => {
+  const omitted = read(error, 'errorsOmitted')
+  return typeof omitted === 'number' && Number.isSafeInteger(omitted) && omitted > 0 ? omitted : 0
+}
 
 /** Best-effort one-line description of a thrown value that is not an error. */
 export const describeValue = (value: unknown): string => {
@@ -186,7 +227,8 @@ const copyContext = (context: object): ErrorContext => {
  *
  * `context` is copied, not referenced: the result shares nothing with the error,
  * so a redactor can edit one without the other, and `JSON.stringify` cannot
- * throw on it.
+ * throw on it. An AggregateError's `errors` are serialized the way a `cause` is,
+ * within `maxAggregatedErrors`.
  */
 export function serializeError(
   value: unknown,
@@ -200,6 +242,9 @@ export function serializeError(
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH
   const includeStack = options.includeStack ?? true
   const includeOwnProperties = options.includeOwnProperties ?? false
+
+  // What is left of maxAggregatedErrors: one budget for the whole output.
+  let aggregatedLeft = options.maxAggregatedErrors ?? DEFAULT_MAX_AGGREGATED_ERRORS
 
   // Tracks the errors on the *current path* so a cycle terminates. A set of the
   // whole traversal would be wrong: the same error appearing under two
@@ -226,6 +271,8 @@ export function serializeError(
       stack?: string
       context?: ErrorContext
       cause?: SerializedErrorWithProperties
+      errors?: SerializedErrorWithProperties[]
+      errorsOmitted?: number
     } = {
       name: readString(current, 'name') ?? 'Error',
       // Not read through `readString`: isErrorLike has already established that
@@ -250,8 +297,35 @@ export function serializeError(
       if (serializedCause !== undefined) serialized.cause = serializedCause
     }
 
+    const aggregate = isAggregateError(current)
+    const errors = aggregate ? read(current, 'errors') : undefined
+    // At maxDepth the list goes the way a cause does, rather than coming out
+    // empty and claiming there was nothing in it.
+    if (Array.isArray(errors) && depth < maxDepth) {
+      const kept: SerializedErrorWithProperties[] = []
+      let omitted = omittedEarlier(current)
+
+      for (const item of errors as readonly unknown[]) {
+        if (aggregatedLeft <= 0) {
+          omitted += 1
+          continue
+        }
+        // Spent before descending, so an AggregateError among them draws on
+        // what is left after this one.
+        aggregatedLeft -= 1
+        const serializedItem = descend(item)
+        // Below maxDepth only a cycle refuses, and a cycle is not a cut: the
+        // item is dropped as a cyclic cause is, and its share comes back.
+        if (serializedItem === undefined) aggregatedLeft += 1
+        else kept.push(serializedItem)
+      }
+
+      serialized.errors = kept
+      if (omitted > 0) serialized.errorsOmitted = omitted
+    }
+
     if (includeOwnProperties) {
-      copyFields(current, serialized, FIXED_FIELDS, (field) =>
+      copyFields(current, serialized, aggregate ? AGGREGATE_FIELDS : FIXED_FIELDS, (field) =>
         isRealError(field) ? descend(field) : toJsonSafe(field),
       )
     }

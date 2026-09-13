@@ -35,6 +35,13 @@ export interface SerializedError {
   readonly context?: ErrorContext | undefined
   /** The serialized `cause`, recursively, up to the configured depth. */
   readonly cause?: SerializedError | undefined
+  /** An AggregateError's `errors`, each serialized like a `cause`. Present only for one. */
+  readonly errors?: readonly SerializedError[] | undefined
+  /**
+   * How many of an AggregateError's errors are missing from `errors`, cut by
+   * `maxAggregatedErrors` here or on an earlier hop. Present only when some are.
+   */
+  readonly errorsOmitted?: number | undefined
 }
 
 /**
@@ -43,5 +50,6 @@ export interface SerializedError {
  */
 export interface SerializedErrorWithProperties extends SerializedError {
   readonly cause?: SerializedErrorWithProperties | undefined
+  readonly errors?: readonly SerializedErrorWithProperties[] | undefined
   readonly [field: string]: unknown
 }
