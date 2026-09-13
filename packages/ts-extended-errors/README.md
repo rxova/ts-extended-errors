@@ -291,6 +291,10 @@ serializeError(null) // { name: 'object', message: 'null' }
 | `includeStack`         | `boolean` | `true`  | Include `stack`                                    |
 | `includeOwnProperties` | `boolean` | `false` | Also copy the error's other own fields (see below) |
 
+`context` is copied field by field through a JSON round trip, so the result shares nothing with the
+error: a `Date` becomes a string, a `BigInt` becomes `'10n'`, and a field that cannot be written
+(a cycle, a `toJSON` that throws) is described with `describeValue` without losing the others.
+
 By default only the fields above are read. `includeOwnProperties: true` also copies any other own
 field of each error in the chain, and widens the return type to `SerializedErrorWithProperties`:
 

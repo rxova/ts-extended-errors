@@ -28,11 +28,11 @@ export interface SerializeErrorOptions {
    * a response body.
    *
    * An error held in such a field is serialized the way a `cause` is, under the
-   * same depth limit and cycle guard. Anything else is copied through a JSON
-   * round trip, so the result stays JSON-safe and detached from the error, and
-   * a value that cannot survive one is described instead. Functions,
-   * `undefined` and fields whose getter throws are skipped. The fixed fields
-   * keep their meaning and are never overwritten.
+   * same depth limit and cycle guard. Anything else is copied the way `context`
+   * is, through a JSON round trip, so the result stays JSON-safe and detached
+   * from the error, and a value that cannot survive one is described instead.
+   * Functions, `undefined` and fields whose getter throws are skipped. The
+   * fixed fields keep their meaning and are never overwritten.
    *
    * @defaultValue false
    */
@@ -53,6 +53,8 @@ export const FIXED_FIELDS: ReadonlySet<string> = new Set([
   'context',
   'cause',
 ])
+
+const NO_FIELDS: ReadonlySet<string> = new Set()
 
 export const isObject = (value: unknown): value is object =>
   typeof value === 'object' && value !== null
@@ -109,39 +111,48 @@ export const describeValue = (value: unknown): string => {
   }
 }
 
+/** A `JSON.stringify` replacer that writes a BigInt the way describeValue does, rather than throwing. */
+const writeBigInt = (_key: string, value: unknown): unknown =>
+  typeof value === 'bigint' ? `${value.toString()}n` : value
+
 /**
  * A JSON round trip of `value`: what a log line would have carried anyway,
  * taken now, so a later mutation of the error cannot change it.
  */
 const toJsonSafe = (value: unknown): unknown => {
   try {
-    const json: unknown = JSON.stringify(value)
+    const json: unknown = JSON.stringify(value, writeBigInt)
     if (typeof json === 'string') return JSON.parse(json) as unknown
   } catch {
-    // A cycle, a bigint or a throwing `toJSON`: described below instead.
+    // A cycle or a throwing `toJSON`: described below instead.
   }
   return describeValue(value)
 }
 
-/** Copies `error`'s own enumerable fields, other than the fixed ones, onto `target`. */
-const copyOwnProperties = (
-  error: object,
+/**
+ * Copies `source`'s own enumerable fields, other than those in `skip`, onto
+ * `target`, each through `copy`. Functions, `undefined`, fields whose getter
+ * throws and fields `copy` returns `undefined` for are skipped.
+ */
+const copyFields = (
+  source: object,
   target: object,
-  serializeNested: (value: unknown) => SerializedErrorWithProperties | undefined,
+  skip: ReadonlySet<string>,
+  copy: (value: unknown) => unknown,
 ): void => {
-  for (const key of Object.keys(error)) {
-    if (FIXED_FIELDS.has(key)) continue
+  for (const key of Object.keys(source)) {
+    if (skip.has(key)) continue
 
     let value: unknown
     try {
-      value = read(error, key)
+      value = read(source, key)
     } catch {
       // A getter that throws. Losing one field beats losing the log line.
       continue
     }
     if (value === undefined || typeof value === 'function') continue
 
-    const copied = isRealError(value) ? serializeNested(value) : toJsonSafe(value)
+    const copied = copy(value)
     if (copied === undefined) continue
 
     // Defined rather than assigned: assigning to a key spelled `__proto__`
@@ -156,11 +167,26 @@ const copyOwnProperties = (
 }
 
 /**
+ * A detached, JSON-safe copy of `context`, taken field by field so that one
+ * field JSON cannot write — a cycle, a `toJSON` that throws — is described on
+ * its own instead of costing the rest.
+ */
+const copyContext = (context: object): ErrorContext => {
+  const copy = {}
+  copyFields(context, copy, NO_FIELDS, toJsonSafe)
+  return copy
+}
+
+/**
  * Converts any thrown value into a plain, JSON-safe object.
  *
  * Non-errors are described rather than dropped: `throw 'nope'` is rare but real,
  * and a serializer that returns `{}` for it is how an incident becomes
  * unreadable.
+ *
+ * `context` is copied, not referenced: the result shares nothing with the error,
+ * so a redactor can edit one without the other, and `JSON.stringify` cannot
+ * throw on it.
  */
 export function serializeError(
   value: unknown,
@@ -216,7 +242,7 @@ export function serializeError(
     }
 
     const context = read(current, 'context')
-    if (isObject(context)) serialized.context = context as ErrorContext
+    if (isObject(context)) serialized.context = copyContext(context)
 
     const cause = read(current, 'cause')
     if (cause !== undefined) {
@@ -224,7 +250,11 @@ export function serializeError(
       if (serializedCause !== undefined) serialized.cause = serializedCause
     }
 
-    if (includeOwnProperties) copyOwnProperties(current, serialized, descend)
+    if (includeOwnProperties) {
+      copyFields(current, serialized, FIXED_FIELDS, (field) =>
+        isRealError(field) ? descend(field) : toJsonSafe(field),
+      )
+    }
 
     path.delete(current)
     return serialized
