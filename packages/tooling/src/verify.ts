@@ -18,6 +18,7 @@ export const STEPS: [name: string, command: string][] = [
   ['dependency dedupe', 'pnpm exec turbo run //#dedupe:check'],
   ['format', 'pnpm run format:check'],
   ['lint', 'pnpm run lint'],
+  ['llms.txt', 'pnpm run check:llms'],
   ['typecheck', 'pnpm exec turbo run typecheck'],
   ['unit tests', 'pnpm exec turbo run test'],
   ['build', 'pnpm exec turbo run build'],

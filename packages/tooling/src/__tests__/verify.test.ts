@@ -7,6 +7,7 @@ describe('STEPS', () => {
       'dependency dedupe',
       'format',
       'lint',
+      'llms.txt',
       'typecheck',
       'unit tests',
       'build',
