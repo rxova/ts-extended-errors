@@ -1,7 +1,6 @@
-<h1 align="center">ts-extended-errors</h1>
+<h1 align="center">@rxova/ts-extended-errors</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/ts-extended-errors"><img src="https://img.shields.io/npm/v/ts-extended-errors?color=cb3837&logo=npm&logoColor=white" alt="npm version" /></a>
   <a href="https://github.com/rxova/ts-extended-errors/actions/workflows/ci.yml"><img src="https://github.com/rxova/ts-extended-errors/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status" /></a>
   <img src="https://img.shields.io/badge/brotli-~4.5%20kB-blue" alt="Brotli size about 4.5 kB" />
   <img src="https://img.shields.io/badge/coverage%20threshold-95%25-brightgreen" alt="Coverage threshold: 95% per file" />
@@ -14,8 +13,16 @@
 **Typed, serializable errors for TypeScript.** A base class for custom errors, a one-line class
 factory, helpers for `cause` chains, and a JSON round trip that rebuilds the original classes.
 
+Published to GitHub Packages. The `.npmrc` of the project that installs it routes the `@rxova`
+scope there, with a GitHub token that has `read:packages`:
+
+```ini
+@rxova:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
 ```bash
-npm install ts-extended-errors
+npm install @rxova/ts-extended-errors
 ```
 
 Requires Node.js 20.19 or newer. Ships ESM and CommonJS with type declarations, and has no runtime
@@ -45,7 +52,7 @@ runtimes.
 ## Quick start
 
 ```ts
-import { defineError, findCauseOf, serializeError, toError } from 'ts-extended-errors'
+import { defineError, findCauseOf, serializeError, toError } from '@rxova/ts-extended-errors'
 
 const HttpError = defineError('HttpError', { code: 'HTTP' })
 const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
@@ -82,7 +89,7 @@ try {
 The base class. Extend it when an error needs fields or methods of its own.
 
 ```ts
-import { ExtendedError, isExtendedError } from 'ts-extended-errors'
+import { ExtendedError, isExtendedError } from '@rxova/ts-extended-errors'
 
 class ConfigError extends ExtendedError<{ file: string }> {
   static override readonly code = 'CONFIG'
@@ -129,7 +136,7 @@ isExtendedError(new Error('x')) // false
 Returns a new error class. The result is the same as extending `ExtendedError` with a static `code`.
 
 ```ts
-import { ExtendedError, defineError } from 'ts-extended-errors'
+import { ExtendedError, defineError } from '@rxova/ts-extended-errors'
 
 const HttpError = defineError('HttpError', { code: 'HTTP' })
 const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
@@ -155,7 +162,7 @@ new GoneError('deleted').code // 'HTTP'
 The first type parameter types `context`:
 
 ```ts
-import { defineError } from 'ts-extended-errors'
+import { defineError } from '@rxova/ts-extended-errors'
 
 const RateLimitError = defineError<{ retryAfter: number }>('RateLimitError', { code: 'RATE_LIMIT' })
 
@@ -168,7 +175,7 @@ new RateLimitError('slow down', { context: { retryAfter: '30' } })
 The returned class can be extended like any other:
 
 ```ts
-import { defineError } from 'ts-extended-errors'
+import { defineError } from '@rxova/ts-extended-errors'
 
 const HttpError = defineError('HttpError', { code: 'HTTP' })
 
@@ -188,7 +195,7 @@ error.retryAfter // 30
 constructor takes `(message, options)`. To type `context` as well, pass both type parameters.
 
 ```ts
-import { ExtendedError, defineError, isExtendedError } from 'ts-extended-errors'
+import { ExtendedError, defineError, isExtendedError } from '@rxova/ts-extended-errors'
 
 const OutOfRangeError = defineError<{ page: number }, RangeError>('OutOfRangeError', {
   base: RangeError,
@@ -222,7 +229,7 @@ import {
   hasCauseOf,
   isExtendedError,
   rootCause,
-} from 'ts-extended-errors'
+} from '@rxova/ts-extended-errors'
 
 const HttpError = defineError('HttpError', { code: 'HTTP' })
 const TimeoutError = defineError<{ ms: number }>('TimeoutError', { code: 'TIMEOUT' })
@@ -256,7 +263,7 @@ Returns a plain, JSON-safe object: `name`, `message`, and `code`, `stack`, `cont
 when present. `cause` is serialized the same way, recursively.
 
 ```ts
-import { ExtendedError, defineError, serializeError } from 'ts-extended-errors'
+import { ExtendedError, defineError, serializeError } from '@rxova/ts-extended-errors'
 
 const TimeoutError = defineError('TimeoutError', { code: 'TIMEOUT' })
 
@@ -288,7 +295,7 @@ By default only the fields above are read. `includeOwnProperties: true` also cop
 field of each error in the chain, and widens the return type to `SerializedErrorWithProperties`:
 
 ```ts
-import { serializeError } from 'ts-extended-errors'
+import { serializeError } from '@rxova/ts-extended-errors'
 
 class DbError extends Error {
   constructor(
@@ -323,7 +330,7 @@ a `vm` context) serialize like local ones.
 Rebuilds the output of `serializeError` as real errors, cause chain included.
 
 ```ts
-import { defineError, deserializeError, findCauseOf } from 'ts-extended-errors'
+import { defineError, deserializeError, findCauseOf } from '@rxova/ts-extended-errors'
 
 const HttpError = defineError('HttpError', { code: 'HTTP' })
 const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
@@ -353,7 +360,7 @@ error.stack === sent.stack // true
   `toError`.
 
 ```ts
-import { ExtendedError, deserializeError } from 'ts-extended-errors'
+import { ExtendedError, deserializeError } from '@rxova/ts-extended-errors'
 
 const error = deserializeError({ name: 'PaymentError', message: 'card declined', code: 'CARD' })
 
@@ -375,7 +382,7 @@ expected to contain.
 Returns an `Error` for any value, for use in `catch` blocks, where the caught value is `unknown`.
 
 ```ts
-import { ExtendedError, toError } from 'ts-extended-errors'
+import { ExtendedError, toError } from '@rxova/ts-extended-errors'
 
 const original = new TypeError('x is not a function')
 toError(original) === original // true: errors are returned unchanged
@@ -399,7 +406,7 @@ original value is kept as `cause`.
 `instanceof Error` is `false`.
 
 ```ts
-import { isErrorLike } from 'ts-extended-errors'
+import { isErrorLike } from '@rxova/ts-extended-errors'
 
 isErrorLike(new Error('x')) // true
 isErrorLike({ message: 'x' }) // true
@@ -413,7 +420,7 @@ A one-line string for any value. `serializeError` and `toError` use it for value
 errors.
 
 ```ts
-import { describeValue } from 'ts-extended-errors'
+import { describeValue } from '@rxova/ts-extended-errors'
 
 describeValue('timeout') // 'timeout'
 describeValue(42) // '42'
@@ -440,7 +447,7 @@ describeValue(undefined) // 'undefined'
 
 ## For coding agents
 
-`node_modules/ts-extended-errors/llms.txt` has the API table, a working example and the common
+`node_modules/@rxova/ts-extended-errors/llms.txt` has the API table, a working example and the common
 mistakes in one file.
 
 ## License

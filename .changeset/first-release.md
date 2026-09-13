@@ -1,5 +1,5 @@
 ---
-'ts-extended-errors': minor
+'@rxova/ts-extended-errors': minor
 ---
 
 First release: `ExtendedError`, `defineError`, the cause-chain helpers, `serializeError`,

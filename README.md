@@ -12,7 +12,7 @@ It moved here from `rxova/experiments` (`packages/ts-extended-errors`) with its 
 | `packages/ts-extended-errors` | The library: dual ESM + CJS built with tsdown, checked with publint + attw                                                                                                                 |
 | `packages/config`             | Shared vitest and tsdown presets — the one home of the 95%-per-file coverage thresholds                                                                                                    |
 | `packages/tooling`            | `verify`: the gate the pre-push hook and CI both run; `pack-smoke`: installs the packed tarball and loads it with plain Node; `check-llms`: keeps each `llms.txt` in step with the exports |
-| Releases                      | Changesets; `release.yml` publishes to npm with provenance once `RELEASE_ENABLED` is `true`                                                                                                |
+| Releases                      | Changesets; `release.yml` publishes to GitHub Packages once `RELEASE_ENABLED` is `true`                                                                                                    |
 | Quality                       | TypeScript 6 strict, ESLint 10 with `strictTypeChecked`, Prettier, Vitest 5                                                                                                                |
 | Hooks                         | Husky: lint-staged + typecheck + tests on commit, commitlint, `verify` on push                                                                                                             |
 | CI                            | One job plus an `all checks` gate, Turbo remote cache in the Actions cache, audit after build                                                                                              |
@@ -34,20 +34,20 @@ It moved here from `rxova/experiments` (`packages/ts-extended-errors`) with its 
 ## Commands
 
 ```sh
-pnpm install                          # dependencies and git hooks
-pnpm test                             # unit tests, coverage enforced per file
-pnpm --filter ts-extended-errors test # the library alone
-pnpm run verify                       # everything CI runs, in order
-pnpm run pack:smoke                   # pack, install and load the tarball
-pnpm run check:llms                   # llms.txt against the exports
-pnpm changeset                        # record a change to the library for the next release
+pnpm install                                 # dependencies and git hooks
+pnpm test                                    # unit tests, coverage enforced per file
+pnpm --filter @rxova/ts-extended-errors test # the library alone
+pnpm run verify                              # everything CI runs, in order
+pnpm run pack:smoke                          # pack, install and load the tarball
+pnpm run check:llms                          # llms.txt against the exports
+pnpm changeset                               # record a change to the library for the next release
 ```
 
 ## Reading this with a coding agent
 
-The package ships an `llms.txt` inside its npm tarball. After an install, an agent can read the API,
-a working example and the common mistakes from `node_modules/ts-extended-errors/llms.txt`, with no
-network access. `check-llms` fails the build when its API table and `src/index.ts` disagree.
+The package ships an `llms.txt` inside its tarball. After an install, an agent can read the API, a
+working example and the common mistakes from `node_modules/@rxova/ts-extended-errors/llms.txt`,
+with no network access. `check-llms` fails the build when its API table and `src/index.ts` disagree.
 
 - [`llms.txt`](llms.txt) — the repository index: what the package is, and what to read next.
 - [`packages/ts-extended-errors/llms.txt`](packages/ts-extended-errors/llms.txt) — the package file.
@@ -58,10 +58,16 @@ network access. `check-llms` fails the build when its API table and `src/index.t
 1. A pull request that changes the library adds a changeset (`pnpm changeset`).
 2. Once CI passes on `main`, `release.yml` opens a `chore: version packages` pull request with the
    version bump and changelog.
-3. Merging that pull request publishes to npm with provenance and tags the release.
+3. Merging that pull request publishes `@rxova/ts-extended-errors` to GitHub Packages and tags the
+   release.
 
-Publishing is off until the repository variable `RELEASE_ENABLED` is `true`. Before that, add the
-repository and `release.yml` as a trusted publisher of `ts-extended-errors` on npm.
+Publishing is off unless the repository variable `RELEASE_ENABLED` is `true`. The workflow
+publishes with its own `GITHUB_TOKEN`, so there is no secret to store. A pull request that token
+opens starts no workflows, so CI runs on the version pull request only once it is closed and
+reopened.
+
+Installing the package needs a `.npmrc` entry for the `@rxova` scope; the
+[package README](packages/ts-extended-errors/README.md) has the two lines.
 
 ## Support
 
