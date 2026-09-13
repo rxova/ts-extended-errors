@@ -1,10 +1,10 @@
 {
-  "name": "template-private",
+  "name": "ts-extended-errors-workspace",
   "private": true,
-  "description": "Template for rxova private TypeScript projects.",
+  "description": "The workspace around the ts-extended-errors library.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rxova/template-private.git"
+    "url": "git+https://github.com/rxova/ts-extended-errors.git"
   },
   "type": "module",
   "packageManager": "pnpm@11.26.0",
