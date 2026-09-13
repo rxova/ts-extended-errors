@@ -1,0 +1,141 @@
+# ts-extended-errors
+
+> Typed, serializable errors for TypeScript. `ExtendedError` is a base class
+> that sets `name`, `code`, `context` and `stack` correctly in subclasses;
+> `defineError` creates such a class in one line; five functions search the
+> `cause` chain; `serializeError` and `deserializeError` round-trip errors
+> through JSON and rebuild them as the original classes. Every function accepts
+> `unknown`. Node >= 20.19, no runtime dependencies and no Node.js APIs, so it
+> also runs in browsers. MIT. Ships ESM and CommonJS with type declarations.
+
+## Install
+
+    npm install ts-extended-errors
+
+No peer dependencies.
+
+## Minimal working example
+
+```ts
+import { defineError, findCauseOf, serializeError, toError } from 'ts-extended-errors'
+
+const HttpError = defineError('HttpError', { code: 'HTTP' })
+const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
+
+function loadUser(userId: number) {
+  throw new NotFoundError('no such user', { context: { userId } })
+}
+
+function loadProfile(userId: number) {
+  try {
+    return loadUser(userId)
+  } catch (cause) {
+    throw new HttpError('loading the profile failed', { cause })
+  }
+}
+
+try {
+  loadProfile(42)
+} catch (thrown) {
+  const error = toError(thrown) // `thrown` is `unknown`, `error` is an `Error`
+
+  const notFound = findCauseOf(error, NotFoundError) // searches the whole chain
+  notFound?.code // 'HTTP_NOT_FOUND'
+  notFound?.context // { userId: 42 }
+
+  console.log(JSON.stringify(serializeError(error, { includeStack: false })))
+  // {"name":"HttpError","message":"loading the profile failed","code":"HTTP","cause":
+  //   {"name":"NotFoundError","message":"no such user","code":"HTTP_NOT_FOUND","context":{"userId":42}}}
+}
+```
+
+## Mistakes to avoid
+
+**1. Passing `context` as the second argument.** The second argument is an
+options object. `context` and `cause` are fields of it.
+
+```ts
+import { defineError } from 'ts-extended-errors'
+
+const NotFoundError = defineError<{ userId: number }>('NotFoundError', { code: 'HTTP_NOT_FOUND' })
+
+// WRONG: a type error, `userId` is not an option
+// @ts-expect-error
+new NotFoundError('no such user', { userId: 42 })
+
+// RIGHT
+new NotFoundError('no such user', { context: { userId: 42 } })
+```
+
+**2. Calling `defineError` inside a function.** Each call returns a new class,
+so `instanceof` against the class from another call is `false`. Define each
+error class once, at module scope, and export it.
+
+**3. Calling `deserializeError` without `classes`.** The class is chosen by the
+payload's `name`, from the built-in error classes and the ones passed in
+`classes`. A name it does not know becomes an `ExtendedError` with that name,
+so `instanceof NotFoundError` is `false`.
+
+```ts
+import { defineError, deserializeError } from 'ts-extended-errors'
+
+const NotFoundError = defineError('NotFoundError', { code: 'HTTP_NOT_FOUND' })
+const payload = JSON.parse(JSON.stringify(new NotFoundError('no such user'))) as unknown
+
+deserializeError(payload) instanceof NotFoundError // false: an ExtendedError named 'NotFoundError'
+deserializeError(payload, { classes: [NotFoundError] }) instanceof NotFoundError // true
+```
+
+**4. Reading `.code` from a caught value.** In `catch (thrown)`, `thrown` is
+`unknown` and may not be an error at all. Use `toError(thrown)` for an `Error`,
+`isExtendedError(thrown)` for a type guard, or `findCauseOf(thrown, Class)`,
+which also finds an error wrapped in another error's `cause`.
+
+## API
+
+| Export | Kind | What it does |
+| --- | --- | --- |
+| `ExtendedError` | class | Base class: `name`, `code`, `context`, `cause`, `stack`, `toJSON()` |
+| `isExtendedError` | function | `value instanceof ExtendedError`, as a type guard |
+| `defineError` | function | `defineError(name, { code?, base? })` returns a new error class |
+| `causeChain` | function | `[error, error.cause, …]`, outermost first |
+| `rootCause` | function | The last value in the chain |
+| `findCause` | function | The first value in the chain that a predicate accepts |
+| `findCauseOf` | function | The first instance of a class in the chain, typed as that class |
+| `hasCauseOf` | function | Whether the chain contains an instance of a class |
+| `serializeError` | function | A JSON-safe object: `name`, `message`, `code`, `stack`, `context`, `cause` |
+| `deserializeError` | function | Rebuilds `serializeError` output as instances of the original classes |
+| `toError` | function | An `Error` for any value; errors are returned unchanged |
+| `isErrorLike` | function | Whether a value is an object with a string `message` |
+| `describeValue` | function | A one-line string for any value |
+| `ErrorContext` | type | `Readonly<Record<string, unknown>>`, the constraint on `context` |
+| `ExtendedErrorOptions` | type | `{ cause?: unknown; context?: Context }` |
+| `SerializedError` | type | The object `serializeError` returns |
+| `SerializedErrorWithProperties` | type | `SerializedError` plus other fields, from `includeOwnProperties: true` |
+| `SerializeErrorOptions` | type | `{ maxDepth?, includeStack?, includeOwnProperties? }` |
+| `DeserializeErrorOptions` | type | `{ classes?, maxDepth? }` |
+| `DefineErrorOptions` | type | `{ code?, base? }` |
+| `ExtendedErrorConstructor` | type | The class `defineError` returns |
+| `ExtendedErrorMembers` | type | `name`, `code`, `context` and `toJSON`, added to any `defineError` class |
+| `ErrorClass` | type | An error class whose constructor takes `(message, options)` |
+
+## Gotchas
+
+- **`serializeError` includes `stack` by default.** Pass `includeStack: false`
+  when the result goes to a client.
+- **`includeOwnProperties: true` copies every other own field** of each error in
+  the chain, which may include request data.
+- **A class with a built-in `base` is not an `ExtendedError`.**
+  `defineError(name, { base: RangeError })` has the same members, but
+  `instanceof ExtendedError` and `isExtendedError` return `false`.
+- **Depth is limited.** `serializeError` and `deserializeError` process 8
+  `cause` levels by default; set `maxDepth` to change it.
+- **`deserializeError` trusts the payload's `name`.** List in `classes` only the
+  classes the payload is expected to contain.
+
+## Docs
+
+- README, with an example for every export: `node_modules/ts-extended-errors/README.md`,
+  or https://github.com/rxova/ts-extended-errors/tree/main/packages/ts-extended-errors#readme
+- npm: https://www.npmjs.com/package/ts-extended-errors
+- Source: https://github.com/rxova/ts-extended-errors

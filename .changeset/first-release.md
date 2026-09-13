@@ -3,4 +3,4 @@
 ---
 
 First release: `ExtendedError`, `defineError`, the cause-chain helpers, `serializeError`,
-`deserializeError` and `toError`.
+`deserializeError` and `toError`. The package ships an `llms.txt` for coding agents.

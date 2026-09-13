@@ -438,6 +438,11 @@ describeValue(undefined) // 'undefined'
 | `ExtendedErrorMembers<Context>`               | `name`, `code`, `context` and `toJSON`, added to any `defineError` class |
 | `ErrorClass<Instance>`                        | An error class whose constructor takes `(message, options)`              |
 
+## For coding agents
+
+`node_modules/ts-extended-errors/llms.txt` has the API table, a working example and the common
+mistakes in one file.
+
 ## License
 
 [MIT](https://github.com/rxova/ts-extended-errors/blob/main/packages/ts-extended-errors/LICENSE) ©

@@ -1,0 +1,31 @@
+# ts-extended-errors
+
+> Typed, serializable errors for TypeScript: a base class for custom errors, a
+> one-line class factory, `cause`-chain helpers, and a JSON round trip that
+> rebuilds the original classes. One published package, `ts-extended-errors`.
+> Node >= 20.19, no runtime dependencies. MIT. Ships ESM and CommonJS.
+
+This file is an index. It points to the files that document the package and
+restates none of their content, so there is nothing here to drift from the
+source.
+
+## Packages
+
+The package ships its `llms.txt` inside the npm tarball, so after an install it
+can be read from `node_modules/ts-extended-errors/llms.txt` with no network
+access. Read it when writing code that uses the library.
+
+- [ts-extended-errors](packages/ts-extended-errors/llms.txt): the API, a working
+  example, and the mistakes to avoid.
+
+## Docs
+
+- [README](packages/ts-extended-errors/README.md): an example for every export,
+  and tables for options and types. Also in the tarball.
+- [npm](https://www.npmjs.com/package/ts-extended-errors)
+
+## Contributing
+
+- [AGENTS.md](AGENTS.md): rules and commands for an agent editing this
+  repository.
+- [README.md](README.md): the workspace, CI and the release process.
