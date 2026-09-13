@@ -142,6 +142,9 @@ which also finds an error wrapped in another error's `cause`.
   `instanceof ExtendedError` and `isExtendedError` return `false`.
 - **Depth is limited.** `serializeError` and `deserializeError` process 8
   `cause` levels by default; set `maxDepth` to change it.
+- **`context` is copied through JSON.** A `Date` in it is serialized as a
+  string and a `BigInt` as `'10n'`, and changing the result does not change the
+  error.
 - **`deserializeError` trusts the payload's `name`.** List in `classes` only the
   classes the payload is expected to contain.
 

@@ -377,6 +377,59 @@ describe('serializeError with includeOwnProperties', () => {
   })
 })
 
+describe('serializeError and context', () => {
+  it('copies context, so a later change on either side does not reach the other', () => {
+    const context = { attempts: 1, tags: ['a'] }
+    const error = new ExtendedError('boom', { context })
+
+    const serialized = serializeError(error)
+    context.tags.push('b')
+
+    expect(serialized.context).toEqual({ attempts: 1, tags: ['a'] })
+
+    const copy = serialized.context as { attempts: number }
+    copy.attempts = 3
+
+    expect(error.context).toEqual({ attempts: 1, tags: ['a', 'b'] })
+  })
+
+  it('writes a BigInt as a string at any depth, where JSON.stringify would throw', () => {
+    const error = new ExtendedError('boom', { context: { total: 10n, page: { size: 20n } } })
+
+    expect(serializeError(error).context).toEqual({ total: '10n', page: { size: '20n' } })
+    expect(() => JSON.stringify(error)).not.toThrow()
+  })
+
+  it('describes a field JSON cannot write without losing the others', () => {
+    const loop: Record<string, unknown> = {}
+    loop.self = loop
+    const error = new ExtendedError('boom', { context: { userId: 42, loop } })
+
+    expect(serializeError(error).context).toEqual({ userId: 42, loop: '[object Object]' })
+  })
+
+  it('gives context JSON semantics, skipping functions, undefined and getters that throw', () => {
+    const context = { at: new Date(0), missing: undefined, retry: () => undefined, kept: 1 }
+    Object.defineProperty(context, 'explodes', {
+      enumerable: true,
+      get: () => {
+        throw new Error('getter')
+      },
+    })
+
+    expect(serializeError(new ExtendedError('boom', { context })).context).toStrictEqual({
+      at: '1970-01-01T00:00:00.000Z',
+      kept: 1,
+    })
+  })
+
+  it('writes a BigInt nested in an own field as a string too', () => {
+    const error = Object.assign(new Error('boom'), { page: { size: 20n } })
+
+    expect(withOwn(error).page).toEqual({ size: '20n' })
+  })
+})
+
 describe('isErrorLike', () => {
   it('accepts anything with a string message', () => {
     expect(isErrorLike(new Error('boom'))).toBe(true)

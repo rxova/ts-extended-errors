@@ -2,7 +2,9 @@
  * Structured data attached to an error — the fields you would otherwise
  * interpolate into the message and then have to parse back out.
  *
- * Keep it serializable: {@link SerializedError} is what ends up in a log line.
+ * Keep it serializable: {@link SerializedError} is what ends up in a log line,
+ * and `serializeError` copies it through a JSON round trip, so a `Date` there
+ * becomes a string and a `Map` an empty object.
  */
 export type ErrorContext = Readonly<Record<string, unknown>>
 
@@ -29,6 +31,7 @@ export interface SerializedError {
   readonly code?: string | undefined
   /** Omitted when `includeStack` is false. */
   readonly stack?: string | undefined
+  /** A copy of the error's `context`, taken through a JSON round trip. */
   readonly context?: ErrorContext | undefined
   /** The serialized `cause`, recursively, up to the configured depth. */
   readonly cause?: SerializedError | undefined
