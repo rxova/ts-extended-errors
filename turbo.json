@@ -38,6 +38,12 @@
       "outputs": [],
       "outputLogs": "new-only"
     },
+    // Never cached: a replayed pass says nothing about what npm would serve.
+    "pack:smoke": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "outputLogs": "new-only"
+    },
     // Root tasks (`//#`): each reads the whole tree in one pass, so there is
     // nothing to fan out, but caching them makes an unchanged tree free — and
     // with the remote cache in CI, free on the runner too.

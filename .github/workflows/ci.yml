@@ -84,6 +84,31 @@ jobs:
         timeout-minutes: 5
         run: pnpm run audit:check
 
+      # Packs the real tarball, installs it into a scratch project and loads it
+      # with plain Node, through `import` and `require`: the package the way npm
+      # serves it, which nothing above looks at.
+      - name: Pack smoke test
+        run: pnpm run pack:smoke
+
+      # Everything above ran on the Node in .nvmrc, while `engines` promises
+      # less. The same smoke test runs again on exactly that floor, read from the
+      # manifest so lowering the promise moves the check with it. Plain `node`
+      # from the switch on: pnpm 11 does not start below 22.13.
+      - name: Read the Node floor from engines
+        id: floor
+        run: >-
+          node -p "'version=' + require('./packages/ts-extended-errors/package.json').engines.node.replace(/^>=/, '')"
+          >> "$GITHUB_OUTPUT"
+      - name: Switch to Node ${{ steps.floor.outputs.version }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ steps.floor.outputs.version }}
+      - name: Pack, install and load on Node ${{ steps.floor.outputs.version }}
+        working-directory: packages/ts-extended-errors
+        run: |
+          node --version
+          node --import tsx ../tooling/src/pack-smoke.ts
+
       - name: Upload coverage reports
         if: always()
         uses: actions/upload-artifact@v7

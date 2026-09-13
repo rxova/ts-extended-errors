@@ -24,6 +24,9 @@
     "audit:check": "pnpm audit --audit-level=high --ignore-registry-errors",
     "dedupe:check": "pnpm dedupe --check",
     "check:exports": "turbo run check:exports",
+    "pack:smoke": "turbo run pack:smoke",
+    "changeset": "changeset",
+    "release": "turbo run build --filter=ts-extended-errors && changeset publish",
     "verify": "node --import tsx ./packages/tooling/src/verify.ts",
     "prepare": "husky"
   },
@@ -35,6 +38,8 @@
     "*.{json,jsonc,css,md,mdx,yaml,yml}": "prettier --write"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.2",
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^10.0.1",
