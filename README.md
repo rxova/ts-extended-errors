@@ -62,7 +62,7 @@ A pnpm + Turborepo workspace.
 packages/
   ts-extended-errors/  the library, published as @rxova/ts-extended-errors
   config/              shared vitest and tsdown presets; the only home of the coverage thresholds
-  tooling/             repo scripts: verify, pack-smoke, check-llms
+  tooling/             repo scripts: verify, pack-smoke, check-llms, check-changeset
 .changeset/            release notes waiting for the next version
 .github/               CI, the PR-title check, releases and Dependabot
 ```
@@ -104,7 +104,8 @@ failure. Turbo replays every package whose inputs did not change.
 7. Build
 8. Package exports (publint and attw)
 
-On top of it, CI lints the pull request's commits, audits dependencies, and packs, installs and
+On top of it, CI lints the pull request's commits, asks for a changeset when the pull request
+changes the library, audits dependencies, and packs, installs and
 loads the tarball twice: on the Node.js in `.nvmrc`, and on the `engines` floor of the package.
 
 ### Git hooks
@@ -122,8 +123,9 @@ loads the tarball twice: on the Node.js in `.nvmrc`, and on the `engines` floor 
    `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `rename`, `revert`, `style`
    and `test`, with no length limit. Pull requests are squash-merged, so the title becomes the
    commit on `main`, and CI lints it the same way.
-3. Add a changeset (`pnpm changeset`) to any pull request that changes the library. Before 1.0, a
-   breaking change is a minor.
+3. Add a changeset (`pnpm changeset`) to any pull request that changes the library; CI checks for
+   one. A pull request that changes it but publishes nothing (a dev dependency bump, say) is
+   labelled `skip-changeset` instead. Before 1.0, a breaking change is a minor.
 4. A change to the public API ships in one pull request with its tests, its TSDoc, the package
    README section, the `llms.txt` API table and a changeset.
 5. Run `pnpm run verify` before asking for review. Never skip a test or lower a coverage threshold
@@ -139,8 +141,9 @@ loads the tarball twice: on the Node.js in `.nvmrc`, and on the `engines` floor 
    GitHub release.
 
 The workflow publishes with its own `GITHUB_TOKEN`, so there is no secret to store, and runs only
-while the repository variable `RELEASE_ENABLED` is `true`. CI normally runs on the version pull
-request when it opens; if its checks ever stay pending, close and reopen it.
+while the repository variable `RELEASE_ENABLED` is `true`. CI starts on the version pull request
+when it opens, but those runs can stop at `action_required`; if its checks stay pending, close and
+reopen it.
 
 ## Support
 
