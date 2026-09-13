@@ -1,4 +1,4 @@
-# ts-extended-errors
+# @rxova/ts-extended-errors
 
 > Typed, serializable errors for TypeScript. `ExtendedError` is a base class
 > that sets `name`, `code`, `context` and `stack` correctly in subclasses;
@@ -10,14 +10,23 @@
 
 ## Install
 
-    npm install ts-extended-errors
+Published to GitHub Packages, not npmjs.com. The `.npmrc` of the project that
+installs it routes the `@rxova` scope there, with a GitHub token that has
+`read:packages`:
+
+    @rxova:registry=https://npm.pkg.github.com
+    //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+
+Then:
+
+    npm install @rxova/ts-extended-errors
 
 No peer dependencies.
 
 ## Minimal working example
 
 ```ts
-import { defineError, findCauseOf, serializeError, toError } from 'ts-extended-errors'
+import { defineError, findCauseOf, serializeError, toError } from '@rxova/ts-extended-errors'
 
 const HttpError = defineError('HttpError', { code: 'HTTP' })
 const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
@@ -55,7 +64,7 @@ try {
 options object. `context` and `cause` are fields of it.
 
 ```ts
-import { defineError } from 'ts-extended-errors'
+import { defineError } from '@rxova/ts-extended-errors'
 
 const NotFoundError = defineError<{ userId: number }>('NotFoundError', { code: 'HTTP_NOT_FOUND' })
 
@@ -77,7 +86,7 @@ payload's `name`, from the built-in error classes and the ones passed in
 so `instanceof NotFoundError` is `false`.
 
 ```ts
-import { defineError, deserializeError } from 'ts-extended-errors'
+import { defineError, deserializeError } from '@rxova/ts-extended-errors'
 
 const NotFoundError = defineError('NotFoundError', { code: 'HTTP_NOT_FOUND' })
 const payload = JSON.parse(JSON.stringify(new NotFoundError('no such user'))) as unknown
@@ -90,6 +99,9 @@ deserializeError(payload, { classes: [NotFoundError] }) instanceof NotFoundError
 `unknown` and may not be an error at all. Use `toError(thrown)` for an `Error`,
 `isExtendedError(thrown)` for a type guard, or `findCauseOf(thrown, Class)`,
 which also finds an error wrapped in another error's `cause`.
+
+**5. Installing without the scope line in `.npmrc`.** npm then looks for
+`@rxova/ts-extended-errors` on npmjs.com and fails with a 404. See Install.
 
 ## API
 
@@ -135,7 +147,8 @@ which also finds an error wrapped in another error's `cause`.
 
 ## Docs
 
-- README, with an example for every export: `node_modules/ts-extended-errors/README.md`,
-  or https://github.com/rxova/ts-extended-errors/tree/main/packages/ts-extended-errors#readme
-- npm: https://www.npmjs.com/package/ts-extended-errors
+- README, with an example for every export:
+  `node_modules/@rxova/ts-extended-errors/README.md`, or
+  https://github.com/rxova/ts-extended-errors/tree/main/packages/ts-extended-errors#readme
+- Package: https://github.com/rxova/ts-extended-errors/pkgs/npm/ts-extended-errors
 - Source: https://github.com/rxova/ts-extended-errors

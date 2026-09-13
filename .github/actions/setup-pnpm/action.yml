@@ -25,8 +25,9 @@ inputs:
     default: '24'
   registry-url:
     description: >-
-      npm registry to configure auth against. Only the publishing job needs this —
-      it is what writes the .npmrc that Trusted Publishing authenticates with.
+      npm registry for actions/setup-node to write an .npmrc for. Unused here: it
+      sets the registry for every package, and the release job needs it for the
+      @rxova scope only, so that job writes its own.
     required: false
     default: ''
 

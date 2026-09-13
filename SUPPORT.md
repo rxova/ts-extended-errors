@@ -15,7 +15,7 @@ every export, and each output comment is the value that example prints.
 - For serialization: the object `serializeError` produced, and the `classes` passed to
   `deserializeError`.
 - For an `instanceof` that is `false`: where the class is defined, and whether two copies of the
-  package are installed (`npm ls ts-extended-errors`).
+  package are installed (`npm ls @rxova/ts-extended-errors`).
 
 ## Version support
 

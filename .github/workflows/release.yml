@@ -3,11 +3,15 @@ name: Release
 # Runs only after CI has gone green on main, so nothing publishes that a pull
 # request would have been blocked on. changesets/action opens a
 # `chore: version packages` pull request and publishes only once that pull
-# request is merged — a bad bump is visible before it is on npm, immutably.
+# request is merged — a bad bump is visible before it is in the registry.
 #
-# Publishing is opt-in: set the repository variable RELEASE_ENABLED to `true`
-# once npm trusted publishing is configured for this repository and this
-# workflow file. Until then this job is skipped.
+# Publishes @rxova/ts-extended-errors to GitHub Packages with this workflow's
+# GITHUB_TOKEN, so there is no secret to store. Publishing is opt-in: until the
+# repository variable RELEASE_ENABLED is `true`, this job is skipped.
+#
+# A pull request opened with GITHUB_TOKEN starts no workflows, so CI does not
+# run on the version pull request by itself. Close and reopen it to run the
+# required check.
 
 on:
   workflow_run:
@@ -37,7 +41,7 @@ jobs:
     permissions:
       contents: write # version commit and tags
       pull-requests: write # the version pull request
-      id-token: write # npm trusted publishing (OIDC), with provenance
+      packages: write # publish to GitHub Packages
     steps:
       - uses: actions/checkout@v7
         with:
@@ -46,11 +50,14 @@ jobs:
           ref: main
           fetch-depth: 0
       - uses: ./.github/actions/setup-pnpm
-        with:
-          registry-url: 'https://registry.npmjs.org'
-      - name: Upgrade npm for trusted publishing
-        run: npm install -g npm@^11.5.1
       - run: pnpm install --frozen-lockfile
+
+      # Only the @rxova scope goes to GitHub Packages; every other dependency
+      # still resolves from npmjs. The file names the variable, not the token.
+      - name: Authenticate to GitHub Packages
+        run: |
+          echo '@rxova:registry=https://npm.pkg.github.com' >> ~/.npmrc
+          echo '//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}' >> ~/.npmrc
 
       - name: Create version PR or publish
         uses: changesets/action@v2
@@ -62,4 +69,4 @@ jobs:
           commit-message: 'chore: version packages'
           pr-title: 'chore: version packages'
         env:
-          NPM_CONFIG_PROVENANCE: 'true'
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
