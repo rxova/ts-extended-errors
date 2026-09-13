@@ -1,5 +1,12 @@
 # @rxova/ts-extended-errors
 
+## 0.2.1
+
+### Patch Changes
+
+- [#10](https://github.com/rxova/ts-extended-errors/pull/10) [`97a54de`](https://github.com/rxova/ts-extended-errors/commit/97a54decd4e9132c9b684a84c088987376ebe590) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Rewrite the repository README: what the library does with a short example, install, the workspace
+  layout, development commands and hooks, contributing and releases.
+
 ## 0.2.0
 
 ### Minor Changes
