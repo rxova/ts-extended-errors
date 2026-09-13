@@ -56,7 +56,7 @@ npm install @rxova/ts-extended-errors
 
 ## Repository layout
 
-A pnpm + Turborepo workspace. The library moved here from `rxova/experiments` with its history.
+A pnpm + Turborepo workspace.
 
 ```text
 packages/
@@ -141,21 +141,6 @@ loads the tarball twice: on the Node.js in `.nvmrc`, and on the `engines` floor 
 The workflow publishes with its own `GITHUB_TOKEN`, so there is no secret to store, and runs only
 while the repository variable `RELEASE_ENABLED` is `true`. CI normally runs on the version pull
 request when it opens; if its checks ever stay pending, close and reopen it.
-
-## CI costs
-
-The repository is not public, so every Actions minute is billed, rounded up per job.
-
-- **One job.** Each job pays for its own checkout and install. A separate `all checks` job is the
-  single required status, so the name stays put if `verify` is ever split.
-- **Turbo remote cache** in the Actions cache: unchanged packages replay instead of rerunning.
-- **Superseded runs are cancelled.** A pull request description edit runs nothing; a title edit
-  runs only the small `pr-title.yml` job.
-- **Pushes to `main`** that only touch a changelog or the license do not run.
-- **Dependabot** opens at most one grouped pull request per ecosystem each week. Patch and minor
-  updates merge themselves once `all checks` passes; majors wait for review.
-- **Left out on purpose:** a Node.js matrix, CodeQL and a docs deploy. The open-source template
-  `rxova/template-oss` has the last two.
 
 ## Support
 
