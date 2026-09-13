@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  SHIPPED,
   main,
   packSmoke,
   probeSource,
@@ -13,13 +14,20 @@ import {
 
 const SCRATCH = '/scratch'
 
-/** An in-memory workspace holding one package manifest. */
-const memory = (manifest: object, { tarball = true } = {}) => {
+/**
+ * An in-memory workspace holding one package manifest. Listing the scratch
+ * directory shows the tarball; listing anything else shows the installed package.
+ */
+const memory = (
+  manifest: object,
+  { tarball = true, installed = ['dist', 'package.json', ...SHIPPED] } = {},
+) => {
   const files = new Map<string, string>([[join('/pkg', 'package.json'), JSON.stringify(manifest)]])
   const removed: string[] = []
   const fs: Workspace = {
     make: () => SCRATCH,
-    list: () => (tarball ? ['ts-extended-errors-0.1.0.tgz'] : []),
+    list: (dir) =>
+      dir === SCRATCH ? (tarball ? ['ts-extended-errors-0.1.0.tgz'] : []) : installed,
     read: (file) => files.get(file) ?? '',
     write: (file, contents) => {
       files.set(file, contents)
@@ -69,6 +77,17 @@ describe('packSmoke', () => {
   it('fails when npm pack wrote no tarball, and still cleans up', () => {
     const { fs, removed } = memory({ name: 'x', version: '1.0.0' }, { tarball: false })
     expect(() => packSmoke({ pkgDir: '/pkg', sh: npm(), fs })).toThrow('produced no tarball')
+    expect(removed).toEqual([SCRATCH])
+  })
+
+  it('fails when the tarball leaves out a file a reader opens, and still cleans up', () => {
+    const { fs, removed } = memory(
+      { name: 'x', version: '1.0.0' },
+      { installed: ['dist', 'package.json', 'LICENSE'] },
+    )
+    expect(() => packSmoke({ pkgDir: '/pkg', sh: npm(), fs })).toThrow(
+      'the tarball does not contain README.md, llms.txt',
+    )
     expect(removed).toEqual([SCRATCH])
   })
 
