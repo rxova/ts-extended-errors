@@ -7,16 +7,16 @@ It moved here from `rxova/experiments` (`packages/ts-extended-errors`) with its 
 
 ## What is in it
 
-| Piece                         | Details                                                                                                                                       |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/ts-extended-errors` | The library: dual ESM + CJS built with tsdown, checked with publint + attw                                                                    |
-| `packages/config`             | Shared vitest and tsdown presets — the one home of the 95%-per-file coverage thresholds                                                       |
-| `packages/tooling`            | `verify`: the gate the pre-push hook and CI both run; `pack-smoke`: installs the packed tarball and loads it with plain Node                  |
-| Releases                      | Changesets; `release.yml` publishes to npm with provenance once `RELEASE_ENABLED` is `true`                                                   |
-| Quality                       | TypeScript 6 strict, ESLint 10 with `strictTypeChecked`, Prettier, Vitest 5                                                                   |
-| Hooks                         | Husky: lint-staged + typecheck + tests on commit, commitlint, `verify` on push                                                                |
-| CI                            | One job plus an `all checks` gate, Turbo remote cache in the Actions cache, audit after build                                                 |
-| Dependabot                    | Weekly, one grouped PR per ecosystem, at most one open; patch/minor updates auto-merge once `all checks` passes (`dependabot-auto-merge.yml`) |
+| Piece                         | Details                                                                                                                                                                                    |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `packages/ts-extended-errors` | The library: dual ESM + CJS built with tsdown, checked with publint + attw                                                                                                                 |
+| `packages/config`             | Shared vitest and tsdown presets — the one home of the 95%-per-file coverage thresholds                                                                                                    |
+| `packages/tooling`            | `verify`: the gate the pre-push hook and CI both run; `pack-smoke`: installs the packed tarball and loads it with plain Node; `check-llms`: keeps each `llms.txt` in step with the exports |
+| Releases                      | Changesets; `release.yml` publishes to npm with provenance once `RELEASE_ENABLED` is `true`                                                                                                |
+| Quality                       | TypeScript 6 strict, ESLint 10 with `strictTypeChecked`, Prettier, Vitest 5                                                                                                                |
+| Hooks                         | Husky: lint-staged + typecheck + tests on commit, commitlint, `verify` on push                                                                                                             |
+| CI                            | One job plus an `all checks` gate, Turbo remote cache in the Actions cache, audit after build                                                                                              |
+| Dependabot                    | Weekly, one grouped PR per ecosystem, at most one open; patch/minor updates auto-merge once `all checks` passes (`dependabot-auto-merge.yml`)                                              |
 
 ## Where the minutes go
 
@@ -39,8 +39,19 @@ pnpm test                             # unit tests, coverage enforced per file
 pnpm --filter ts-extended-errors test # the library alone
 pnpm run verify                       # everything CI runs, in order
 pnpm run pack:smoke                   # pack, install and load the tarball
+pnpm run check:llms                   # llms.txt against the exports
 pnpm changeset                        # record a change to the library for the next release
 ```
+
+## Reading this with a coding agent
+
+The package ships an `llms.txt` inside its npm tarball. After an install, an agent can read the API,
+a working example and the common mistakes from `node_modules/ts-extended-errors/llms.txt`, with no
+network access. `check-llms` fails the build when its API table and `src/index.ts` disagree.
+
+- [`llms.txt`](llms.txt) — the repository index: what the package is, and what to read next.
+- [`packages/ts-extended-errors/llms.txt`](packages/ts-extended-errors/llms.txt) — the package file.
+- [`AGENTS.md`](AGENTS.md) — for an agent editing this repository, not using the library.
 
 ## Releases
 
@@ -51,3 +62,7 @@ pnpm changeset                        # record a change to the library for the n
 
 Publishing is off until the repository variable `RELEASE_ENABLED` is `true`. Before that, add the
 repository and `release.yml` as a trusted publisher of `ts-extended-errors` on npm.
+
+## Support
+
+[Support](SUPPORT.md) · [Security policy](SECURITY.md)

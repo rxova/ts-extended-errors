@@ -8,15 +8,26 @@
     "error",
     "errors",
     "custom-error",
+    "custom-errors",
+    "error-class",
+    "error-handling",
     "error-cause",
+    "cause",
+    "error-chain",
     "serialize",
+    "deserialize",
+    "error-serialization",
+    "serialize-error",
+    "json",
+    "instanceof",
     "typed-errors"
   ],
   "license": "MIT",
   "author": "Jonatan Kruszewski",
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "llms.txt"
   ],
   "exports": {
     ".": {
