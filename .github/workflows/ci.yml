@@ -21,7 +21,10 @@ on:
   pull_request:
     # No `edited`: it fires on body edits too, and would re-run this whole job
     # because a description gained a link. The title check is pr-title.yml.
-    types: [opened, synchronize, reopened]
+    # `labeled`/`unlabeled` stay: the changeset check's escape hatch is a label,
+    # and a re-run replays the old event, labels and all, so only a new event
+    # sees one that was just added.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 permissions:
   contents: read
@@ -56,6 +59,18 @@ jobs:
       - name: Lint the pushed commit
         if: github.event_name == 'push'
         run: pnpm exec commitlint --last --verbose
+
+      # A change to the library without a changeset would release it with an
+      # unchanged version. It still runs when the label is set, so that honouring
+      # the label shows in a log. The version pull request is exempt: it consumes
+      # the changesets.
+      - name: Require a changeset when the library changed
+        if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: node --import tsx ./packages/tooling/src/check-changeset.ts
 
       # Turbo only runs suites it knows about. A package with a vitest config
       # but no `test` script would be skipped without a word, so look for the

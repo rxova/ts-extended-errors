@@ -1,15 +1,17 @@
 version: 2
 
 # Weekly, one grouped pull request per ecosystem, at most one open at a time —
-# each Dependabot PR is a CI run, and CI runs are billed here. No custom labels:
-# Dependabot's defaults (`dependencies` plus the ecosystem) are created for you,
-# whereas a custom label that does not exist in the repository is dropped.
+# each Dependabot PR is a CI run, and CI runs are billed here. `skip-changeset`
+# lets a dependency bump through the changeset check. Dependabot drops a label
+# that does not exist in the repository, so both are created once:
+#   gh label create dependencies && gh label create skip-changeset
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 1
+    labels: ['dependencies', 'skip-changeset']
     commit-message:
       prefix: chore
       include: scope
@@ -30,6 +32,7 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 1
+    labels: ['dependencies', 'skip-changeset']
     commit-message:
       prefix: chore
       include: scope

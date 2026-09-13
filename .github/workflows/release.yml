@@ -9,9 +9,9 @@ name: Release
 # GITHUB_TOKEN, so there is no secret to store. Publishing is opt-in: until the
 # repository variable RELEASE_ENABLED is `true`, this job is skipped.
 #
-# A pull request opened with GITHUB_TOKEN starts no workflows, so CI does not
-# run on the version pull request by itself. Close and reopen it to run the
-# required check.
+# CI starts on the version pull request when this workflow opens it, but those
+# runs can stop at `action_required` instead of running. If its checks stay
+# pending, close and reopen the pull request: the runs then start as you.
 
 on:
   workflow_run:

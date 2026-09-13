@@ -9,8 +9,9 @@ pnpm + Turborepo monorepo. Node >= 22.13 to develop. TypeScript everywhere.
   preset's 22.
 - `packages/*` — workspace packages, built dual ESM + CJS with tsdown.
 - `packages/config` — the shared vitest and tsdown presets. Coverage thresholds live here only.
-- `packages/tooling` — repo scripts (`verify`, `pack-smoke`, `check-llms`).
-- `.changeset` — pending release notes. A change to the library adds one (`pnpm changeset`).
+- `packages/tooling` — repo scripts (`verify`, `pack-smoke`, `check-llms`, `check-changeset`).
+- `.changeset` — pending release notes. A change to the library adds one (`pnpm changeset`); CI
+  checks. A pull request that publishes nothing (a dev dependency bump) is labelled `skip-changeset`.
 - `apps/*` — applications, when there are any.
 
 ## Commands
