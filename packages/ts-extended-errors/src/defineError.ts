@@ -33,6 +33,32 @@ export interface ExtendedErrorConstructor<
   readonly code: string | undefined
 }
 
+/**
+ * The class {@link defineError} returns when given a `message`. A throw site
+ * passes only the options, `new InvalidDateError({ context: { value } })`, and
+ * the class writes the message from `context`. `context` is required when its
+ * type has required fields, and the options are optional when it has none.
+ *
+ * It also takes `(message, options)`, where a string first argument is the
+ * message itself. That keeps it an {@link ErrorClass}: `deserializeError`
+ * rebuilds it with the message the payload carried, and it can be the `base`
+ * of another class.
+ */
+export interface MessageErrorConstructor<
+  Context extends ErrorContext = ErrorContext,
+  Instance extends Error = ExtendedError<Context>,
+> {
+  new (
+    ...options: Partial<Context> extends Context
+      ? [options?: ExtendedErrorOptions<Context>]
+      : [options: ExtendedErrorOptions<Context> & { readonly context: Context }]
+  ): Instance
+  new (message: string, options?: ExtendedErrorOptions<Context>): Instance
+  readonly prototype: Instance
+  /** Inherited from the base class when this one does not declare its own. */
+  readonly code: string | undefined
+}
+
 /** Options for {@link defineError}. */
 export interface DefineErrorOptions<Context extends ErrorContext = ErrorContext> {
   /**
@@ -98,6 +124,114 @@ const extendBase = (base: ErrorClass, code: string | undefined) =>
   }
 
 /**
+ * A subclass of `Defined` that writes its message from the context.
+ *
+ * A string first argument is taken as the message instead. That is the
+ * `(message, options)` constructor every other class here has, and it is how
+ * `deserializeError` rebuilds one: with the message that was sent, rather than
+ * one formatted again from context that went through JSON, where a `Date` is
+ * now a string.
+ */
+const withMessage = (Defined: ErrorClass, format: (context: ErrorContext) => string) =>
+  class extends Defined {
+    constructor(first?: unknown, second?: ExtendedErrorOptions) {
+      if (typeof first === 'string') {
+        super(first, second)
+      } else {
+        const options = (first ?? {}) as ExtendedErrorOptions
+        super(formatMessage(format, options.context ?? {}, new.target.name), options)
+      }
+    }
+  }
+
+/**
+ * Calls `format`, and returns `fallback` when it throws.
+ *
+ * The formatter runs on data nobody has checked, often inside a `catch` that is
+ * already handling a failure. If its exception escaped, the caller would get a
+ * `TypeError` from `JSON.stringify(10n)` in place of the error it meant to
+ * throw, and the context with it would be lost.
+ */
+const formatMessage = (
+  format: (context: ErrorContext) => string,
+  context: ErrorContext,
+  fallback: string,
+): string => {
+  try {
+    return format(context)
+  } catch {
+    return fallback
+  }
+}
+
+/**
+ * Declares an error class that writes its own message, so a throw site passes
+ * only the context.
+ *
+ * The type of `context` is taken from the parameter of `message`, or from the
+ * first type parameter when you give one. When `message` throws, the error is
+ * still created, with the class name as its message, rather than the caller
+ * getting the formatter's exception in its place.
+ *
+ * @example
+ * ```ts
+ * const InvalidDateError = defineError('InvalidDateError', {
+ *   code: 'INVALID_DATE',
+ *   message: (context: { value: string }) => `"${context.value}" is not a valid date`,
+ * })
+ *
+ * const error = new InvalidDateError({ context: { value: '2026-02-30' } })
+ * error.message // '"2026-02-30" is not a valid date'
+ * ```
+ */
+export function defineError<Context extends ErrorContext = ErrorContext>(
+  name: string,
+  options: DefineErrorOptions<Context> & { readonly message: (context: Context) => string },
+): MessageErrorConstructor<Context>
+/**
+ * Declares an error class that writes its own message, on a base that is not
+ * an {@link ExtendedError}, such as `RangeError`.
+ *
+ * @example
+ * ```ts
+ * const PageError = defineError('PageError', {
+ *   base: RangeError,
+ *   message: (context: { page: number }) => `page ${String(context.page)} does not exist`,
+ * })
+ *
+ * new PageError({ context: { page: 0 } }) instanceof RangeError // true
+ * ```
+ */
+export function defineError<
+  Context extends ErrorContext = ErrorContext,
+  Base extends Error = Error,
+>(
+  name: string,
+  options: {
+    readonly code?: string
+    readonly base: ErrorClass<Base>
+    readonly message: (context: Context) => string
+  },
+): MessageErrorConstructor<Context, Base & ExtendedErrorMembers<Context>>
+/**
+ * Declares a subclass of a class that writes its own message. Without a
+ * `message` of its own, it writes the message the way its base does.
+ *
+ * @example
+ * ```ts
+ * const PastDateError = defineError('PastDateError', { base: InvalidDateError })
+ *
+ * new PastDateError({ context: { value: '1999-01-01' } }) instanceof InvalidDateError // true
+ * ```
+ */
+export function defineError<
+  Context extends ErrorContext = ErrorContext,
+  Instance extends Error = ExtendedError<Context>,
+>(
+  name: string,
+  options: { readonly code?: string; readonly base: MessageErrorConstructor<Context, Instance> },
+): MessageErrorConstructor<Context, Instance>
+/**
  * Declares an error class in one line.
  *
  * The class it returns is a real class: `instanceof` works, subclassing works,
@@ -157,7 +291,11 @@ export function defineError<
 ): ExtendedErrorConstructor<Context, Base & ExtendedErrorMembers<Context>>
 export function defineError(
   name: string,
-  options: { readonly code?: string; readonly base?: ErrorClass } = {},
+  options: {
+    readonly code?: string
+    readonly base?: ErrorClass
+    readonly message?: (context: ErrorContext) => string
+  } = {},
 ): ErrorClass {
   const base = options.base ?? ExtendedError
 
@@ -179,5 +317,10 @@ export function defineError(
   // name is what `new.target.name` copies onto `error.name`.
   Object.defineProperty(Defined, 'name', { value: name, configurable: true })
 
-  return Defined
+  if (options.message === undefined) return Defined
+
+  const WithMessage = withMessage(Defined, options.message)
+  Object.defineProperty(WithMessage, 'name', { value: name, configurable: true })
+
+  return WithMessage
 }

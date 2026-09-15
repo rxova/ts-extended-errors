@@ -154,10 +154,11 @@ NotFoundError.code // 'HTTP_NOT_FOUND'
 new GoneError('deleted').code // 'HTTP'
 ```
 
-| Option | Type        | Default           | Description                                          |
-| ------ | ----------- | ----------------- | ---------------------------------------------------- |
-| `code` | `string`    | the base's `code` | Copied to every instance                             |
-| `base` | error class | `ExtendedError`   | The class to extend; see [other bases](#other-bases) |
+| Option    | Type                  | Default           | Description                                               |
+| --------- | --------------------- | ----------------- | --------------------------------------------------------- |
+| `code`    | `string`              | the base's `code` | Copied to every instance                                  |
+| `base`    | error class           | `ExtendedError`   | The class to extend; see [other bases](#other-bases)      |
+| `message` | `(context) => string` | none              | Writes the message; see [fixed messages](#fixed-messages) |
 
 The first type parameter types `context`:
 
@@ -188,6 +189,65 @@ error.name // 'ServiceUnavailableError'
 error.code // 'HTTP'
 error.retryAfter // 30
 ```
+
+### Fixed messages
+
+With `message`, the class writes its own message from `context`, so a throw site passes only the
+options:
+
+```ts
+import { defineError } from '@rxova/ts-extended-errors'
+
+const InvalidDateError = defineError('InvalidDateError', {
+  code: 'INVALID_DATE',
+  message: (context: { value: string }) => `"${context.value}" is not a valid date`,
+})
+
+const error = new InvalidDateError({ context: { value: '2026-02-30' } })
+
+error.message // '"2026-02-30" is not a valid date'
+error.context // { value: '2026-02-30' }
+error.code // 'INVALID_DATE'
+
+// @ts-expect-error: `context` is required, because `value` is
+new InvalidDateError()
+```
+
+The type of `context` comes from the parameter of `message`. When that type has no required fields,
+the options are optional as well. `cause` goes next to `context`, as for any other class:
+
+```ts
+import { defineError } from '@rxova/ts-extended-errors'
+
+const ConfigMissingError = defineError('ConfigMissingError', {
+  message: () => 'no config file found',
+})
+
+new ConfigMissingError().message // 'no config file found'
+new ConfigMissingError({ cause: new Error('ENOENT') }).cause // Error: ENOENT
+```
+
+A string first argument is still taken as the message: `new InvalidDateError('custom', { context })`.
+`deserializeError` uses that constructor, so a rebuilt error has the message it was sent with, and
+`message` is not called on context that went through JSON.
+
+`message` works with `base`, including a built-in class. A class defined on one with `message` and no
+`message` of its own writes the message the same way, and takes the same options:
+
+```ts
+import { defineError } from '@rxova/ts-extended-errors'
+
+const InvalidDateError = defineError<{ value: string }>('InvalidDateError', {
+  message: ({ value }) => `"${value}" is not a valid date`,
+})
+const PastDateError = defineError('PastDateError', { base: InvalidDateError })
+
+new PastDateError({ context: { value: '1999-01-01' } }).message // '"1999-01-01" is not a valid date'
+```
+
+When `message` throws, for example on a `BigInt` passed to `JSON.stringify`, the error is still
+created, with the class name as its message and `context` kept. The caller gets the error it meant
+to throw, not the formatter's `TypeError`.
 
 ### Other bases
 
@@ -478,6 +538,7 @@ describeValue(undefined) // 'undefined'
 | `DeserializeErrorOptions`                     | Options of `deserializeError`                                                 |
 | `DefineErrorOptions<Context>`                 | Options of `defineError`                                                      |
 | `ExtendedErrorConstructor<Context, Instance>` | The class `defineError` returns                                               |
+| `MessageErrorConstructor<Context, Instance>`  | The class `defineError` returns with `message`                                |
 | `ExtendedErrorMembers<Context>`               | `name`, `code`, `context` and `toJSON`, added to any `defineError` class      |
 | `ErrorClass<Instance>`                        | An error class whose constructor takes `(message, options)`                   |
 

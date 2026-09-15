@@ -1,6 +1,7 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { findCauseOf } from '../chain'
-import { defineError } from '../defineError'
+import { defineError, type ExtendedErrorConstructor } from '../defineError'
+import { deserializeError } from '../deserialize'
 import { ExtendedError, isExtendedError } from '../ExtendedError'
 import { serializeError } from '../serialize'
 import type { SerializedError } from '../types'
@@ -271,5 +272,197 @@ describe('defineError on a class other than ExtendedError', () => {
     // @ts-expect-error: the base must take `(message, options)`
     const Defined = defineError('Defined', { base: StatusError })
     expect(Defined).toBeTypeOf('function')
+  })
+})
+
+const InvalidDateError = defineError('InvalidDateError', {
+  code: 'INVALID_DATE',
+  message: (context: { value: string }) => `"${context.value}" is not a valid date`,
+})
+const ConfigMissingError = defineError('ConfigMissingError', {
+  message: () => 'no config file found',
+})
+
+describe('defineError with a message', () => {
+  it('writes the message from the context', () => {
+    const error = new InvalidDateError({ context: { value: '2026-02-30' } })
+
+    expect(error.message).toBe('"2026-02-30" is not a valid date')
+    expect(error.context).toEqual({ value: '2026-02-30' })
+    expect(error.code).toBe('INVALID_DATE')
+    expect(error.name).toBe('InvalidDateError')
+    expect(InvalidDateError.name).toBe('InvalidDateError')
+    expect(error).toBeInstanceOf(InvalidDateError)
+    expect(error).toBeInstanceOf(ExtendedError)
+  })
+
+  it('forwards cause, and defines it only when one was passed', () => {
+    const cause = new Error('inner')
+
+    expect(new InvalidDateError({ context: { value: 'x' }, cause }).cause).toBe(cause)
+    expect('cause' in new InvalidDateError({ context: { value: 'x' } })).toBe(false)
+  })
+
+  it('takes no arguments when the context has no required fields', () => {
+    expect(new ConfigMissingError().message).toBe('no config file found')
+    expect(new ConfigMissingError().context).toBeUndefined()
+    expect(new ConfigMissingError({ cause: 'ENOENT' }).cause).toBe('ENOENT')
+  })
+
+  it('passes an empty context to the message when none was given', () => {
+    const DiskError = defineError('DiskError', {
+      message: (context: { detail?: string }) => context.detail ?? 'disk error',
+    })
+
+    expect(new DiskError().message).toBe('disk error')
+    expect(new DiskError({ context: { detail: 'disk full' } }).message).toBe('disk full')
+  })
+
+  it('takes a string first argument as the message itself', () => {
+    const error = new InvalidDateError('custom', { context: { value: 'x' } })
+
+    expect(error.message).toBe('custom')
+    expect(error.context).toEqual({ value: 'x' })
+  })
+
+  it('extends a base defined with defineError', () => {
+    const RetryError = defineError('RetryError', {
+      base: HttpError,
+      message: (context: { attempts: number }) =>
+        `gave up after ${String(context.attempts)} attempts`,
+    })
+
+    const error = new RetryError({ context: { attempts: 3 } })
+
+    expect(error).toBeInstanceOf(HttpError)
+    expect(error.code).toBe('HTTP')
+    expect(error.message).toBe('gave up after 3 attempts')
+  })
+
+  it('extends a built-in class', () => {
+    const PageError = defineError('PageError', {
+      base: RangeError,
+      code: 'PAGE',
+      message: (context: { page: number }) => `page ${String(context.page)} does not exist`,
+    })
+
+    const error = new PageError({ context: { page: 0 } })
+
+    expect(error).toBeInstanceOf(RangeError)
+    expect(error).not.toBeInstanceOf(ExtendedError)
+    expect(error.message).toBe('page 0 does not exist')
+    expect(error.code).toBe('PAGE')
+    expect(error.context).toEqual({ page: 0 })
+    expect(error.stack?.split('\n')[0]).toBe('PageError: page 0 does not exist')
+  })
+
+  it('keeps writing the message in a subclass', () => {
+    class PastDateError extends InvalidDateError {}
+
+    const error = new PastDateError({ context: { value: '1999-01-01' } })
+
+    expect(error.name).toBe('PastDateError')
+    expect(error.message).toBe('"1999-01-01" is not a valid date')
+    expect(error).toBeInstanceOf(InvalidDateError)
+  })
+
+  it('takes the context type from the type parameter instead', () => {
+    const NotADateError = defineError<{ value: string }>('NotADateError', {
+      message: ({ value }) => `not a date: ${value}`,
+    })
+
+    expect(new NotADateError({ context: { value: 'x' } }).message).toBe('not a date: x')
+  })
+
+  it('falls back to the class name when the message throws', () => {
+    const TotalError = defineError('TotalError', {
+      message: (context: { total: bigint }) => `total: ${JSON.stringify(context.total)}`,
+    })
+    class GrandTotalError extends TotalError {}
+
+    const error = new TotalError({ context: { total: 10n } })
+
+    expect(error).toBeInstanceOf(TotalError)
+    expect(error.message).toBe('TotalError')
+    expect(error.context).toEqual({ total: 10n })
+    expect(new GrandTotalError({ context: { total: 10n } }).message).toBe('GrandTotalError')
+  })
+
+  it('is inherited by a class defined on it without a message', () => {
+    const PastDateError = defineError('PastDateError', { base: InvalidDateError })
+
+    const error = new PastDateError({ context: { value: '1999-01-01' } })
+
+    expect(error.message).toBe('"1999-01-01" is not a valid date')
+    expect(error.name).toBe('PastDateError')
+    expect(error.code).toBe('INVALID_DATE')
+    expect(error).toBeInstanceOf(InvalidDateError)
+    expectTypeOf(error.context).toEqualTypeOf<{ value: string } | undefined>()
+
+    // @ts-expect-error: `value` is required, as it is for the base
+    const withoutContext = () => new PastDateError()
+    expect(withoutContext).toBeTypeOf('function')
+  })
+
+  it('leaves the type of classes defined without a message as it was', () => {
+    expectTypeOf(defineError('Plain')).toEqualTypeOf<ExtendedErrorConstructor>()
+    expectTypeOf(defineError('Leaf', { base: HttpError })).toEqualTypeOf<ExtendedErrorConstructor>()
+  })
+
+  it('lets a class defined on it write its own message', () => {
+    const PastDateError = defineError('PastDateError', {
+      base: InvalidDateError,
+      message: (context: { value: string }) => `${context.value} is in the past`,
+    })
+
+    const error = new PastDateError({ context: { value: '1999-01-01' } })
+
+    expect(error.message).toBe('1999-01-01 is in the past')
+    expect(error.code).toBe('INVALID_DATE')
+    expect(error).toBeInstanceOf(InvalidDateError)
+  })
+
+  it('starts the stack at the throw site, under the defined name', () => {
+    const lines = new InvalidDateError({ context: { value: 'x' } }).stack?.split('\n') ?? []
+
+    expect(lines[0]).toBe('InvalidDateError: "x" is not a valid date')
+    expect(lines[1]).toContain('defineError.test.ts')
+  })
+
+  it('is rebuilt by deserializeError with the message it was sent with', () => {
+    const ExpiredError = defineError('ExpiredError', {
+      message: (context: { at: Date }) => `expired at ${context.at.toISOString()}`,
+    })
+    // `at` arrives as a string, so formatting the message again would throw.
+    const payload = JSON.parse(
+      JSON.stringify(new ExpiredError({ context: { at: new Date(0) } })),
+    ) as unknown
+
+    const rebuilt = deserializeError(payload, { classes: [ExpiredError] })
+
+    expect(rebuilt).toBeInstanceOf(ExpiredError)
+    expect(rebuilt.message).toBe('expired at 1970-01-01T00:00:00.000Z')
+  })
+
+  it('is found down a cause chain', () => {
+    const error = new ExtendedError('import failed', {
+      cause: new InvalidDateError({ context: { value: 'x' } }),
+    })
+
+    expect(findCauseOf(error, InvalidDateError)?.context?.value).toBe('x')
+  })
+
+  it('types context from the parameter of message, and requires it when it has required fields', () => {
+    expectTypeOf(new InvalidDateError({ context: { value: 'x' } }).context).toEqualTypeOf<
+      { value: string } | undefined
+    >()
+
+    // @ts-expect-error: `value` is required
+    const withoutContext = () => new InvalidDateError()
+    // @ts-expect-error: `value` is a string
+    const wrongContext = () => new InvalidDateError({ context: { value: 1 } })
+
+    expect(withoutContext).toBeTypeOf('function')
+    expect(wrongContext).toBeTypeOf('function')
   })
 })
