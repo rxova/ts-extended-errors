@@ -5,6 +5,7 @@ export type {
   ErrorClass,
   ExtendedErrorConstructor,
   ExtendedErrorMembers,
+  MessageErrorConstructor,
 } from './defineError'
 export { causeChain, rootCause, findCause, findCauseOf, hasCauseOf } from './chain'
 export { serializeError, isErrorLike, describeValue } from './serialize'

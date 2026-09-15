@@ -103,13 +103,31 @@ which also finds an error wrapped in another error's `cause`.
 **5. Installing without the scope line in `.npmrc`.** npm then looks for
 `@rxova/ts-extended-errors` on npmjs.com and fails with a 404. See Install.
 
+**6. Writing the same message at every throw site.** Give the class a
+`message` option instead. The class then takes only the options, and the type
+of `context` comes from the parameter of `message`.
+
+```ts
+import { defineError } from '@rxova/ts-extended-errors'
+
+// WRONG: every caller repeats the sentence
+const LooseDateError = defineError<{ value: string }>('LooseDateError')
+new LooseDateError('"2026-02-30" is not a valid date', { context: { value: '2026-02-30' } })
+
+// RIGHT
+const InvalidDateError = defineError('InvalidDateError', {
+  message: (context: { value: string }) => `"${context.value}" is not a valid date`,
+})
+new InvalidDateError({ context: { value: '2026-02-30' } })
+```
+
 ## API
 
 | Export | Kind | What it does |
 | --- | --- | --- |
 | `ExtendedError` | class | Base class: `name`, `code`, `context`, `cause`, `stack`, `toJSON()` |
 | `isExtendedError` | function | `value instanceof ExtendedError`, as a type guard |
-| `defineError` | function | `defineError(name, { code?, base? })` returns a new error class |
+| `defineError` | function | `defineError(name, { code?, base?, message? })` returns a new error class |
 | `causeChain` | function | `[error, error.cause, …]`, outermost first |
 | `rootCause` | function | The last value in the chain |
 | `findCause` | function | The first value in the chain that a predicate accepts |
@@ -128,6 +146,7 @@ which also finds an error wrapped in another error's `cause`.
 | `DeserializeErrorOptions` | type | `{ classes?, maxDepth? }` |
 | `DefineErrorOptions` | type | `{ code?, base? }` |
 | `ExtendedErrorConstructor` | type | The class `defineError` returns |
+| `MessageErrorConstructor` | type | The class `defineError` returns with `message`: `new Class({ context, cause })` |
 | `ExtendedErrorMembers` | type | `name`, `code`, `context` and `toJSON`, added to any `defineError` class |
 | `ErrorClass` | type | An error class whose constructor takes `(message, options)` |
 
@@ -148,6 +167,10 @@ which also finds an error wrapped in another error's `cause`.
 - **`context` is copied through JSON.** A `Date` in it is serialized as a
   string and a `BigInt` as `'10n'`, and changing the result does not change the
   error.
+- **A `message` that throws does not replace the error.** The error is still
+  created, with the class name as its message and `context` kept.
+- **`deserializeError` keeps the sent message.** A class defined with `message`
+  is rebuilt with the payload's `message`; its `message` option is not called.
 - **`deserializeError` trusts the payload's `name`.** List in `classes` only the
   classes the payload is expected to contain.
 
