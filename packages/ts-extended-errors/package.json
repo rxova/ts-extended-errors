@@ -1,6 +1,6 @@
 {
   "name": "@rxova/ts-extended-errors",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "description": "Typed, serializable errors for TypeScript: a base class that survives subclassing, a factory for error taxonomies, and cause-chain helpers.",
   "keywords": [
