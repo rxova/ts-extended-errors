@@ -1,10 +1,10 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { findCauseOf } from '../chain'
-import { defineError, type ExtendedErrorConstructor } from '../defineError'
+import { defineError, type ErrorClass, type ExtendedErrorConstructor } from '../defineError'
 import { deserializeError } from '../deserialize'
 import { ExtendedError, isExtendedError } from '../ExtendedError'
 import { serializeError } from '../serialize'
-import type { SerializedError } from '../types'
+import type { ErrorContext, SerializedError } from '../types'
 
 const HttpError = defineError('HttpError', { code: 'HTTP' })
 const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
@@ -70,6 +70,68 @@ describe('defineError', () => {
   it('keeps sibling classes apart', () => {
     expect(new NotFoundError('no such user')).not.toBeInstanceOf(GoneError)
     expect(new GoneError('gone')).not.toBeInstanceOf(NotFoundError)
+  })
+
+  it('types context as present when the throw site has to pass one', () => {
+    const error = new InvalidDateError({ context: { value: '2026-02-30' } })
+
+    // The point of the issue: `context` is required at every throw site, so
+    // reading a field off it should not need `?.` and a `??` for a branch that
+    // cannot be taken.
+    expectTypeOf(error.context).toEqualTypeOf<{ value: string }>()
+    expect(error.context.value).toBe('2026-02-30')
+  })
+
+  it('leaves context optional when the class can be constructed without one', () => {
+    // `ConfigMissingError`'s message takes no context, so nothing requires one
+    // and an instance really can have none. Narrowing here would be a lie.
+    expectTypeOf(new ConfigMissingError().context).toEqualTypeOf<ErrorContext | undefined>()
+
+    const DiskError = defineError('DiskError', {
+      message: (context: { detail?: string }) => context.detail ?? 'disk error',
+    })
+
+    expectTypeOf(new DiskError().context).toEqualTypeOf<{ detail?: string } | undefined>()
+    expect(new DiskError().context).toBeUndefined()
+  })
+
+  it('keeps context present through the (message, options) overload', () => {
+    // The overload `deserializeError` rebuilds through. It cannot require a
+    // context without ceasing to be an `ErrorClass`, so it defaults one — the
+    // instance type promises a context, and this is what keeps that true.
+    const error = new InvalidDateError('sent from elsewhere')
+
+    expectTypeOf(error.context).toEqualTypeOf<{ value: string }>()
+    expect(error.context).toEqual({})
+    expect(error.message).toBe('sent from elsewhere')
+    expect('cause' in error).toBe(false)
+  })
+
+  it('narrows context on a class defined on a built-in base too', () => {
+    const PageError = defineError('PageError', {
+      base: RangeError,
+      message: (context: { page: number }) => `page ${String(context.page)} does not exist`,
+    })
+
+    const error = new PageError({ context: { page: 0 } })
+
+    expectTypeOf(error.context).toEqualTypeOf<{ page: number }>()
+    expect(error.context.page).toBe(0)
+    expect(error).toBeInstanceOf(RangeError)
+  })
+
+  it('stays an ErrorClass, so deserializeError can rebuild it', () => {
+    // Narrowing the instance must not cost the `(message, options)` signature:
+    // `classes` takes `ErrorClass`, and a class that no longer matched it would
+    // be a type error at every call site that lists one.
+    const classes: ErrorClass[] = [InvalidDateError, ConfigMissingError]
+    const rebuilt = deserializeError(
+      { name: 'InvalidDateError', message: '"x" is not a valid date', context: { value: 'x' } },
+      { classes },
+    )
+
+    expect(rebuilt).toBeInstanceOf(InvalidDateError)
+    expect((rebuilt as InstanceType<typeof InvalidDateError>).context).toEqual({ value: 'x' })
   })
 
   it('starts the stack at the throw site, under the defined name', () => {
@@ -397,7 +459,9 @@ describe('defineError with a message', () => {
     expect(error.name).toBe('PastDateError')
     expect(error.code).toBe('INVALID_DATE')
     expect(error).toBeInstanceOf(InvalidDateError)
-    expectTypeOf(error.context).toEqualTypeOf<{ value: string } | undefined>()
+    // Required at the call site, so present on the instance — the base's
+    // guarantee is inherited along with its message.
+    expectTypeOf(error.context).toEqualTypeOf<{ value: string }>()
 
     // @ts-expect-error: `value` is required, as it is for the base
     const withoutContext = () => new PastDateError()
@@ -449,13 +513,15 @@ describe('defineError with a message', () => {
       cause: new InvalidDateError({ context: { value: 'x' } }),
     })
 
-    expect(findCauseOf(error, InvalidDateError)?.context?.value).toBe('x')
+    // One `?.` for "was it found", and none for the context: the class requires
+    // one at every throw site, so the instance has one.
+    expect(findCauseOf(error, InvalidDateError)?.context.value).toBe('x')
   })
 
   it('types context from the parameter of message, and requires it when it has required fields', () => {
-    expectTypeOf(new InvalidDateError({ context: { value: 'x' } }).context).toEqualTypeOf<
-      { value: string } | undefined
-    >()
+    expectTypeOf(new InvalidDateError({ context: { value: 'x' } }).context).toEqualTypeOf<{
+      value: string
+    }>()
 
     // @ts-expect-error: `value` is required
     const withoutContext = () => new InvalidDateError()
