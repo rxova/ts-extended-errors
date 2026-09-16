@@ -14,6 +14,9 @@ export default defineConfig(
     // Tool config lives outside the type-checked programs; linting it with
     // projectService would demand a tsconfig per config file.
     '**/*.config.{js,cjs,mjs,ts}',
+    // Astro regenerates these type declarations on every build. They are not
+    // ours to fix, and they fail rules the hand-written sources here pass.
+    '**/.astro/',
   ]),
   js.configs.recommended,
   {
