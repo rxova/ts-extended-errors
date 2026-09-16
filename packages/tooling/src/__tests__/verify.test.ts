@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { STEPS, shell, verify } from '../verify.js'
 
 describe('STEPS', () => {
-  it('is the list CI runs, cheapest first', () => {
+  it('covers every check CI runs, cheapest first', () => {
     expect(STEPS.map(([name]) => name)).toEqual([
       'dependency dedupe',
       'format',
@@ -17,6 +17,15 @@ describe('STEPS', () => {
 
   it('leaves audit to CI, where a fresh CVE cannot block an unrelated push', () => {
     expect(STEPS.some(([, command]) => command.includes('audit'))).toBe(false)
+  })
+
+  // docs.yml builds the site at the base path rxova.org mounts it on, and that
+  // is the build whose output ships. Building it again here, at a base nothing
+  // serves, would put an Astro build in front of every push to prove nothing.
+  it('leaves the docs site out of the build step', () => {
+    const build = STEPS.find(([name]) => name === 'build')?.[1] ?? ''
+
+    expect(build).toContain("--filter='!@repo/docs'")
   })
 })
 
