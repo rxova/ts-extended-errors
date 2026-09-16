@@ -213,8 +213,19 @@ error.code // 'INVALID_DATE'
 new InvalidDateError()
 ```
 
+Because the throw site has to pass a context, the instance's `context` is typed as present rather
+than `Context | undefined` — so a caller reads a field off it directly:
+
+```ts
+import { findCauseOf } from '@rxova/ts-extended-errors'
+
+const found = findCauseOf(thrown, InvalidDateError)
+found?.context.value // string — no second `?.` and no `?? ''` for a case that cannot happen
+```
+
 The type of `context` comes from the parameter of `message`. When that type has no required fields,
-the options are optional as well. `cause` goes next to `context`, as for any other class:
+the options are optional as well — and then `context` really can be absent, so it stays
+`Context | undefined`. `cause` goes next to `context`, as for any other class:
 
 ```ts
 import { defineError } from '@rxova/ts-extended-errors'
@@ -229,7 +240,9 @@ new ConfigMissingError({ cause: new Error('ENOENT') }).cause // Error: ENOENT
 
 A string first argument is still taken as the message: `new InvalidDateError('custom', { context })`.
 `deserializeError` uses that constructor, so a rebuilt error has the message it was sent with, and
-`message` is not called on context that went through JSON.
+`message` is not called on context that went through JSON. That constructor cannot require a context
+without the class ceasing to be an `ErrorClass`, so it defaults one to `{}` — which is what keeps the
+instance type honest when a payload arrives carrying no `context` at all.
 
 `message` works with `base`, including a built-in class. A class defined on one with `message` and no
 `message` of its own writes the message the same way, and takes the same options:
@@ -528,19 +541,19 @@ describeValue(undefined) // 'undefined'
 
 ## Types
 
-| Type                                          | Description                                                                   |
-| --------------------------------------------- | ----------------------------------------------------------------------------- |
-| `ErrorContext`                                | `Readonly<Record<string, unknown>>`, the constraint on `context`              |
-| `ExtendedErrorOptions<Context>`               | `{ cause?: unknown; context?: Context }`                                      |
-| `SerializedError`                             | `{ name; message; code?; stack?; context?; cause?; errors?; errorsOmitted? }` |
-| `SerializedErrorWithProperties`               | `SerializedError` plus other fields, from `includeOwnProperties: true`        |
-| `SerializeErrorOptions`                       | Options of `serializeError`                                                   |
-| `DeserializeErrorOptions`                     | Options of `deserializeError`                                                 |
-| `DefineErrorOptions<Context>`                 | Options of `defineError`                                                      |
-| `ExtendedErrorConstructor<Context, Instance>` | The class `defineError` returns                                               |
-| `MessageErrorConstructor<Context, Instance>`  | The class `defineError` returns with `message`                                |
-| `ExtendedErrorMembers<Context>`               | `name`, `code`, `context` and `toJSON`, added to any `defineError` class      |
-| `ErrorClass<Instance>`                        | An error class whose constructor takes `(message, options)`                   |
+| Type                                          | Description                                                                                                             |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `ErrorContext`                                | `Readonly<Record<string, unknown>>`, the constraint on `context`                                                        |
+| `ExtendedErrorOptions<Context>`               | `{ cause?: unknown; context?: Context }`                                                                                |
+| `SerializedError`                             | `{ name; message; code?; stack?; context?; cause?; errors?; errorsOmitted? }`                                           |
+| `SerializedErrorWithProperties`               | `SerializedError` plus other fields, from `includeOwnProperties: true`                                                  |
+| `SerializeErrorOptions`                       | Options of `serializeError`                                                                                             |
+| `DeserializeErrorOptions`                     | Options of `deserializeError`                                                                                           |
+| `DefineErrorOptions<Context>`                 | Options of `defineError`                                                                                                |
+| `ExtendedErrorConstructor<Context, Instance>` | The class `defineError` returns                                                                                         |
+| `MessageErrorConstructor<Context, Instance>`  | The class `defineError` returns with `message`; `context` is present on its instances when the throw site must pass one |
+| `ExtendedErrorMembers<Context>`               | `name`, `code`, `context` and `toJSON`, added to any `defineError` class                                                |
+| `ErrorClass<Instance>`                        | An error class whose constructor takes `(message, options)`                                                             |
 
 ## For coding agents
 

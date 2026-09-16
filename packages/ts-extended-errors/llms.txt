@@ -146,7 +146,7 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
 | `DeserializeErrorOptions` | type | `{ classes?, maxDepth? }` |
 | `DefineErrorOptions` | type | `{ code?, base? }` |
 | `ExtendedErrorConstructor` | type | The class `defineError` returns |
-| `MessageErrorConstructor` | type | The class `defineError` returns with `message`: `new Class({ context, cause })` |
+| `MessageErrorConstructor` | type | The class `defineError` returns with `message`: `new Class({ context, cause })`. Its instances type `context` as present when the throw site must pass one |
 | `ExtendedErrorMembers` | type | `name`, `code`, `context` and `toJSON`, added to any `defineError` class |
 | `ErrorClass` | type | An error class whose constructor takes `(message, options)` |
 
@@ -171,6 +171,9 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
   created, with the class name as its message and `context` kept.
 - **`deserializeError` keeps the sent message.** A class defined with `message`
   is rebuilt with the payload's `message`; its `message` option is not called.
+- **A `message` class always has a `context` object.** The `(message, options)`
+  constructor `deserializeError` rebuilds through defaults it to `{}`, so a
+  payload that carried none produces `context: {}` rather than `undefined`.
 - **`deserializeError` trusts the payload's `name`.** List in `classes` only the
   classes the payload is expected to contain.
 
