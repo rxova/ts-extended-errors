@@ -544,8 +544,13 @@ describeValue(undefined) // 'undefined'
 
 ## For coding agents
 
-`node_modules/@rxova/ts-extended-errors/llms.txt` has the API table, a working example and the common
-mistakes in one file.
+[`llms.txt`](llms.txt) ships in this tarball: the API table, a working example and the mistakes to
+avoid, readable from `node_modules/@rxova/ts-extended-errors/llms.txt` with no network access.
+
+Online, the [documentation site](https://rxova.org/packages/ts-extended-errors/) serves every page
+as raw markdown at the same URL plus `.md`, with an
+[index](https://rxova.org/packages/ts-extended-errors/llms.txt) and an
+[everything-inlined](https://rxova.org/packages/ts-extended-errors/llms-full.txt) variant.
 
 ## License
 

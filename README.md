@@ -1,6 +1,7 @@
 # ts-extended-errors
 
 [![CI](https://github.com/rxova/ts-extended-errors/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rxova/ts-extended-errors/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Typed, serializable errors for TypeScript.** This repository holds one published package,
 [`@rxova/ts-extended-errors`](packages/ts-extended-errors): a base class for custom errors, a
@@ -46,11 +47,15 @@ npm install @rxova/ts-extended-errors
 
 ## Documentation
 
+- [Documentation site](https://rxova.org/packages/ts-extended-errors/): guides, the full reference
+  and the design notes. Built from `apps/docs` and published as part of rxova.org.
 - [Package README](packages/ts-extended-errors/README.md): an example for every export, and the
   options and types tables.
 - [Changelog](packages/ts-extended-errors/CHANGELOG.md): every release, with its pull request.
 - [`llms.txt`](packages/ts-extended-errors/llms.txt): the API, a working example and the common
-  mistakes, for a coding agent. It ships in the tarball.
+  mistakes, for a coding agent. It ships in the tarball. The docs site serves
+  [its own](https://rxova.org/packages/ts-extended-errors/llms.txt), plus an
+  [llms-full.txt](https://rxova.org/packages/ts-extended-errors/llms-full.txt).
 - [Published versions](https://github.com/rxova/ts-extended-errors/pkgs/npm/ts-extended-errors) on
   GitHub Packages.
 
@@ -63,8 +68,10 @@ packages/
   ts-extended-errors/  the library, published as @rxova/ts-extended-errors
   config/              shared vitest and tsdown presets; the only home of the coverage thresholds
   tooling/             repo scripts: verify, pack-smoke, check-llms, check-changeset
+apps/
+  docs/                the Astro + Starlight site, mounted on rxova.org
 .changeset/            release notes waiting for the next version
-.github/               CI, the PR-title check, releases and Dependabot
+.github/               CI, CodeQL, the docs dispatch, the PR-title check, releases and Dependabot
 ```
 
 The library builds dual ESM + CJS with tsdown and is checked with publint and attw. Across the
@@ -92,8 +99,8 @@ pnpm changeset                               # record a change for the next rele
 
 ### The gate
 
-`pnpm run verify` is what the pre-push hook and CI both run, cheapest first, stopping at the first
-failure. Turbo replays every package whose inputs did not change.
+`pnpm run verify` is what the pre-push hook runs, cheapest first, stopping at the first failure.
+Turbo replays every package whose inputs did not change.
 
 1. Dependency dedupe
 2. Format
@@ -104,9 +111,15 @@ failure. Turbo replays every package whose inputs did not change.
 7. Build
 8. Package exports (publint and attw)
 
-On top of it, CI lints the pull request's commits, asks for a changeset when the pull request
-changes the library, audits dependencies, and packs, installs and
-loads the tarball twice: on the Node.js in `.nvmrc`, and on the `engines` floor of the package.
+CI runs the same checks as parallel jobs rather than calling the script, so a red check names what
+broke. On top of them it lints the pull request's commits, asks for a changeset when the pull
+request changes the library, audits dependencies, runs the unit suite on Node 22 and 24, and packs,
+installs and loads the tarball twice: on the Node.js in `.nvmrc`, and on the `engines` floor of the
+package. `codeql.yml` analyses the source weekly and on every pull request.
+
+The docs site is built by `docs.yml` rather than by the gate, at the base path rxova.org mounts it
+on — that build is the one whose output ships, and it validates every internal link, every `.md`
+twin and the `llms.txt` size budgets.
 
 ### Git hooks
 
@@ -118,17 +131,17 @@ loads the tarball twice: on the Node.js in `.nvmrc`, and on the `engines` floor 
 
 ## Contributing
 
-1. Branch from `main`.
-2. Write [Conventional Commits](https://www.conventionalcommits.org). The allowed types are
-   `build`, `chore`, `ci`, `docs`, `feat`, `fix`, `perf`, `refactor`, `rename`, `revert`, `style`
-   and `test`, with no length limit. Pull requests are squash-merged, so the title becomes the
-   commit on `main`, and CI lints it the same way.
-3. Add a changeset (`pnpm changeset`) to any pull request that changes the library; CI checks for
-   one. A pull request that changes it but publishes nothing (a dev dependency bump, say) is
-   labelled `skip-changeset` instead. Before 1.0, a breaking change is a minor.
-4. A change to the public API ships in one pull request with its tests, its TSDoc, the package
-   README section, the `llms.txt` API table and a changeset.
-5. Run `pnpm run verify` before asking for review. Never skip a test or lower a coverage threshold
+[CONTRIBUTING.md](CONTRIBUTING.md) has the setup, the quality gates, the commit and changeset rules,
+and what a public API change has to ship with. The short version:
+
+1. Branch from `main`, and write [Conventional Commits](https://www.conventionalcommits.org).
+   Pull requests are squash-merged, so the title becomes the commit on `main` and CI lints it the
+   same way.
+2. Add a changeset (`pnpm changeset`) to any pull request that changes the library; CI checks for
+   one. Before 1.0, a breaking change is a minor.
+3. A change to the public API ships in one pull request with its tests, its TSDoc, the package
+   README section, the docs page and the `llms.txt` API table.
+4. Run `pnpm run verify` before asking for review. Never skip a test or lower a coverage threshold
    to get it green.
 
 [AGENTS.md](AGENTS.md) has the same rules, written for a coding agent working in this repository.
@@ -147,5 +160,5 @@ reopen it.
 
 ## Support
 
-[Support](SUPPORT.md) · [Security policy](SECURITY.md) ·
-[MIT license](packages/ts-extended-errors/LICENSE)
+[Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [Security policy](SECURITY.md) ·
+[Code of conduct](CODE_OF_CONDUCT.md) · [MIT license](LICENSE)

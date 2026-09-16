@@ -1,0 +1,52 @@
+name: Bug report
+description: Something the package does that it should not, or fails to do
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For a security issue, please use private vulnerability reporting instead:
+        https://github.com/rxova/ts-extended-errors/security/advisories/new
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      description: The version of `@rxova/ts-extended-errors` you are on.
+      placeholder: '0.3.0'
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: >-
+        The runtime and its version, and whether your code loads the package as
+        ESM or CommonJS. A bundler and its target matter for anything about
+        `instanceof`.
+      placeholder: 'Node 22.14, ESM'
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you observed, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: >-
+        The smallest snippet that shows it. For a serialization problem, include
+        the object `serializeError` produced and the `classes` passed to
+        `deserializeError`; for an `instanceof` that is false, say where the
+        class is declared and whether two copies of the package are installed
+        (`npm ls @rxova/ts-extended-errors`).
+      render: ts
+    validations:
+      required: true
