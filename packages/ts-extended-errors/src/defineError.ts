@@ -34,15 +34,35 @@ export interface ExtendedErrorConstructor<
 }
 
 /**
+ * `Instance`, with `context` narrowed to `Context` when a throw site has to pass
+ * one.
+ *
+ * The condition is the same one the constructor below uses to decide whether
+ * `context` is a required argument, so the instance type says exactly what the
+ * call site was made to guarantee. Without it every read of a required context
+ * went through `?.` and a `??` for a branch that cannot be taken, which is the
+ * boilerplate `message` exists to remove.
+ *
+ * A context type with no required fields keeps `Context | undefined`: there the
+ * options argument really is optional, and an instance really can have none.
+ */
+type WithContext<Instance, Context extends ErrorContext> =
+  Partial<Context> extends Context ? Instance : Instance & { readonly context: Context }
+
+/**
  * The class {@link defineError} returns when given a `message`. A throw site
  * passes only the options, `new InvalidDateError({ context: { value } })`, and
  * the class writes the message from `context`. `context` is required when its
  * type has required fields, and the options are optional when it has none.
  *
+ * When it is required, the instance's `context` is typed as present rather than
+ * `Context | undefined` — see {@link WithContext}.
+ *
  * It also takes `(message, options)`, where a string first argument is the
  * message itself. That keeps it an {@link ErrorClass}: `deserializeError`
  * rebuilds it with the message the payload carried, and it can be the `base`
- * of another class.
+ * of another class. That overload cannot require a context without ceasing to be
+ * an `ErrorClass`, so it defaults one instead — see {@link withMessage}.
  */
 export interface MessageErrorConstructor<
   Context extends ErrorContext = ErrorContext,
@@ -52,9 +72,9 @@ export interface MessageErrorConstructor<
     ...options: Partial<Context> extends Context
       ? [options?: ExtendedErrorOptions<Context>]
       : [options: ExtendedErrorOptions<Context> & { readonly context: Context }]
-  ): Instance
-  new (message: string, options?: ExtendedErrorOptions<Context>): Instance
-  readonly prototype: Instance
+  ): WithContext<Instance, Context>
+  new (message: string, options?: ExtendedErrorOptions<Context>): WithContext<Instance, Context>
+  readonly prototype: WithContext<Instance, Context>
   /** Inherited from the base class when this one does not declare its own. */
   readonly code: string | undefined
 }
@@ -136,7 +156,21 @@ const withMessage = (Defined: ErrorClass, format: (context: ErrorContext) => str
   class extends Defined {
     constructor(first?: unknown, second?: ExtendedErrorOptions) {
       if (typeof first === 'string') {
-        super(first, second)
+        // The only way to reach a class with a required context without passing
+        // one, and `deserializeError` takes it for every rebuild: a payload that
+        // carries no `context` would otherwise produce an instance whose type
+        // promises a context it does not have, and `error.context.key` would
+        // throw rather than read `undefined`.
+        //
+        // Requiring the argument here instead is not open: this overload is what
+        // makes the class an `ErrorClass`, which is what lets `deserializeError`
+        // accept it in `classes` and what lets it be another class's `base`.
+        //
+        // Built as a variable rather than inline: `Defined` is an `ErrorClass`,
+        // whose options parameter is the native `ErrorOptions`, and an object
+        // literal there is excess-property checked against it.
+        const options: ExtendedErrorOptions = { ...second, context: second?.context ?? {} }
+        super(first, options)
       } else {
         const options = (first ?? {}) as ExtendedErrorOptions
         super(formatMessage(format, options.context ?? {}, new.target.name), options)
