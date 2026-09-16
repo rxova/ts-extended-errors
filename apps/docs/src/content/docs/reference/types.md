@@ -117,9 +117,9 @@ interface MessageErrorConstructor<
     ...options: Partial<Context> extends Context
       ? [options?: ExtendedErrorOptions<Context>]
       : [options: ExtendedErrorOptions<Context> & { readonly context: Context }]
-  ): Instance
-  new (message: string, options?: ExtendedErrorOptions<Context>): Instance
-  readonly prototype: Instance
+  ): WithContext<Instance, Context>
+  new (message: string, options?: ExtendedErrorOptions<Context>): WithContext<Instance, Context>
+  readonly prototype: WithContext<Instance, Context>
   readonly code: string | undefined
 }
 ```
@@ -128,6 +128,20 @@ The class `defineError` returns when given a `message`. The conditional tuple is
 `context` required when its type has required fields and the whole argument optional when it does
 not. The second signature keeps the class an `ErrorClass`, which is what lets `deserializeError`
 rebuild it and what lets it be the `base` of another class.
+
+`WithContext` applies the same condition to the instance, so where the throw site has to pass a
+context the instance's is typed as present rather than `Context | undefined`:
+
+```ts
+const found = findCauseOf(thrown, InvalidDateError)
+found?.context.value // string — no second `?.` for a case that cannot happen
+```
+
+It is not exported; it exists so that the call site's guarantee and the instance type cannot drift
+apart. The `(message, options)` constructor is the one path that could build an instance without a
+context, and it defaults one to `{}` rather than requiring the argument — requiring it would stop
+the class being an `ErrorClass`. See
+[Defining errors](../guides/defining-errors.md#messages-written-from-context).
 
 ## `ExtendedErrorMembers`
 
