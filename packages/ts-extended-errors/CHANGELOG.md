@@ -1,5 +1,48 @@
 # @rxova/ts-extended-errors
 
+## 0.4.0
+
+### Minor Changes
+
+- [#19](https://github.com/rxova/ts-extended-errors/pull/19) [`1c3cd65`](https://github.com/rxova/ts-extended-errors/commit/1c3cd65c91a2aedd56f766e74a7f3d6c6d36e2c0) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Type `context` as present on the instances of a class defined with `message`, when the throw site has
+  to pass one. Fixes [#17](https://github.com/rxova/ts-extended-errors/issues/17).
+  
+  `message` makes `context` a required constructor argument as soon as its type has a required field,
+  but the instance type stayed `Context | undefined` — so every read went through a `?.` and a `??`
+  for a branch that cannot be taken, and the workaround was a hand-written class holding the value as
+  its own field, which is the boilerplate `message` exists to remove.
+  
+  ```ts
+  const CorruptRecordError = defineError('CorruptRecordError', {
+    message: ({ key }: { key: string }) => `unreadable record: ${key}`,
+  })
+  
+  const found = findCauseOf(error, CorruptRecordError)
+  found?.context.key // string — was `'context' is possibly 'undefined'`
+  ```
+  
+  The narrowing uses the same condition the constructor already uses to decide whether `context` is
+  required, so a class whose context has no required fields is unchanged: there the options argument
+  really is optional and an instance really can have none.
+  
+  The `(message, options)` constructor is the one path that could otherwise build an instance without
+  a context, and `deserializeError` rebuilds through it. It cannot require the argument without the
+  class ceasing to be an `ErrorClass` — which is what lets it be passed in `classes` and be another
+  class's `base` — so it now defaults `context` to `{}`. A payload carrying no `context` therefore
+  rebuilds as `context: {}` rather than `undefined`, and `error.context.key` reads `undefined` instead
+  of throwing.
+
+### Patch Changes
+
+- [#18](https://github.com/rxova/ts-extended-errors/pull/18) [`540e69f`](https://github.com/rxova/ts-extended-errors/commit/540e69fcecfa1cf3263248ce365db9eee1fecdff) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Point the tarball's `llms.txt` and README at the documentation site.
+  
+  The package now has docs at https://rxova.org/packages/ts-extended-errors/, built from `apps/docs` in
+  this repository. Both files ship inside the tarball, so an agent that installed the package and read
+  `node_modules/@rxova/ts-extended-errors/llms.txt` had no way to find them.
+  
+  `llms.txt` gains the site, its `llms.txt` index and its `llms-full.txt`; the README's "For coding
+  agents" section says the same for a reader. Nothing about the API or the published files changes.
+
 ## 0.3.0
 
 ### Minor Changes
