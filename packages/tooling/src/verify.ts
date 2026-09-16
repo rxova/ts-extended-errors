@@ -9,7 +9,19 @@
  *
  * `audit` is deliberately absent: its verdict changes with the advisory
  * database, not with this tree, so an overnight CVE would start failing every
- * push for code nobody changed. CI runs it after this, where that call belongs.
+ * push for code nobody changed. CI runs it in its own job, where that call
+ * belongs.
+ *
+ * The docs site is excluded from `build` for a different reason: docs.yml
+ * builds it at the base path rxova.org mounts it on, and that is the build
+ * whose output ships. Rendering it again here, at a base nothing serves, would
+ * add an Astro build to every push to prove nothing. `typecheck` and `test`
+ * still cover it.
+ *
+ * CI runs these steps as separate parallel jobs rather than calling this script,
+ * so a failure names itself instead of arriving as "verify failed" — the repo is
+ * public and its Actions minutes are free, which is what pays for the split.
+ * The lists are held together by `verify.test.ts`.
  */
 import { execSync } from 'node:child_process'
 import { isEntry } from './entry.js'
@@ -21,7 +33,7 @@ export const STEPS: [name: string, command: string][] = [
   ['llms.txt', 'pnpm run check:llms'],
   ['typecheck', 'pnpm exec turbo run typecheck'],
   ['unit tests', 'pnpm exec turbo run test'],
-  ['build', 'pnpm exec turbo run build'],
+  ['build', "pnpm exec turbo run build --filter='!@repo/docs'"],
   ['package exports', 'pnpm run check:exports'],
 ]
 
