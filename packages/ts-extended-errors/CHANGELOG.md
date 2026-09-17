@@ -1,5 +1,15 @@
 # ts-extended-errors
 
+## 0.4.4
+
+### Patch Changes
+
+- [#28](https://github.com/rxova/ts-extended-errors/pull/28) [`eda94cc`](https://github.com/rxova/ts-extended-errors/commit/eda94cc61704df8fb9fec7947bb015055b4962a0) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Treat getters, proxy traps and prototype checks that throw while inspecting an unknown value as
+  unavailable metadata. Serialization, normalization, cause traversal, type guards and
+  deserialization now keep handling the original failure; a value that refuses every form of
+  inspection is described as `'<uninspectable object>'`. Exceptions from caller-provided predicates
+  and error constructors still propagate.
+
 ## 0.4.3
 
 ### Patch Changes
