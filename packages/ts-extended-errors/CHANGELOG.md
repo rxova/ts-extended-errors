@@ -1,5 +1,17 @@
 # ts-extended-errors
 
+## 0.4.1
+
+### Patch Changes
+
+- [#21](https://github.com/rxova/ts-extended-errors/pull/21) [`1b358cf`](https://github.com/rxova/ts-extended-errors/commit/1b358cff0e02f4c16b89cc32d9c14c6e2d64203e) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Publish to npm as `ts-extended-errors`, in place of `@rxova/ts-extended-errors` on GitHub Packages.
+  
+  Install with `npm install ts-extended-errors`; no `.npmrc` scope line or GitHub token is needed. Every
+  earlier version, 0.1.0 to 0.4.0, is on npm under the new name with the same code. A project on the
+  old name changes the dependency and its imports from `@rxova/ts-extended-errors` to
+  `ts-extended-errors`; nothing else about the API changes. Releases now publish from CI through npm
+  trusted publishing, with provenance.
+
 ## 0.4.0
 
 ### Minor Changes
