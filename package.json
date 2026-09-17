@@ -27,7 +27,7 @@
     "pack:smoke": "turbo run pack:smoke",
     "check:llms": "node --import tsx ./packages/tooling/src/check-llms.ts",
     "changeset": "changeset",
-    "release": "turbo run build --filter=@rxova/ts-extended-errors && changeset publish",
+    "release": "turbo run build --filter=ts-extended-errors && changeset publish",
     "verify": "node --import tsx ./packages/tooling/src/verify.ts",
     "prepare": "husky"
   },

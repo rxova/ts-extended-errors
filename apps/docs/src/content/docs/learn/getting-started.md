@@ -5,20 +5,9 @@ description: Install the package, declare an error class, throw it with context,
 
 ## Install
 
-The package is published to GitHub Packages, not npmjs.com. Route the `@rxova` scope there in the
-`.npmrc` of the project that installs it, with a GitHub token that has `read:packages`:
-
-```ini
-@rxova:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
 ```bash
-npm install @rxova/ts-extended-errors
+npm install ts-extended-errors
 ```
-
-Without that scope line npm looks for the package on npmjs.com and fails with a 404 — it is the one
-install mistake worth knowing about in advance.
 
 No peer dependencies and nothing else to configure. Node.js 20.19 or newer; the package uses no Node
 APIs, so bundlers targeting browsers and workers are equally fine. Both ESM and CommonJS entry
@@ -34,7 +23,7 @@ return two different classes, and `instanceof` between them is false.
 
 ```ts
 // errors.ts
-import { defineError } from '@rxova/ts-extended-errors'
+import { defineError } from 'ts-extended-errors'
 
 export const AppError = defineError('AppError', { code: 'APP' })
 
@@ -85,7 +74,7 @@ A `catch` binding is `unknown`, because JavaScript permits throwing anything. `f
 `unknown`, searches the whole chain, and narrows to the class you asked for:
 
 ```ts
-import { findCauseOf, toError } from '@rxova/ts-extended-errors'
+import { findCauseOf, toError } from 'ts-extended-errors'
 import { NotFoundError } from './errors.js'
 
 try {
@@ -110,7 +99,7 @@ is the `AppError` wrapping it. That is the one mistake worth internalising early
 what is included, call `serializeError` directly:
 
 ```ts
-import { serializeError } from '@rxova/ts-extended-errors'
+import { serializeError } from 'ts-extended-errors'
 
 logger.error(serializeError(error)) // with stacks, for your own logs
 response.json(serializeError(error, { includeStack: false })) // without, for a client

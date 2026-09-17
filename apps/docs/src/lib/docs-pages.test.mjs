@@ -83,9 +83,7 @@ describe('firstSentence', () => {
   })
 
   it('gives up on a body with nothing to summarise', () => {
-    expect(
-      firstSentence('```console\n$ npm install @rxova/ts-extended-errors\n```'),
-    ).toBeUndefined()
+    expect(firstSentence('```console\n$ npm install ts-extended-errors\n```')).toBeUndefined()
   })
 })
 

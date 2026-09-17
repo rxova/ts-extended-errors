@@ -3,7 +3,7 @@ title: ts-extended-errors
 description: Typed, serializable errors for TypeScript — a base class that survives subclassing, a one-line class factory, cause-chain helpers, and a JSON round trip that rebuilds the original classes.
 ---
 
-`@rxova/ts-extended-errors` is one small package for the part of an application that only runs when
+`ts-extended-errors` is one small package for the part of an application that only runs when
 something has already gone wrong. It gives you error classes that behave the way you expected
 JavaScript's to behave, and a way to move them across a boundary — a queue, a worker, an HTTP
 response, a log line — without losing what they were.
@@ -11,22 +11,14 @@ response, a log line — without losing what they were.
 Node.js 20.19 or newer, no runtime dependencies, no Node APIs (so it runs in browsers and workers
 too), ESM and CommonJS with type declarations. MIT.
 
-The package is published to GitHub Packages rather than npmjs.com, so the project installing it
-routes the `@rxova` scope there in its `.npmrc`, with a GitHub token that has `read:packages`:
-
-```ini
-@rxova:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
 ```bash
-npm install @rxova/ts-extended-errors
+npm install ts-extended-errors
 ```
 
 ## In one example
 
 ```ts
-import { defineError, findCauseOf, serializeError, toError } from '@rxova/ts-extended-errors'
+import { defineError, findCauseOf, serializeError, toError } from 'ts-extended-errors'
 
 const HttpError = defineError('HttpError', { code: 'HTTP' })
 const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
@@ -87,4 +79,4 @@ Every page here is also served as raw markdown — add `.md` to any URL. There i
 [`llms.txt`](https://rxova.org/packages/ts-extended-errors/llms.txt) index and an
 [`llms-full.txt`](https://rxova.org/packages/ts-extended-errors/llms-full.txt) with every page
 inlined. The package also ships its own `llms.txt` inside the tarball, readable from
-`node_modules/@rxova/ts-extended-errors/llms.txt` with no network access.
+`node_modules/ts-extended-errors/llms.txt` with no network access.

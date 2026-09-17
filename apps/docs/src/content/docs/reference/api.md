@@ -1,6 +1,6 @@
 ---
 title: API reference
-description: Every export of @rxova/ts-extended-errors, with its signature and behaviour — classes, the factory, the chain helpers, and the serialization pair.
+description: Every export of ts-extended-errors, with its signature and behaviour — classes, the factory, the chain helpers, and the serialization pair.
 ---
 
 Everything below is exported from the package root. There are no subpath exports other than
@@ -21,7 +21,7 @@ import {
   toError,
   isErrorLike,
   describeValue,
-} from '@rxova/ts-extended-errors'
+} from 'ts-extended-errors'
 ```
 
 ## Exports

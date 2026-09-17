@@ -21,7 +21,7 @@ whole job is dealing with it.
 Returns a real `Error` for any value.
 
 ```ts
-import { toError } from '@rxova/ts-extended-errors'
+import { toError } from 'ts-extended-errors'
 
 logger.error(toError(thrown))
 ```
@@ -85,7 +85,7 @@ A value JSON cannot write — a cycle, a `toJSON` that throws — is described b
 ## A complete handler
 
 ```ts
-import { findCauseOf, toError } from '@rxova/ts-extended-errors'
+import { findCauseOf, toError } from 'ts-extended-errors'
 import { NotFoundError, RateLimitedError } from './errors.js'
 
 export function handle(thrown: unknown) {

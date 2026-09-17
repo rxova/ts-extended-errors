@@ -4,8 +4,8 @@ pnpm + Turborepo monorepo. Node >= 22.13 to develop. TypeScript everywhere.
 
 ## Layout
 
-- `packages/ts-extended-errors` — the library, published to GitHub Packages as
-  `@rxova/ts-extended-errors`. It supports Node >= 20.19, so it builds for Node 20, not the
+- `packages/ts-extended-errors` — the library, published to npm as
+  `ts-extended-errors`. It supports Node >= 20.19, so it builds for Node 20, not the
   preset's 22.
 - `packages/*` — workspace packages, built dual ESM + CJS with tsdown.
 - `packages/config` — the shared vitest and tsdown presets. Coverage thresholds live here only.

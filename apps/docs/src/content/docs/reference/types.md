@@ -18,7 +18,7 @@ import type {
   MessageErrorConstructor,
   ExtendedErrorMembers,
   ErrorClass,
-} from '@rxova/ts-extended-errors'
+} from 'ts-extended-errors'
 ```
 
 ## `ErrorContext`
