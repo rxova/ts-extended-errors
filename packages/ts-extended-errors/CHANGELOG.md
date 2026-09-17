@@ -1,5 +1,14 @@
 # ts-extended-errors
 
+## 0.4.3
+
+### Patch Changes
+
+- [#25](https://github.com/rxova/ts-extended-errors/pull/25) [`1472f5e`](https://github.com/rxova/ts-extended-errors/commit/1472f5ebcbf35f7719b56c97f47e74b25781b0d0) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Describe the package as a zero-dependency error model for TypeScript applications that use native
+  exceptions but need typed context, cause-chain inspection, and reliable JSON round trips. Clarify
+  how that model differs from typed return values and effect systems, and document the trust,
+  redaction and class-name rules at a serialization boundary. The code does not change.
+
 ## 0.4.2
 
 ### Patch Changes
