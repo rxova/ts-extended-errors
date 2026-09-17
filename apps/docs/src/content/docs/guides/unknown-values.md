@@ -34,6 +34,9 @@ with the original as its `cause`, since it may carry fields this package knows n
 
 Anything else becomes an `ExtendedError` whose message is `describeValue(value)`, again with the
 original as its `cause`. `throw 'nope'` reaches your logger as `Error: nope` rather than vanishing.
+If a getter or proxy trap throws while the value is inspected, that metadata is treated as
+unavailable. Even a revoked proxy becomes an `Error` instead of replacing the original failure with
+the inspection exception.
 
 ## `isErrorLike(value)`
 
@@ -47,7 +50,8 @@ if (isErrorLike(payload)) {
 ```
 
 Loose enough that `{ message: 'Not found', status: 404 }` passes. That is the intended behaviour for
-deciding whether something is worth serializing as an error; it is not a security check.
+deciding whether something is worth serializing as an error; it is not a security check. A value
+whose `message` getter or proxy trap throws returns `false`.
 
 ## `isExtendedError(value)`
 
@@ -80,7 +84,8 @@ describeValue(undefined) // 'undefined'
 ```
 
 A value JSON cannot write — a cycle, a `toJSON` that throws — is described by its string tag
-(`'[object Object]'`) rather than costing you the throw.
+(`'[object Object]'`) rather than costing you the throw. If the value refuses string-tag inspection
+too, the fallback is `'<uninspectable object>'`.
 
 ## A complete handler
 

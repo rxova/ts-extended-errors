@@ -1,3 +1,5 @@
+import { isInstanceOf, read } from './safe'
+
 /**
  * Walks `error` and everything under its `cause`, outermost first.
  *
@@ -6,7 +8,9 @@
  * stops someone from throwing `{ cause: 'timeout' }`, and a walker that assumed
  * otherwise would throw while you were trying to report a failure.
  *
- * Cycles terminate: `a.cause = b; b.cause = a` yields `[a, b]`.
+ * Cycles terminate: `a.cause = b; b.cause = a` yields `[a, b]`. A `cause`
+ * getter or proxy trap that throws ends the chain at that value; inspecting an
+ * error must not replace it with an inspection failure.
  */
 export function causeChain(error: unknown): unknown[] {
   const chain: unknown[] = []
@@ -20,7 +24,7 @@ export function causeChain(error: unknown): unknown[] {
     if (typeof current !== 'object') break
     seen.add(current)
 
-    const next: unknown = (current as { cause?: unknown }).cause
+    const next = read(current, 'cause')
     // Stopping on a value already on the chain is what makes a cycle terminate.
     if (seen.has(next)) break
     current = next
@@ -69,7 +73,7 @@ export function findCauseOf<T>(
   error: unknown,
   constructor: abstract new (...args: never[]) => T,
 ): T | undefined {
-  return findCause(error, (candidate): candidate is T => candidate instanceof constructor)
+  return findCause(error, (candidate): candidate is T => isInstanceOf(candidate, constructor))
 }
 
 /** Whether anything in the chain is an instance of `constructor`. */

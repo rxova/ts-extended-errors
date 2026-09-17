@@ -1,14 +1,7 @@
 import type { ErrorClass } from './defineError'
 import { ExtendedError } from './ExtendedError'
-import {
-  AGGREGATE_FIELDS,
-  DEFAULT_MAX_DEPTH,
-  FIXED_FIELDS,
-  isErrorLike,
-  isObject,
-  read,
-  readString,
-} from './serialize'
+import { AGGREGATE_FIELDS, DEFAULT_MAX_DEPTH, FIXED_FIELDS } from './serialize'
+import { arrayItems, has, isInstanceOf, keys, read, readString, tryRead } from './safe'
 import { toError } from './toError'
 import type { ErrorContext } from './types'
 
@@ -51,7 +44,7 @@ const BUILT_IN_CLASSES: readonly ErrorClass[] = [
 
 /** True for a value that {@link serializeError} could have produced from an error. */
 const hasName = (value: unknown): boolean =>
-  isObject(value) && typeof read(value, 'name') === 'string'
+  typeof value === 'object' && value !== null && typeof read(value, 'name') === 'string'
 
 /**
  * Puts a serialized field back on a rebuilt error.
@@ -86,7 +79,9 @@ const restore = (error: Error, key: string, value: unknown, enumerable: boolean)
  * points at this function instead of the failure.
  *
  * A real error is returned untouched, and a value that is not error-shaped goes
- * through {@link toError}.
+ * through {@link toError}. Getters and proxy traps that throw are treated as
+ * inaccessible fields. Exceptions from a class in `classes` are not swallowed:
+ * those constructors are caller-provided behavior, not payload inspection.
  *
  * @example
  * ```ts
@@ -95,8 +90,12 @@ const restore = (error: Error, key: string, value: unknown, enumerable: boolean)
  * ```
  */
 export function deserializeError(value: unknown, options: DeserializeErrorOptions = {}): Error {
-  if (value instanceof Error) return value
-  if (!isErrorLike(value)) return toError(value)
+  if (isInstanceOf(value, Error)) return value
+  if (typeof value !== 'object' || value === null) return toError(value)
+
+  // Read once: a getter may be stateful as well as capable of throwing.
+  const message = readString(value, 'message')
+  if (message === undefined) return toError(value)
 
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH
 
@@ -110,14 +109,24 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
   // cannot come out of JSON, but an object built by hand can hold one.
   const path = new Set<unknown>()
 
-  const walk = (current: Error, depth: number): Error => {
+  const walk = (current: object, currentMessage: string, depth: number): Error => {
     // Rebuilds something this error holds, when it is a serialized error and
     // neither the depth limit nor a cycle says to stop. Anything else, a real
     // error included, is kept as it is.
-    const descend = (next: unknown): unknown =>
-      isErrorLike(next) && !(next instanceof Error) && depth < maxDepth && !path.has(next)
-        ? walk(next, depth + 1)
-        : next
+    const descend = (next: unknown): unknown => {
+      if (
+        isInstanceOf(next, Error) ||
+        typeof next !== 'object' ||
+        next === null ||
+        depth >= maxDepth ||
+        path.has(next)
+      ) {
+        return next
+      }
+
+      const nextMessage = readString(next, 'message')
+      return nextMessage === undefined ? next : walk(next, nextMessage, depth + 1)
+    }
 
     path.add(current)
 
@@ -126,23 +135,28 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
 
     // An AggregateError's `errors`, rebuilt the way a cause is. Read under that
     // name only: other classes keep other things there.
-    const listed = name === 'AggregateError' ? read(current, 'errors') : undefined
-    const errors = Array.isArray(listed) ? (listed as readonly unknown[]).map(descend) : undefined
+    const errors =
+      name === 'AggregateError' ? arrayItems(read(current, 'errors'))?.map(descend) : undefined
 
     // Handed to the constructor, so the class sets them the way it would for
     // any other throw; `cause` only when there was one, for the reason
     // ExtendedError gives.
     const constructorOptions: { cause?: unknown; context?: ErrorContext } = {}
-    if ('cause' in current) constructorOptions.cause = descend(current.cause)
+    if (has(current, 'cause')) {
+      const cause = tryRead(current, 'cause')
+      if (cause.ok) constructorOptions.cause = descend(cause.value)
+    }
     const context = read(current, 'context')
-    if (isObject(context)) constructorOptions.context = context as ErrorContext
+    if (typeof context === 'object' && context !== null) {
+      constructorOptions.context = context as ErrorContext
+    }
 
     const error =
       Class !== undefined
-        ? new Class(current.message, constructorOptions)
+        ? new Class(currentMessage, constructorOptions)
         : errors !== undefined
-          ? new AggregateError(errors, current.message, constructorOptions)
-          : new ExtendedError(current.message, constructorOptions)
+          ? new AggregateError(errors, currentMessage, constructorOptions)
+          : new ExtendedError(currentMessage, constructorOptions)
 
     if (error.name !== name) restore(error, 'name', name, false)
 
@@ -150,7 +164,7 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
     if (code !== undefined) restore(error, 'code', code, true)
 
     // A built-in class ignores `context` in its options.
-    if (isObject(context)) restore(error, 'context', context, true)
+    if (typeof context === 'object' && context !== null) restore(error, 'context', context, true)
 
     const stack = readString(current, 'stack')
     if (stack === undefined) Reflect.deleteProperty(error, 'stack')
@@ -165,18 +179,19 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
     }
 
     const fixed = errors === undefined ? FIXED_FIELDS : AGGREGATE_FIELDS
-    for (const key of Object.keys(current)) {
+    for (const key of keys(current)) {
       if (fixed.has(key)) continue
-      const field = read(current, key)
+      const field = tryRead(current, key)
+      if (!field.ok) continue
       // serializeError always writes a name for an error it walked, so a field
       // without one is data — `{ message: 'Not found', status: 404 }` — and
       // stays data.
-      restore(error, key, hasName(field) ? descend(field) : field, true)
+      restore(error, key, hasName(field.value) ? descend(field.value) : field.value, true)
     }
 
     path.delete(current)
     return error
   }
 
-  return walk(value, 0)
+  return walk(value, message, 0)
 }

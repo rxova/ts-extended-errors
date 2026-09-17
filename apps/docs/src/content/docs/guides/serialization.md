@@ -36,6 +36,12 @@ second bundled copy of a library, where `instanceof Error` is false — is walke
 value that is not an error is described rather than dropped, because `throw 'nope'` is rare but real
 and a serializer that returns `{}` for it is how an incident becomes unreadable.
 
+A getter or proxy trap that throws is treated as an inaccessible field: a throwing `cause` ends
+that chain, while optional metadata is omitted. An object that refuses both JSON and string-tag
+inspection becomes `'<uninspectable object>'`. Exceptions from a predicate passed to `findCause` or
+a class constructor passed to `deserializeError` still propagate; those are caller-provided
+behavior rather than inspection of the unknown value.
+
 `context` is _copied_, not referenced, through a JSON round trip taken there and then. The result
 shares nothing with the error, so a redactor can edit one without touching the other and
 `JSON.stringify` cannot throw on it later. The cost is that a `Date` in `context` becomes a string

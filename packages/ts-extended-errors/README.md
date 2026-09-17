@@ -444,7 +444,9 @@ throw are skipped. The fields may hold anything the thrower put there, such as r
 
 Values that are not errors become `{ name: typeof value, message: describeValue(value) }`. Objects
 with a string `message` are read field by field, so errors from another realm (a worker, an iframe,
-a `vm` context) serialize like local ones.
+a `vm` context) serialize like local ones. A getter or proxy trap that throws is treated as an
+inaccessible field. An object that refuses both JSON and string-tag inspection is described as
+`'<uninspectable object>'` rather than escaping from the error-handling path.
 
 ## `deserializeError(value, options?)`
 
@@ -501,7 +503,9 @@ deserializeError({ name: 'TypeError', message: 'x is not a function' }) instance
 
 The class is chosen by a `name` read from the payload, so list only the classes the payload is
 expected to contain. A payload from outside your system is untrusted: `deserializeError` does not
-validate its `code`, `context` or other restored fields.
+validate its `code`, `context` or other restored fields. A getter or proxy trap that throws is
+treated as an inaccessible field; an exception from a class in `classes` still propagates because
+that constructor is caller-provided behavior.
 
 ## `toError(value)`
 
