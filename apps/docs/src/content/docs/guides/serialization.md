@@ -63,6 +63,11 @@ response.json(serializeError(error, { includeStack: false })) // a client: they 
 `includeStack` defaults to `true` because a log line is the common case and a stackless log is
 useless. The response path is the one that has to say otherwise.
 
+JSON-safe does not mean safe to send to a client. `serializeError` does not redact the fixed fields:
+`message`, `code` and `context` are written as given, and a stack normally repeats the message in
+its first line. Build a public response from fields you intend to expose instead of treating the
+serializer as an allowlist.
+
 `includeOwnProperties` copies whatever else the error class assigned — a `statusCode`, a `request`,
 a `user`. What is in those fields is up to whoever threw, so this is for a log you control, not for
 a response body. Errors held in such fields are serialized like a `cause`, under the same depth
@@ -90,6 +95,9 @@ payload carried — and the cause chain is rebuilt the same way.
 an `ExtendedError` that keeps the name, so it still reads correctly in a log but
 `instanceof NotFoundError` is false. List every class the payload is expected to contain.
 
+Class names are protocol keys. Keep custom names stable and unique within `classes` unless one is
+deliberately replacing a built-in; when two entries have the same name, the later one wins.
+
 With no serialized stack the result has none, rather than one pointing at `deserializeError` instead
 of at the failure. A real `Error` passes through untouched, and a value that is not error-shaped
 goes through [`toError`](./unknown-values.md).
@@ -104,7 +112,7 @@ goes through [`toError`](./unknown-values.md).
 `deserializeError` constructs a class because the payload said to. Only list classes in `classes`
 that you are willing to have constructed from that input, and treat a payload from outside your
 system as the untrusted data it is — the same care you would give `JSON.parse` output that decides
-control flow.
+control flow. The payload's `code`, `context` and other restored fields are not validated.
 
 ## Limits
 

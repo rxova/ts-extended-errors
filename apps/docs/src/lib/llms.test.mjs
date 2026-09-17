@@ -71,13 +71,15 @@ describe('llmsIndex', () => {
   })
 
   it('states the API facts that change how an agent writes the calling code', () => {
-    // Each of the four is a mistake the package's own llms.txt lists as common:
+    // Each is a mistake the package's own llms.txt lists as common:
     // context passed positionally, defineError called per-throw, deserializeError
-    // called without `classes`, and `.code` read off an `unknown` catch binding.
+    // called without `classes`, `.code` read off an `unknown` catch binding, and
+    // thrown errors expected to appear in a function signature.
     expect(index).toContain('options object')
     expect(index).toContain('module\n   scope')
     expect(index).toContain('classes')
     expect(index).toContain('`unknown`')
+    expect(index).toContain('function signature')
   })
 
   it('points at llms-full.txt absolutely', () => {
