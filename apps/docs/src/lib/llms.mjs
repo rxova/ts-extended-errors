@@ -26,7 +26,9 @@
  * the few facts that change how the calling code is written.
  */
 const SUMMARY = [
-  'Typed, serializable errors for TypeScript. `ExtendedError` is a base class',
+  'A zero-dependency error model for TypeScript applications that use native',
+  'exceptions but need typed context, cause-chain inspection, and reliable JSON',
+  'round trips. `ExtendedError` is a base class',
   'that keeps `name`, `code`, `context` and `stack` correct through subclassing;',
   '`defineError` declares such a class in one line and builds taxonomies through',
   'its `base` option; five helpers search the `cause` chain; `serializeError` and',

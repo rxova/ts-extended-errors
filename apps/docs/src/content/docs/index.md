@@ -1,6 +1,6 @@
 ---
 title: ts-extended-errors
-description: Typed, serializable errors for TypeScript — a base class that survives subclassing, a one-line class factory, cause-chain helpers, and a JSON round trip that rebuilds the original classes.
+description: A zero-dependency error model for TypeScript applications that use native exceptions but need typed context, cause-chain inspection, and reliable JSON round trips.
 ---
 
 `ts-extended-errors` is one small package for the part of an application that only runs when

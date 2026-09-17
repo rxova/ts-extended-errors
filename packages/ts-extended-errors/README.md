@@ -10,8 +10,10 @@
   <a href="https://github.com/rxova/ts-extended-errors/blob/main/packages/ts-extended-errors/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license" /></a>
 </p>
 
-**Typed, serializable errors for TypeScript.** A base class for custom errors, a one-line class
-factory, helpers for `cause` chains, and a JSON round trip that rebuilds the original classes.
+**A zero-dependency error model for TypeScript applications** that use native exceptions but need
+typed context, cause-chain inspection, and reliable JSON round trips. A base class for custom
+errors, a one-line class factory, helpers that search `cause` chains, and a serializer that rebuilds
+the original classes.
 
 ```bash
 npm install ts-extended-errors
