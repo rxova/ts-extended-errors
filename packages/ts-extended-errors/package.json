@@ -1,6 +1,6 @@
 {
   "name": "ts-extended-errors",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "description": "Typed, serializable errors for TypeScript: a base class that survives subclassing, a factory for error taxonomies, and cause-chain helpers.",
   "keywords": [
