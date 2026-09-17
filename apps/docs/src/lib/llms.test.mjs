@@ -116,6 +116,6 @@ describe('llmsFull', () => {
 
   it('repeats the same summary the index carries', () => {
     expect(full.split('\n')[0]).toBe('# ts-extended-errors')
-    expect(full).toContain('> Typed, serializable errors for TypeScript.')
+    expect(full).toContain('> A zero-dependency error model for TypeScript applications')
   })
 })

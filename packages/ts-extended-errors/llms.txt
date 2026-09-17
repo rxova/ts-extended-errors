@@ -1,6 +1,8 @@
 # ts-extended-errors
 
-> Typed, serializable errors for TypeScript. `ExtendedError` is a base class
+> A zero-dependency error model for TypeScript applications that use native
+> exceptions but need typed context, cause-chain inspection, and reliable JSON
+> round trips. `ExtendedError` is a base class
 > that sets `name`, `code`, `context` and `stack` correctly in subclasses;
 > `defineError` creates such a class in one line; five functions search the
 > `cause` chain; `serializeError` and `deserializeError` round-trip errors

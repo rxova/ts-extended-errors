@@ -3,10 +3,11 @@
 [![CI](https://github.com/rxova/ts-extended-errors/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rxova/ts-extended-errors/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**Typed, serializable errors for TypeScript.** This repository holds one published package,
-[`ts-extended-errors`](packages/ts-extended-errors): a base class for custom errors, a
-one-line class factory, helpers for `cause` chains, and a JSON round trip that rebuilds the original
-classes. Node.js 20.19 or newer, browsers too, no runtime dependencies, ESM and CommonJS. MIT.
+**A zero-dependency error model for TypeScript applications** that use native exceptions but need
+typed context, cause-chain inspection, and reliable JSON round trips. This repository holds one
+published package, [`ts-extended-errors`](packages/ts-extended-errors): a base class for custom
+errors, a one-line class factory, helpers that search `cause` chains, and a serializer that rebuilds
+the original classes. Node.js 20.19 or newer, browsers too, no runtime dependencies, ESM and CommonJS. MIT.
 
 ```ts
 import { defineError, deserializeError, findCauseOf, serializeError } from 'ts-extended-errors'
