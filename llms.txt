@@ -2,8 +2,8 @@
 
 > Typed, serializable errors for TypeScript: a base class for custom errors, a
 > one-line class factory, `cause`-chain helpers, and a JSON round trip that
-> rebuilds the original classes. One package, `@rxova/ts-extended-errors`,
-> published to GitHub Packages. Node >= 20.19, no runtime dependencies. MIT.
+> rebuilds the original classes. One package, `ts-extended-errors`,
+> published to npm. Node >= 20.19, no runtime dependencies. MIT.
 > Ships ESM and CommonJS.
 
 This file is an index. It points to the files that document the package and
@@ -13,10 +13,10 @@ source.
 ## Packages
 
 The package ships its `llms.txt` inside its tarball, so after an install it can
-be read from `node_modules/@rxova/ts-extended-errors/llms.txt` with no network
+be read from `node_modules/ts-extended-errors/llms.txt` with no network
 access. Read it when writing code that uses the library.
 
-- [@rxova/ts-extended-errors](packages/ts-extended-errors/llms.txt): the
+- [ts-extended-errors](packages/ts-extended-errors/llms.txt): the
   install line, the API, a working example, and the mistakes to avoid.
 
 ## Docs
@@ -34,8 +34,8 @@ exists as raw markdown — add `.md` to any URL.
   and tables for options and types. Also in the tarball.
 - [Changelog](packages/ts-extended-errors/CHANGELOG.md): every release, with its
   pull request.
-- [GitHub Packages](https://github.com/rxova/ts-extended-errors/pkgs/npm/ts-extended-errors):
-  the published versions.
+- [npm](https://www.npmjs.com/package/ts-extended-errors): the published
+  versions.
 
 ## Contributing
 

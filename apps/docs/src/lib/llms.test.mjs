@@ -59,13 +59,15 @@ describe('llmsIndex', () => {
   })
 
   it('gives the install line, since an agent reaching this has not installed it yet', () => {
-    expect(index).toContain('npm install @rxova/ts-extended-errors')
+    expect(index).toContain('npm install ts-extended-errors')
   })
 
-  it('gives the .npmrc scope line, without which the install 404s', () => {
-    // The package is on GitHub Packages, so `npm install` on its own fails. An
-    // index that omitted this would send an agent straight into that 404.
-    expect(index).toContain('@rxova:registry=https://npm.pkg.github.com')
+  it('installs from npm, with no registry or token set-up', () => {
+    // The package moved from GitHub Packages to npm. An index still carrying the
+    // old `.npmrc` scope line would send an agent to a registry that no longer
+    // has the package, under a name it no longer publishes.
+    expect(index).not.toContain('npm.pkg.github.com')
+    expect(index).not.toContain('@rxova/')
   })
 
   it('states the API facts that change how an agent writes the calling code', () => {

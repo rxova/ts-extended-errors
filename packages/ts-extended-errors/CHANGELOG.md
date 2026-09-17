@@ -1,4 +1,4 @@
-# @rxova/ts-extended-errors
+# ts-extended-errors
 
 ## 0.4.0
 

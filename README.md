@@ -4,17 +4,12 @@
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Typed, serializable errors for TypeScript.** This repository holds one published package,
-[`@rxova/ts-extended-errors`](packages/ts-extended-errors): a base class for custom errors, a
+[`ts-extended-errors`](packages/ts-extended-errors): a base class for custom errors, a
 one-line class factory, helpers for `cause` chains, and a JSON round trip that rebuilds the original
 classes. Node.js 20.19 or newer, browsers too, no runtime dependencies, ESM and CommonJS. MIT.
 
 ```ts
-import {
-  defineError,
-  deserializeError,
-  findCauseOf,
-  serializeError,
-} from '@rxova/ts-extended-errors'
+import { defineError, deserializeError, findCauseOf, serializeError } from 'ts-extended-errors'
 
 const HttpError = defineError('HttpError', { code: 'HTTP' })
 const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
@@ -33,16 +28,8 @@ back.cause instanceof NotFoundError // true
 
 ## Install
 
-The package is published to GitHub Packages, not npmjs.com. Route the `@rxova` scope there in the
-`.npmrc` of the project that installs it, with a GitHub token that has `read:packages`:
-
-```ini
-@rxova:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
 ```bash
-npm install @rxova/ts-extended-errors
+npm install ts-extended-errors
 ```
 
 ## Documentation
@@ -56,8 +43,7 @@ npm install @rxova/ts-extended-errors
   mistakes, for a coding agent. It ships in the tarball. The docs site serves
   [its own](https://rxova.org/packages/ts-extended-errors/llms.txt), plus an
   [llms-full.txt](https://rxova.org/packages/ts-extended-errors/llms-full.txt).
-- [Published versions](https://github.com/rxova/ts-extended-errors/pkgs/npm/ts-extended-errors) on
-  GitHub Packages.
+- [Published versions](https://www.npmjs.com/package/ts-extended-errors) on npm.
 
 ## Repository layout
 
@@ -65,7 +51,7 @@ A pnpm + Turborepo workspace.
 
 ```text
 packages/
-  ts-extended-errors/  the library, published as @rxova/ts-extended-errors
+  ts-extended-errors/  the library, published as ts-extended-errors
   config/              shared vitest and tsdown presets; the only home of the coverage thresholds
   tooling/             repo scripts: verify, pack-smoke, check-llms, check-changeset
 apps/
@@ -86,7 +72,7 @@ You need Node.js 22.13 or newer (`.nvmrc` pins 24) and pnpm 11, the exact versio
 ```sh
 pnpm install                                 # dependencies and git hooks
 pnpm test                                    # unit tests, coverage enforced per file
-pnpm --filter @rxova/ts-extended-errors test # the library alone
+pnpm --filter ts-extended-errors test # the library alone
 pnpm typecheck                               # tsc across the workspace
 pnpm lint                                    # ESLint
 pnpm format                                  # Prettier, writing
@@ -150,11 +136,10 @@ and what a public API change has to ship with. The short version:
 
 1. Once CI passes on `main`, `release.yml` opens or updates a `chore: version packages` pull
    request with the version bump and the changelog, built from the pending changesets.
-2. Merging it publishes `@rxova/ts-extended-errors` to GitHub Packages, then tags and creates the
-   GitHub release.
+2. Merging it publishes `ts-extended-errors` to npm, then tags and creates the GitHub release.
 
-The workflow publishes with its own `GITHUB_TOKEN`, so there is no secret to store, and runs only
-while the repository variable `RELEASE_ENABLED` is `true`. CI starts on the version pull request
+The workflow publishes through npm trusted publishing (OIDC) with provenance, so there is no npm
+token to store, and runs only while the repository variable `RELEASE_ENABLED` is `true`. CI starts on the version pull request
 when it opens, but those runs can stop at `action_required`; if its checks stay pending, close and
 reopen it.
 

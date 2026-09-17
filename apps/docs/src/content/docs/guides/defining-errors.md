@@ -9,7 +9,7 @@ cases; `class … extends ExtendedError` is for when the class needs members of 
 ## `defineError`
 
 ```ts
-import { defineError } from '@rxova/ts-extended-errors'
+import { defineError } from 'ts-extended-errors'
 
 const TimeoutError = defineError('TimeoutError', { code: 'TIMEOUT' })
 
@@ -142,7 +142,7 @@ Use a class declaration when the error needs members of its own — an extra met
 property, a narrower constructor.
 
 ```ts
-import { ExtendedError } from '@rxova/ts-extended-errors'
+import { ExtendedError } from 'ts-extended-errors'
 
 class ConfigError extends ExtendedError<{ file: string; key: string }> {
   static override readonly code = 'CONFIG'

@@ -1,5 +1,5 @@
 {
-  "name": "@rxova/ts-extended-errors",
+  "name": "ts-extended-errors",
   "version": "0.4.0",
   "type": "module",
   "description": "Typed, serializable errors for TypeScript: a base class that survives subclassing, a factory for error taxonomies, and cause-chain helpers.",
@@ -68,7 +68,7 @@
     "vitest": "^5.0.0"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "repository": {
     "type": "git",

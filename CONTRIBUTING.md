@@ -31,7 +31,7 @@ pnpm install
 
 ```bash
 pnpm test                                    # unit tests, coverage enforced per file
-pnpm --filter @rxova/ts-extended-errors test # the library alone
+pnpm --filter ts-extended-errors test # the library alone
 pnpm typecheck
 pnpm lint
 pnpm run format:check
@@ -45,7 +45,7 @@ jobs, so a green verify means a green pipeline.
 A single test file:
 
 ```bash
-pnpm --filter @rxova/ts-extended-errors exec vitest run src/__tests__/serialize.test.ts
+pnpm --filter ts-extended-errors exec vitest run src/__tests__/serialize.test.ts
 ```
 
 ## The docs site
@@ -114,7 +114,7 @@ directions, so a renamed export fails until the table is updated.
 ## Releases
 
 `release.yml` opens a `chore: version packages` pull request from the pending
-changesets. Merging it publishes `@rxova/ts-extended-errors` to GitHub Packages
-with the workflow's own `GITHUB_TOKEN`, and tags the release. It runs only while
+changesets. Merging it publishes `ts-extended-errors` to npm through
+trusted publishing, with provenance and no stored token, and tags the release. It runs only while
 the repository variable `RELEASE_ENABLED` is `true`, and nothing is published
 from a local machine.

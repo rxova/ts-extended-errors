@@ -10,7 +10,7 @@ functions are the round trip.
 ## Out: `serializeError`
 
 ```ts
-import { serializeError } from '@rxova/ts-extended-errors'
+import { serializeError } from 'ts-extended-errors'
 
 const payload = serializeError(error, { includeStack: false })
 ```
@@ -72,7 +72,7 @@ fields whose getter throws are skipped; and the fixed fields are never overwritt
 ## Back: `deserializeError`
 
 ```ts
-import { deserializeError } from '@rxova/ts-extended-errors'
+import { deserializeError } from 'ts-extended-errors'
 import { HttpError, NotFoundError } from './errors.js'
 
 const error = deserializeError(JSON.parse(line), { classes: [HttpError, NotFoundError] })
@@ -121,14 +121,14 @@ Both are described in more detail, along with the cycle handling, in
 
 ```ts
 // producer.ts
-import { serializeError } from '@rxova/ts-extended-errors'
+import { serializeError } from 'ts-extended-errors'
 
 await queue.push(JSON.stringify({ jobId, error: serializeError(cause) }))
 ```
 
 ```ts
 // consumer.ts
-import { deserializeError, findCauseOf } from '@rxova/ts-extended-errors'
+import { deserializeError, findCauseOf } from 'ts-extended-errors'
 import { RateLimitedError } from './errors.js'
 
 const { jobId, error: payload } = JSON.parse(message) as { jobId: string; error: unknown }

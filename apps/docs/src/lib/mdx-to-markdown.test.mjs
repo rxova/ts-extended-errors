@@ -37,9 +37,9 @@ describe('mapUnfenced', () => {
   it('treats an unterminated fence as fenced to the end of the file', () => {
     // The safe direction: a missing close means the tail is left verbatim rather
     // than a runaway rule chewing through the rest of the page.
-    expect(
-      mapUnfenced('```sh\nnpm install @rxova/ts-extended-errors\nstill code', () => 'TOUCHED'),
-    ).toBe('```sh\nnpm install @rxova/ts-extended-errors\nstill code')
+    expect(mapUnfenced('```sh\nnpm install ts-extended-errors\nstill code', () => 'TOUCHED')).toBe(
+      '```sh\nnpm install ts-extended-errors\nstill code',
+    )
   })
 })
 
