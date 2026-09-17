@@ -117,7 +117,7 @@ export function llmsIndex(pages, origin) {
     '',
     '## If you are writing calling code',
     '',
-    'Four facts prevent most of the mistakes:',
+    'Five facts prevent most of the mistakes:',
     '',
     '1. The second constructor argument is an options object, so context goes in',
     '   `{ context: { userId } }` rather than being passed directly.',
@@ -129,6 +129,9 @@ export function llmsIndex(pages, origin) {
     '   classes come back as a plain `ExtendedError` carrying the right name.',
     '4. In a `catch`, the binding is `unknown`. Use `toError`, `isExtendedError` or',
     '   `findCauseOf` rather than reading `.code` off it.',
+    '5. “Typed” describes an error after narrowing. TypeScript does not include',
+    '   thrown errors in a function signature; use a union or `Result` when each',
+    '   caller must see an expected failure in the return type.',
     '',
   ]
 

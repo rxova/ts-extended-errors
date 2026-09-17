@@ -142,8 +142,14 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
 
 ## Gotchas
 
+- **“Typed” does not mean checked exceptions.** TypeScript does not include
+  thrown errors in a function's type. Use a discriminated union or `Result`
+  when every caller must see an expected failure in the return type.
 - **`serializeError` includes `stack` by default.** Pass `includeStack: false`
   when the result goes to a client.
+- **Serialization is not redaction.** `message`, `code` and `context` are
+  written as given, and a stack normally repeats the message in its first line.
+  Build public responses from an explicit allowlist.
 - **`includeOwnProperties: true` copies every other own field** of each error in
   the chain, which may include request data.
 - **A class with a built-in `base` is not an `ExtendedError`.**
@@ -166,6 +172,10 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
   payload that carried none produces `context: {}` rather than `undefined`.
 - **`deserializeError` trusts the payload's `name`.** List in `classes` only the
   classes the payload is expected to contain.
+- **Class names are protocol keys.** Keep the custom names in `classes` stable
+  and unique. When two entries have the same name, the later class wins.
+- **Deserialization does not validate restored fields.** Treat `code`, `context`
+  and any own properties from an external payload as untrusted data.
 
 ## Docs
 
@@ -178,5 +188,5 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
 - README, with an example for every export:
   `node_modules/ts-extended-errors/README.md`, or
   https://github.com/rxova/ts-extended-errors/tree/main/packages/ts-extended-errors#readme
-- Package: https://github.com/rxova/ts-extended-errors/pkgs/npm/ts-extended-errors
+- Package: https://www.npmjs.com/package/ts-extended-errors
 - Source: https://github.com/rxova/ts-extended-errors

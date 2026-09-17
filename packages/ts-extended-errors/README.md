@@ -35,6 +35,7 @@ runtimes.
 ## Contents
 
 - [Quick start](#quick-start)
+- [Choosing an error model](#choosing-an-error-model)
 - [`ExtendedError`](#extendederror)
 - [`defineError`](#defineerrorname-options)
 - [Cause chains](#cause-chains)
@@ -77,6 +78,22 @@ try {
   //   {"name":"NotFoundError","message":"no such user","code":"HTTP_NOT_FOUND","context":{"userId":42}}}
 }
 ```
+
+## Choosing an error model
+
+“Typed” describes the error object after a caller has caught and narrowed it: its class, `code` and
+`context`. TypeScript does not declare thrown errors in a function's signature, so this package does
+not provide checked exceptions.
+
+| Need                                                                         | Model                                                |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------- |
+| A message and stack that nobody branches on                                  | Native `Error`                                       |
+| Structured exceptions, searchable causes and a JSON boundary                 | `ts-extended-errors`                                 |
+| Expected failures that every caller sees in the function's return type       | A discriminated union or `Result<Value, ErrorValue>` |
+| Typed failures as part of a wider runtime for effects, resources and retries | An effect system                                     |
+
+The models compose: an `ExtendedError` subclass can be the error value in a `Result`, while
+unexpected failures still use native `throw` and `catch`.
 
 ## `ExtendedError`
 
@@ -360,6 +377,10 @@ serializeError(null) // { name: 'object', message: 'null' }
 | `includeOwnProperties` | `boolean` | `false` | Also copy the error's other own fields (see below)                   |
 | `maxAggregatedErrors`  | `number`  | `10`    | How many `AggregateError` errors to include, across the whole output |
 
+JSON-safe does not mean safe to send to a client. The serializer does not redact `message`, `code`
+or `context`, and a stack normally repeats the message in its first line. Build a public response
+from fields you intend to expose, and pass `includeStack: false`.
+
 `context` is copied field by field through a JSON round trip, so the result shares nothing with the
 error: a `Date` becomes a string, a `BigInt` becomes `'10n'`, and a field that cannot be written
 (a cycle, a `toJSON` that throws) is described with `describeValue` without losing the others.
@@ -452,7 +473,8 @@ error.stack === sent.stack // true
 
 - Each error is created with the class whose `name` equals its `name` field. `Error`, `EvalError`,
   `RangeError`, `ReferenceError`, `SyntaxError`, `TypeError` and `URIError` are always available;
-  classes in `classes` take precedence over them.
+  classes in `classes` take precedence over them. Treat those names as protocol keys: keep them
+  stable and unique. If the list contains the same name twice, the later class wins.
 - A name that matches no class produces an `ExtendedError` with that name.
 - `code`, `context`, `stack` and any fields from `includeOwnProperties` are restored. Without a
   serialized `stack`, the result has no `stack`.
@@ -478,7 +500,8 @@ deserializeError({ name: 'TypeError', message: 'x is not a function' }) instance
 | `maxDepth` | `number`                | `8`     | How many `cause` levels to rebuild; deeper ones stay as they came |
 
 The class is chosen by a `name` read from the payload, so list only the classes the payload is
-expected to contain.
+expected to contain. A payload from outside your system is untrusted: `deserializeError` does not
+validate its `code`, `context` or other restored fields.
 
 ## `toError(value)`
 
