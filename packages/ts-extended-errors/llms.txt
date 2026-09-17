@@ -176,6 +176,10 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
   and unique. When two entries have the same name, the later class wins.
 - **Deserialization does not validate restored fields.** Treat `code`, `context`
   and any own properties from an external payload as untrusted data.
+- **Hostile inspection is best-effort.** A getter or proxy trap that throws is
+  treated as an inaccessible field; an otherwise indescribable value becomes
+  `'<uninspectable object>'`. Exceptions from a `findCause` predicate or a
+  constructor passed to `deserializeError` still propagate.
 
 ## Docs
 

@@ -1,4 +1,5 @@
 import { serializeError } from './serialize'
+import { isInstanceOf } from './safe'
 import type { ErrorContext, ExtendedErrorOptions, SerializedError } from './types'
 
 /**
@@ -110,7 +111,8 @@ export class ExtendedError<Context extends ErrorContext = ErrorContext> extends 
  * `instanceof`, so it is false for an instance from a second copy of this
  * package in the same process. That is the honest answer — two copies mean two
  * distinct classes — and {@link serializeError} is the cross-realm-tolerant
- * path when you need one.
+ * path when you need one. A proxy that refuses prototype inspection returns
+ * `false` rather than throwing from this guard.
  */
 export const isExtendedError = (value: unknown): value is ExtendedError =>
-  value instanceof ExtendedError
+  isInstanceOf(value, ExtendedError)

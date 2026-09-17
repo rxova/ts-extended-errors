@@ -1,3 +1,4 @@
+import { arrayItems, isInstanceOf, keys, objectTag, read, readString } from './safe'
 import type { ErrorContext, SerializedError, SerializedErrorWithProperties } from './types'
 
 /** Options for {@link serializeError}. */
@@ -77,28 +78,11 @@ export const AGGREGATE_FIELDS: ReadonlySet<string> = new Set([
 
 const NO_FIELDS: ReadonlySet<string> = new Set()
 
-export const isObject = (value: unknown): value is object =>
-  typeof value === 'object' && value !== null
-
-/**
- * Reads a property off a value without asserting anything about its shape.
- *
- * Everything here works through `unknown` on purpose: a `catch` binding is
- * `unknown`, and by the time you are serializing you may well be holding an
- * error from another realm (a worker, a vm context, a second bundled copy of a
- * library) where `instanceof Error` is false but every field you care about is
- * present.
- */
-export const read = (value: object, key: string): unknown => (value as Record<string, unknown>)[key]
-
-export const readString = (value: object, key: string): string | undefined => {
-  const property = read(value, key)
-  return typeof property === 'string' ? property : undefined
-}
+const isObject = (value: unknown): value is object => typeof value === 'object' && value !== null
 
 /**
  * True for anything Error-shaped, including the cross-realm errors that fail
- * `instanceof Error`.
+ * `instanceof Error`. A throwing `message` getter or proxy trap returns false.
  */
 export const isErrorLike = (value: unknown): value is Error =>
   isObject(value) && typeof read(value, 'message') === 'string'
@@ -112,7 +96,7 @@ export const isErrorLike = (value: unknown): value is Error =>
  * recognises an error from a vm context, which fails `instanceof`.
  */
 const isRealError = (value: unknown): boolean =>
-  value instanceof Error || Object.prototype.toString.call(value) === '[object Error]'
+  isInstanceOf(value, Error) || (isObject(value) && objectTag(value) === '[object Error]')
 
 /**
  * True for an AggregateError, from this realm or another.
@@ -123,7 +107,7 @@ const isRealError = (value: unknown): boolean =>
  * messages of a validation error.
  */
 const isAggregateError = (value: object): boolean =>
-  value instanceof AggregateError || readString(value, 'name') === 'AggregateError'
+  isInstanceOf(value, AggregateError) || readString(value, 'name') === 'AggregateError'
 
 /**
  * The errors an AggregateError lost before it reached this serializer: one on
@@ -134,7 +118,11 @@ const omittedEarlier = (error: object): number => {
   return typeof omitted === 'number' && Number.isSafeInteger(omitted) && omitted > 0 ? omitted : 0
 }
 
-/** Best-effort one-line description of a thrown value that is not an error. */
+/**
+ * Best-effort one-line description of a thrown value that is not an error.
+ * An object that refuses both JSON and string-tag inspection becomes
+ * `'<uninspectable object>'`.
+ */
 export const describeValue = (value: unknown): string => {
   if (typeof value === 'string') return value
   if (typeof value === 'symbol') return value.toString()
@@ -145,10 +133,10 @@ export const describeValue = (value: unknown): string => {
     // Deliberately `unknown`: the lib types stringify as returning `string`,
     // but it genuinely returns undefined for a value whose `toJSON` does.
     const json: unknown = JSON.stringify(value)
-    return typeof json === 'string' ? json : Object.prototype.toString.call(value)
+    return typeof json === 'string' ? json : (objectTag(value) ?? '<uninspectable object>')
   } catch {
     // Cyclic, or a `toJSON` that throws. Neither is a reason to lose the throw.
-    return Object.prototype.toString.call(value)
+    return objectTag(value) ?? '<uninspectable object>'
   }
 }
 
@@ -181,16 +169,10 @@ const copyFields = (
   skip: ReadonlySet<string>,
   copy: (value: unknown) => unknown,
 ): void => {
-  for (const key of Object.keys(source)) {
+  for (const key of keys(source)) {
     if (skip.has(key)) continue
 
-    let value: unknown
-    try {
-      value = read(source, key)
-    } catch {
-      // A getter that throws. Losing one field beats losing the log line.
-      continue
-    }
+    const value = read(source, key)
     if (value === undefined || typeof value === 'function') continue
 
     const copied = copy(value)
@@ -228,7 +210,9 @@ const copyContext = (context: object): ErrorContext => {
  * `context` is copied, not referenced: the result shares nothing with the error,
  * so a redactor can edit one without the other, and `JSON.stringify` cannot
  * throw on it. An AggregateError's `errors` are serialized the way a `cause` is,
- * within `maxAggregatedErrors`.
+ * within `maxAggregatedErrors`. Getters and proxy traps that throw are treated
+ * as inaccessible fields rather than allowed to replace the failure being
+ * serialized.
  */
 export function serializeError(
   value: unknown,
@@ -253,7 +237,13 @@ export function serializeError(
   const path = new Set<unknown>()
 
   const walk = (current: unknown, depth: number): SerializedErrorWithProperties => {
-    if (!isErrorLike(current)) {
+    if (!isObject(current)) {
+      return { name: typeof current, message: describeValue(current) }
+    }
+
+    // Read once: a getter may be stateful as well as capable of throwing.
+    const message = readString(current, 'message')
+    if (message === undefined) {
       return { name: typeof current, message: describeValue(current) }
     }
 
@@ -275,9 +265,7 @@ export function serializeError(
       errorsOmitted?: number
     } = {
       name: readString(current, 'name') ?? 'Error',
-      // Not read through `readString`: isErrorLike has already established that
-      // this one is a string.
-      message: current.message,
+      message,
     }
 
     const code = readString(current, 'code')
@@ -298,10 +286,10 @@ export function serializeError(
     }
 
     const aggregate = isAggregateError(current)
-    const errors = aggregate ? read(current, 'errors') : undefined
+    const errors = aggregate ? arrayItems(read(current, 'errors')) : undefined
     // At maxDepth the list goes the way a cause does, rather than coming out
     // empty and claiming there was nothing in it.
-    if (Array.isArray(errors) && depth < maxDepth) {
+    if (errors !== undefined && depth < maxDepth) {
       const kept: SerializedErrorWithProperties[] = []
       let omitted = omittedEarlier(current)
 
