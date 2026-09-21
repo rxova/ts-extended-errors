@@ -58,7 +58,7 @@ packages/
 apps/
   docs/                the Astro + Starlight site, mounted on rxova.org
 .changeset/            release notes waiting for the next version
-.github/               CI, CodeQL, the docs dispatch, the PR-title check, releases and Dependabot
+.github/               CI, CodeQL, the docs dispatch, the PR-title check, releases and Renovate
 ```
 
 The library builds dual ESM + CJS with tsdown and is checked with publint and attw. Across the
