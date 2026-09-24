@@ -23,7 +23,15 @@ const PREFIX = 'https://rxova.org/packages/ts-extended-errors'
 const twin = (route, body = 'Body.') =>
   ['---', `title: "${route}"`, `source: ${PREFIX}/${route}/`, '---', '', body, ''].join('\n')
 
-const page = (title = 'Page') => `<!doctype html><title>${title}</title><p>Hi.</p>`
+/** A doc page as Starlight renders it: every template but `splash` has a sidebar. */
+const page = (title = 'Page') =>
+  `<!doctype html><html lang="en" data-theme="dark" data-has-toc data-has-sidebar>` +
+  `<title>${title}</title><p>Hi.</p></html>`
+
+/** A splash page: Starlight leaves `data-has-sidebar` off, and may add a hero. */
+const splash = (title = 'Home') =>
+  `<!doctype html><html lang="en" data-theme="dark" data-has-hero>` +
+  `<title>${title}</title><h1>Hi.</h1></html>`
 
 describe('twinFor', () => {
   it.each([
@@ -35,9 +43,25 @@ describe('twinFor', () => {
 })
 
 describe('isUntwinned', () => {
-  it('excludes only Astro 404', () => {
-    expect(isUntwinned('404.html')).toBe(true)
-    expect(isUntwinned('guides/serialization/index.html')).toBe(false)
+  it('excludes Astro 404, whatever its markup', () => {
+    expect(isUntwinned('404.html', page('404'))).toBe(true)
+    expect(isUntwinned('404.html', splash('404'))).toBe(true)
+  })
+
+  it('excludes a splash page', () => {
+    expect(isUntwinned('index.html', splash())).toBe(true)
+  })
+
+  it('keeps a page with a sidebar, even one with a hero', () => {
+    expect(isUntwinned('guides/serialization/index.html', page())).toBe(false)
+    const withHero = page().replace('data-has-sidebar', 'data-has-sidebar data-has-hero')
+    expect(isUntwinned('index.html', withHero)).toBe(false)
+  })
+
+  it('reads the attribute from the <html> tag only', () => {
+    // A code sample quoting the attribute must not turn a splash into a doc.
+    const quoted = splash().replace('<h1>', '<code>data-has-sidebar</code><h1>')
+    expect(isUntwinned('index.html', quoted)).toBe(true)
   })
 })
 
@@ -80,6 +104,32 @@ describe('checkMdRoutes', () => {
 
     expect(failures).toEqual([
       'guides/serialization/index.html has no markdown twin at guides/serialization.md',
+    ])
+  })
+
+  it('passes a splash page with no twin', async () => {
+    const dir = await dist({
+      'index.html': splash(),
+      'reference/api/index.html': page(),
+      'reference/api.md': twin('reference/api'),
+      '404.html': splash('404'),
+    })
+
+    const { failures, twins } = await checkMdRoutes(dir)
+
+    expect(failures).toEqual([])
+    expect(twins).toBe(1)
+  })
+
+  it('reports a sidebar page with no twin, even at the root', async () => {
+    const dir = await dist({
+      'index.html': page(),
+      'reference/api/index.html': page(),
+      'reference/api.md': twin('reference/api'),
+    })
+
+    expect((await checkMdRoutes(dir)).failures).toEqual([
+      'index.html has no markdown twin at index.md',
     ])
   })
 

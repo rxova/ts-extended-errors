@@ -28,11 +28,18 @@ export const DEFAULT_DIST = join(dirname(fileURLToPath(import.meta.url)), '..', 
 /**
  * Pages that are deliberately not twinned.
  *
- * Only Astro's 404. Every content page here is prose — there is no splash and no
- * standalone app in `public/` — so nothing else is excluded, and a page that
- * arrives without a twin is a bug rather than a category.
+ * Astro's 404, and every splash page — the home page is one. A splash is a
+ * landing page rather than a document, and `docsPages()` drops it for that
+ * reason (`isSplash` in src/lib/docs-md.mjs), so the twin this would otherwise
+ * demand is one the build never writes.
+ *
+ * Read from the rendered page rather than the source, because this script only
+ * ever sees `dist`. Starlight marks `<html>` with `data-has-sidebar` exactly
+ * when the template is not `splash`, so its absence is the same rule
+ * `isSplash` applies. `data-has-hero` would not do: a doc page can have a hero.
  */
-export const isUntwinned = (htmlPath) => htmlPath === '404.html'
+export const isUntwinned = (htmlPath, html) =>
+  htmlPath === '404.html' || !/<html\b[^>]*\sdata-has-sidebar\b/i.test(html)
 
 /**
  * Markup that must not survive into a `.md`, each with what it means when it does.
@@ -125,8 +132,8 @@ export async function checkMdRoutes(distDir = DEFAULT_DIST) {
   const mdFiles = new Set(await collect(distDir, '.md'))
 
   for (const html of htmlFiles) {
-    if (isUntwinned(html)) continue
-    if (isRedirect(await readFile(join(distDir, html), 'utf8'))) continue
+    const source = await readFile(join(distDir, html), 'utf8')
+    if (isUntwinned(html, source) || isRedirect(source)) continue
 
     const twin = twinFor(html)
     if (!mdFiles.has(twin)) failures.push(`${html} has no markdown twin at ${twin}`)

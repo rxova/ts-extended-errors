@@ -245,6 +245,9 @@ importers:
       '@astrojs/check':
         specifier: ^0.9.9
         version: 0.9.10(prettier@3.9.7)(typescript@6.0.3)
+      '@types/node':
+        specifier: ^26.6.1
+        version: 26.6.1
       typescript:
         specifier: 6.0.3
         version: 6.0.3

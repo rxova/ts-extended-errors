@@ -17,14 +17,25 @@
     // No `^build` and no coverage: every module under test is plain JavaScript
     // over plain objects, which is the whole reason they are split out from the
     // Astro-only adapter beside them.
+    //
+    // The landing page's snippet reads the library from source rather than
+    // through a build (tsconfig.json `paths`, vitest.config.mjs `alias`), so
+    // that source is part of both cache keys: a change to the library has to
+    // re-run them rather than replay a pass against the old code.
     "test": {
       "dependsOn": [],
       "outputs": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/config/vitest.base.ts",
+        "$TURBO_ROOT$/packages/ts-extended-errors/src/**"
+      ],
       "outputLogs": "new-only"
     },
     "typecheck": {
       "dependsOn": [],
       "outputs": [],
+      "inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/packages/ts-extended-errors/src/**"],
       "outputLogs": "new-only"
     },
     // This app publishes no tarball and has neither of these scripts, but both

@@ -1,0 +1,111 @@
+---
+// The install command, with a button that copies it.
+//
+// The button starts `hidden` and the script reveals it, so a reader without
+// JavaScript — or without a clipboard, which needs a secure context — sees the
+// command and no button that does nothing.
+
+const command = 'npm install ts-extended-errors'
+---
+
+<div class="copy-install" data-copy-install>
+  <code><span class="prompt" aria-hidden="true">$</span> {command}</code>
+  <button type="button" data-command={command} hidden>
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+      <path
+        fill="currentColor"
+        d="M16 1H6a2 2 0 0 0-2 2v12h2V3h10V1Zm3 4H10a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16h-9V7h9v14Z"
+      ></path>
+    </svg>
+    <span class="sr-only">Copy the install command</span>
+  </button>
+  <span class="status" role="status" aria-live="polite"></span>
+</div>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-copy-install]')) {
+    const button = root.querySelector('button')
+    const status = root.querySelector('.status')
+    const command = button?.dataset.command
+    if (!button || !status || !command || !window.isSecureContext) continue
+
+    let clear: number | undefined
+    button.hidden = false
+    button.addEventListener('click', () => {
+      navigator.clipboard.writeText(command).then(
+        () => {
+          status.textContent = 'Copied'
+        },
+        () => {
+          status.textContent = 'Copy failed'
+        },
+      )
+      window.clearTimeout(clear)
+      clear = window.setTimeout(() => {
+        status.textContent = ''
+      }, 2000)
+    })
+  }
+</script>
+
+<style>
+  .copy-install {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    max-width: 100%;
+    padding: 0.25rem 0.25rem 0.25rem 1rem;
+    border: 1px solid var(--sl-color-hairline-light);
+    border-radius: var(--rx-radius-pill);
+    background: var(--sl-color-gray-6);
+  }
+
+  code {
+    overflow-x: auto;
+    padding: 0;
+    background: none;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-sm);
+    white-space: nowrap;
+  }
+
+  .prompt {
+    color: var(--sl-color-gray-3);
+    user-select: none;
+  }
+
+  button {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
+    border-radius: var(--rx-radius-pill);
+    background: transparent;
+    color: var(--sl-color-gray-2);
+    cursor: pointer;
+  }
+
+  button[hidden] {
+    display: none;
+  }
+
+  button:hover {
+    background: var(--sl-color-gray-5);
+    color: var(--sl-color-white);
+  }
+
+  .status {
+    min-width: 4.5rem;
+    padding-inline-end: 0.5rem;
+    color: var(--sl-color-text-accent);
+    font-size: var(--sl-text-xs);
+    text-align: start;
+  }
+
+  .status:empty {
+    min-width: 0;
+    padding: 0;
+  }
+</style>

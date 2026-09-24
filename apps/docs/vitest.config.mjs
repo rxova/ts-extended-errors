@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+
 import { defineConfig } from 'vitest/config'
 
 /**
@@ -11,6 +13,13 @@ import { defineConfig } from 'vitest/config'
  * as complete, and the reader who would notice is a model that cannot ask.
  */
 export default defineConfig({
+  resolve: {
+    alias: {
+      'ts-extended-errors': fileURLToPath(
+        new URL('../../packages/ts-extended-errors/src/index.ts', import.meta.url),
+      ),
+    },
+  },
   test: {
     include: ['scripts/**/*.test.mjs', 'src/**/*.test.mjs'],
     environment: 'node',

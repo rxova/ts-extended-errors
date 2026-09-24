@@ -19,10 +19,14 @@ import { HOME, sectionOf, mdRoute, htmlRoute, firstSentence } from './docs-pages
 /**
  * A splash page is a landing page, not a document.
  *
- * No page here is one today — `index.md` is ordinary prose and belongs in the
- * twins. The rule is keyed off frontmatter rather than an id list so that if a
- * splash is ever added it excludes itself, instead of being served to an agent
- * as a hollowed-out `.md` that costs a fetch and teaches it nothing.
+ * The home page is one: it is built around an animated comparison, and its
+ * content already reaches agents through `learn/why`, `learn/getting-started`
+ * and the summary in llms.mjs. The rule is keyed off frontmatter rather than an
+ * id list so that any later splash excludes itself too, instead of being served
+ * to an agent as a hollowed-out `.md` that costs a fetch and teaches it nothing.
+ *
+ * check-md-routes.mjs applies the same rule to the built HTML, so a page
+ * dropped here is not then reported as missing its twin.
  */
 const isSplash = (entry) => entry.data.template === 'splash'
 

@@ -1,0 +1,146 @@
+---
+title: ts-extended-errors
+description: A zero-dependency error model for TypeScript applications that use native exceptions but need typed context, cause-chain inspection, and reliable JSON round trips.
+# A landing page, not a document: no sidebar, and no `.md` twin — docsPages()
+# drops splash pages, and check-md-routes.mjs expects that. The content an agent
+# needs from here is in learn/why, learn/getting-started and llms.txt.
+template: splash
+hero:
+  title: Errors that keep their shape.
+  tagline: Typed error classes in one line, cause chains you can search, and a JSON round trip that comes back as the classes it left as — for TypeScript code that already throws.
+---
+
+import { Card, CardGrid, LinkCard, TabItem, Tabs } from '@astrojs/starlight/components'
+import { withBase } from '../../lib/base-url.mjs'
+
+export const to = (path) =>
+  // Links carry the base explicitly. A relative `./learn/why/` only resolves
+  // while the home page is served with its trailing slash, and the `.md`-link
+  // rewriting the other pages rely on is not known to run on MDX.
+  withBase(path, import.meta.env.BASE_URL)
+
+## What it gives you
+
+<CardGrid>
+  <Card title="Subclasses that work" icon="approve-check">
+    `name` is the class name, `instanceof` holds after downlevel compilation, and the stack starts
+    at the throw site rather than inside the constructor.
+  </Card>
+  <Card title="A code and a context" icon="seti:typescript">
+    A stable string per class to branch on, and a typed data object per error, so failure details
+    stop being interpolated into prose and parsed back out.
+  </Card>
+  <Card title="One-line classes" icon="puzzle">
+    `defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })` builds a real
+    class, and `base` builds families of them.
+  </Card>
+  <Card title="Cause chains you can search" icon="magnifier">
+    A low-level failure is usually wrapped two or three times before it reaches the handler that
+    knows what to do about it. `findCauseOf` finds it at any depth.
+  </Card>
+  <Card title="A JSON round trip" icon="seti:json">
+    `serializeError` produces a plain object; `deserializeError` rebuilds it as the classes it was,
+    so `instanceof` still works on the other side of a queue or an HTTP response.
+  </Card>
+  <Card title="Tolerance for anything thrown" icon="warning">
+    Every function takes `unknown`, including strings, plain objects and `null`. No runtime
+    dependencies and no Node APIs, so it runs in browsers and workers too.
+  </Card>
+</CardGrid>
+
+## Install
+
+<Tabs syncKey="pkg">
+  <TabItem label="npm">
+
+```bash
+npm install ts-extended-errors
+```
+
+  </TabItem>
+  <TabItem label="pnpm">
+
+```bash
+pnpm add ts-extended-errors
+```
+
+  </TabItem>
+  <TabItem label="yarn">
+
+```bash
+yarn add ts-extended-errors
+```
+
+  </TabItem>
+  <TabItem label="bun">
+
+```bash
+bun add ts-extended-errors
+```
+
+  </TabItem>
+</Tabs>
+
+Node.js 20.19 or newer, ESM and CommonJS with type declarations. MIT.
+
+## In one example
+
+```ts
+import { defineError, findCauseOf, serializeError, toError } from 'ts-extended-errors'
+
+const HttpError = defineError('HttpError', { code: 'HTTP' })
+const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
+
+function loadProfile(userId: number) {
+  try {
+    throw new NotFoundError('no such user', { context: { userId } })
+  } catch (cause) {
+    throw new HttpError('loading the profile failed', { cause })
+  }
+}
+
+try {
+  loadProfile(42)
+} catch (thrown) {
+  const error = toError(thrown) // `thrown` is `unknown`; `error` is an `Error`
+
+  // Searches the whole cause chain, not just the outermost error.
+  const notFound = findCauseOf(error, NotFoundError)
+  notFound?.code // 'HTTP_NOT_FOUND'
+  notFound?.context // { userId: 42 }
+
+  console.log(JSON.stringify(serializeError(error, { includeStack: false })))
+  // {"name":"HttpError","message":"loading the profile failed","code":"HTTP","cause":
+  //   {"name":"NotFoundError","message":"no such user","code":"HTTP_NOT_FOUND",
+  //    "context":{"userId":42}}}
+}
+```
+
+## Where to go next
+
+<CardGrid>
+  <LinkCard
+    title="Getting started"
+    description="Install it, declare a class, throw it and catch it."
+    href={to('/learn/getting-started/')}
+  />
+  <LinkCard
+    title="Why this exists"
+    description="What native errors get wrong, and what this changes."
+    href={to('/learn/why/')}
+  />
+  <LinkCard
+    title="Defining errors"
+    description="Codes, contexts and families of classes."
+    href={to('/guides/defining-errors/')}
+  />
+  <LinkCard
+    title="API reference"
+    description="Every export, with its signature."
+    href={to('/reference/api/')}
+  />
+</CardGrid>
+
+For coding agents: every documentation page has a raw-markdown twin — add `.md` to its URL — and
+
+<a href={to('/llms.txt')}>`llms.txt`</a> indexes them all.

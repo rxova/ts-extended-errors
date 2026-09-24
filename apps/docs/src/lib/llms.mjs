@@ -20,8 +20,8 @@
 /**
  * The library's own summary, as the blockquote llmstxt.org puts under the H1.
  *
- * Written here rather than lifted from a page's frontmatter: `index.md` opens
- * with a sentence aimed at a person who has just arrived. This is the paragraph
+ * Written here rather than lifted from a page's frontmatter: the home page is a
+ * landing page aimed at a person who has just arrived, and has no twin. This is the paragraph
  * a model needs first — what the package exports, what it refuses to do, and
  * the few facts that change how the calling code is written.
  */

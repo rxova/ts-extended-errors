@@ -7,7 +7,19 @@
     // before anything has built. Without this line the endpoints under
     // `src/pages/` lint as `any` on a clean checkout and fail every
     // type-aware rule, which is a failure that only ever appears in CI.
-    "types": ["astro/client"]
+    //
+    // `node` is here for the landing page's snippet, which imports the library
+    // from source (see `paths`). That source calls `Error.captureStackTrace`,
+    // which TypeScript's own lib files do not declare; only @types/node does.
+    // The cost is that Node globals also type-check in browser scripts.
+    "types": ["astro/client", "node"],
+    // The home page shows, and snippets.test.mjs runs, a real module written
+    // against `ts-extended-errors`. The package's `exports` point only at
+    // `dist/`, which does not exist when CI lints, so the import is mapped to
+    // the source instead. vitest.config.mjs carries the same alias.
+    "paths": {
+      "ts-extended-errors": ["../../packages/ts-extended-errors/src/index.ts"]
+    }
   },
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist"]

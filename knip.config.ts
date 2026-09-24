@@ -14,6 +14,12 @@ export default {
   // Advice nobody has to act on is advice that stops being read.
   treatConfigHintsAsErrors: true,
   workspaces: {
+    'apps/docs': {
+      // Starlight's component overrides are named by path in a string —
+      // `components: { Hero: './src/components/landing/LandingHero.astro' }` in
+      // astro.config.mjs — which is not an import, so knip cannot follow it.
+      entry: ['src/components/landing/LandingHero.astro'],
+    },
     'packages/tooling': {
       // Repo scripts, invoked by name from package.json and CI, never imported.
       entry: ['src/*.ts'],

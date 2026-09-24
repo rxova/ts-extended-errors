@@ -41,6 +41,14 @@ export default defineConfig(
     rules: { 'no-console': 'off' },
   },
   {
+    // The home page displays this module verbatim, as the way to declare a
+    // context. It has to be a type alias: `defineError` constrains context to
+    // `Readonly<Record<string, unknown>>`, and an interface has no implicit
+    // index signature, so the rule's own fix, `interface`, does not compile.
+    files: ['apps/docs/src/components/landing/snippets/after.ts'],
+    rules: { '@typescript-eslint/consistent-type-definitions': 'off' },
+  },
+  {
     files: ['**/__tests__/**', '**/*.test.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',

@@ -67,6 +67,11 @@ export default defineConfig({
         // body into its own header and footer, so this build must not draw the
         // umbrella footer itself.
         pageComponent: true,
+        // Merged over the brand's own overrides rather than replacing them.
+        // The home page's hero: headline, calls to action, install command and
+        // the before/after comparison. Every other page with a hero — Starlight's
+        // 404 — still gets the default, which the override renders itself.
+        components: { Hero: './src/components/landing/LandingHero.astro' },
         sidebar: [
           { label: 'Learn', items: [{ autogenerate: { directory: 'learn' } }] },
           { label: 'Guides', items: [{ autogenerate: { directory: 'guides' } }] },

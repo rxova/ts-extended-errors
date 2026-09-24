@@ -1,0 +1,755 @@
+---
+// The home page's centrepiece: one job done by hand, then with the library, in
+// a single full-width window with Before and After tabs. Side by side, neither
+// panel was wide enough for the code. Both sides are Starlight's <Code>, so they
+// follow the site's code theme in light and dark. Numbered notes pair each
+// problem with its fix, and the same numbers sit in the code's gutter.
+//
+// Progressive by design. Without JavaScript both sides show, one above the
+// other, with every note visible. The script adds the tabs and, unless the
+// reader prefers reduced motion, one pass that lights the notes in order when
+// the section scrolls into view. It animates only opacity and transform, and
+// it stops on the "after" side.
+
+import { Code } from '@astrojs/starlight/components'
+
+import { after, before, lineMarkers, notes } from './snippets'
+
+// Inline code in a note, without pulling a markdown renderer into a component.
+const code = (text: string) =>
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+
+const sides = [
+  {
+    id: 'before',
+    label: 'Before',
+    heading: 'By hand',
+    notes: notes.map((note) => note.problem),
+    code: before,
+    markers: { del: lineMarkers(before, 'before') },
+  },
+  {
+    id: 'after',
+    label: 'After',
+    heading: 'With ts-extended-errors',
+    notes: notes.map((note) => note.fix),
+    code: after,
+    markers: { ins: lineMarkers(after, 'after') },
+  },
+]
+---
+
+<section class="comparison" aria-labelledby="comparison-heading" data-comparison>
+  <h2 id="comparison-heading">An error that has to cross a boundary</h2>
+  <p class="lede">
+    A worker charges a card and the charge fails. On the other side of a JSON hop, the API must
+    decide whether to retry, or to tell the customer why.
+  </p>
+
+  <div class="window">
+    <div class="window-bar" hidden data-bar>
+      <div class="tabs" role="group" aria-label="Show">
+        {
+          sides.map((side) => (
+            <button
+              type="button"
+              data-show={side.id}
+              aria-pressed={side.id === 'before' ? 'true' : 'false'}
+            >
+              <span class={`tag ${side.id}`}>{side.label}</span>
+              <span class="tab-heading">{side.heading}</span>
+            </button>
+          ))
+        }
+      </div>
+      {/* A native range, so dragging, clicking, arrow keys and screen readers
+          all work without code of ours; the script draws the fill and ticks. */}
+      <div class="progress" hidden data-progress>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="50"
+          value="0"
+          aria-label="Walkthrough progress"
+          data-scrubber
+        />
+      </div>
+    </div>
+
+    <div class="panes">
+      {
+        sides.map((side) => (
+          <div
+            class={`pane ${side.id}`}
+            role="group"
+            data-pane={side.id}
+            aria-labelledby={`${side.id}-label`}
+          >
+            <p class="label" id={`${side.id}-label`}>
+              <span class={`tag ${side.id}`}>{side.label}</span> {side.heading}
+            </p>
+            <ol class="notes">
+              {side.notes.map((note) => (
+                <li class="note" data-note>
+                  <span set:html={code(note)} />
+                </li>
+              ))}
+            </ol>
+            <div class="code">
+              <Code code={side.code} lang="ts" frame="none" wrap {...side.markers} />
+            </div>
+          </div>
+        ))
+      }
+      {/* The walkthrough's control, drawn like a video's: a circle over the
+          code that shows on hover or focus, and stays up while paused so the
+          way back in is obvious. */}
+      <div class="overlay">
+        <button type="button" class="play" hidden data-play data-state="playing">
+          <svg class="icon pause" aria-hidden="true" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"></path>
+          </svg>
+          <svg class="icon resume" aria-hidden="true" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M8 5.14v13.72L19 12z"></path>
+          </svg>
+          <svg class="icon replay" aria-hidden="true" viewBox="0 0 24 24">
+            <path
+              fill="currentColor"
+              d="M12 5V1.5L7 6.5l5 5V8a4 4 0 1 1-4 4H6a6 6 0 1 0 6-7Z"
+              transform="translate(0 1)"></path>
+          </svg>
+          <span class="sr-only" data-play-label>Pause the walkthrough</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Beats, in milliseconds. Each note stays alone long enough to read it and
+  // find its lines in the code; the turn to "after" gets a beat of its own.
+  const LEAD_MS = 900
+  const NOTE_MS = 2600
+  const TURN_MS = 1600
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-comparison]')) {
+    // Once per element. In development a hot reload can run this module again
+    // over the same page, and two sequences driving one set of controls is how
+    // Pause ends up stopping one of them while the other carries on.
+    if (root.dataset.js !== undefined) continue
+
+    const bar = root.querySelector<HTMLElement>('[data-bar]')
+    const play = root.querySelector<HTMLButtonElement>('[data-play]')
+    const playLabel = root.querySelector('[data-play-label]')
+    const progress = root.querySelector<HTMLElement>('[data-progress]')
+    const scrubber = root.querySelector<HTMLInputElement>('[data-scrubber]')
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-show]')]
+    const panes = [...root.querySelectorAll<HTMLElement>('[data-pane]')]
+
+    // Each note with the code lines it points at. Expressive Code writes a
+    // marker's label into the line's inline `--tmLabel`, so every numbered line
+    // can be tied back to its note and light up with it.
+    const [beforeParts, afterParts] = panes.map((pane) => {
+      const lines = [...pane.querySelectorAll<HTMLElement>('.ec-line')]
+      const labelOf = (line: HTMLElement) =>
+        line.style.getPropertyValue('--tmLabel').replace(/\D/g, '')
+      return [...pane.querySelectorAll<HTMLElement>('[data-note]')].map((note, index) => {
+        const part = lines.filter((line) => labelOf(line) === String(index + 1))
+        for (const line of part) line.classList.add('part')
+        return [note, ...part]
+      })
+    })
+    if (!bar || !play || !progress || !scrubber || !beforeParts || !afterParts) continue
+
+    // The tabs. CSS shows the chosen side; the other is made inert, so it is
+    // out of the tab order and the accessibility tree, not merely faded.
+    let side = ''
+    const show = (next: string) => {
+      if (next === side) return
+      side = next
+      root.dataset.show = next
+      for (const tab of tabs) tab.setAttribute('aria-pressed', String(tab.dataset.show === next))
+      for (const pane of panes) pane.inert = pane.dataset.pane !== next
+    }
+    root.dataset.js = ''
+    bar.hidden = false
+    show('before')
+
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      for (const tab of tabs) {
+        tab.addEventListener('click', () => {
+          show(tab.dataset.show ?? 'before')
+        })
+      }
+      continue
+    }
+
+    // The walkthrough as a timeline rather than a chain of timers: every
+    // state is a function of one time, so the progress bar can jump anywhere
+    // and the view is simply drawn again for that moment.
+    const cues: { at: number; part: HTMLElement[]; text: string }[] = []
+    let clock = LEAD_MS
+    for (const [index, part] of beforeParts.entries()) {
+      cues.push({ at: clock, part, text: `Problem ${String(index + 1)} of 4` })
+      clock += NOTE_MS
+    }
+    const turnAt = clock
+    clock += TURN_MS
+    for (const [index, part] of afterParts.entries()) {
+      cues.push({ at: clock, part, text: `Fix ${String(index + 1)} of 4` })
+      clock += NOTE_MS
+    }
+    const end = clock
+
+    scrubber.max = String(end)
+    for (const cue of [...cues.map((c) => c.at), turnAt]) {
+      const tick = document.createElement('span')
+      tick.className = 'tick'
+      tick.style.left = `${String((cue / end) * 100)}%`
+      progress.append(tick)
+    }
+
+    type State = 'playing' | 'paused' | 'ended'
+    const labels: Record<State, string> = {
+      playing: 'Pause the walkthrough',
+      paused: 'Play the walkthrough',
+      ended: 'Replay the walkthrough',
+    }
+    let state: State = 'paused'
+    let time = 0
+    let frame: number | undefined
+    let last = 0
+    let pausedByPage = false
+
+    const draw = () => {
+      for (const cue of cues) {
+        for (const element of cue.part) element.classList.toggle('lit', cue.at <= time)
+      }
+      show(time >= turnAt ? 'after' : 'before')
+      scrubber.value = String(time)
+      progress.style.setProperty('--progress', `${String((time / end) * 100)}%`)
+      const current = cues.findLast((cue) => cue.at <= time)
+      scrubber.setAttribute('aria-valuetext', current ? current.text : 'Start')
+    }
+
+    const setState = (next: State) => {
+      state = next
+      play.dataset.state = next
+      if (playLabel) playLabel.textContent = labels[next]
+    }
+
+    const stop = () => {
+      if (frame !== undefined) cancelAnimationFrame(frame)
+      frame = undefined
+    }
+
+    const step = (now: number) => {
+      time = Math.min(end, time + (now - last))
+      last = now
+      draw()
+      if (time >= end) {
+        stop()
+        setState('ended')
+        return
+      }
+      frame = requestAnimationFrame(step)
+    }
+
+    const resume = () => {
+      if (time >= end) time = 0
+      root.dataset.anim = ''
+      setState('playing')
+      last = performance.now()
+      stop()
+      frame = requestAnimationFrame(step)
+    }
+
+    const pause = () => {
+      stop()
+      setState('paused')
+    }
+
+    play.addEventListener('click', () => {
+      if (state === 'playing') pause()
+      else resume()
+    })
+
+    // Dragging jumps the view to that moment. Playback, if it was running,
+    // carries on from there, the way a video's scrubber behaves.
+    scrubber.addEventListener('input', () => {
+      root.dataset.anim = ''
+      time = Number(scrubber.value)
+      last = performance.now()
+      draw()
+      if (state === 'ended' && time < end) setState('paused')
+      if (state !== 'playing' && time >= end) setState('ended')
+    })
+
+    // Choosing a side is taking over: jump to the end, where everything is lit,
+    // and show that side, rather than moving the view away from the reader again.
+    for (const tab of tabs) {
+      tab.addEventListener('click', () => {
+        stop()
+        time = end
+        draw()
+        setState('ended')
+        show(tab.dataset.show ?? 'before')
+      })
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && state === 'playing') {
+        pausedByPage = true
+        pause()
+      } else if (!document.hidden && pausedByPage) {
+        pausedByPage = false
+        resume()
+      }
+    })
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return
+        observer.disconnect()
+        play.hidden = false
+        progress.hidden = false
+        draw()
+        resume()
+      },
+      // A trigger line 40% up from the bottom of the viewport, not a ratio of
+      // the section: on a phone the section is taller than the screen, and a
+      // ratio threshold there is never reached.
+      { rootMargin: '0px 0px -40% 0px' },
+    )
+    observer.observe(root)
+  }
+</script>
+
+<style>
+  .comparison {
+    width: 100%;
+    margin-top: clamp(2rem, 5vw, 3.5rem);
+    text-align: start;
+  }
+
+  h2 {
+    margin: 0;
+    color: var(--sl-color-white);
+    font-size: clamp(var(--sl-text-xl), calc(0.75rem + 1.5vw), var(--sl-text-3xl));
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .lede {
+    max-width: 42rem;
+    margin: 0.5rem auto 1.25rem;
+    color: var(--sl-color-gray-2);
+    text-align: center;
+    text-wrap: pretty;
+  }
+
+  .window {
+    /* `clip`, not `hidden`: `hidden` makes the window a scroll container, and
+       the bar's sticky positioning would then track the window, not the page. */
+    overflow: clip;
+    border: 1px solid var(--sl-color-hairline-light);
+    border-radius: var(--rx-radius);
+    background: var(--sl-color-bg);
+  }
+
+  /* The brand gradient's one placement on this page: the side worth copying. */
+  .comparison[data-show='after'] .window {
+    border-color: transparent;
+    background:
+      linear-gradient(var(--sl-color-bg), var(--sl-color-bg)) padding-box,
+      var(--rx-gradient) border-box;
+  }
+
+  /* The tabs and the progress bar stay under the site header while the code
+     scrolls past; the window is taller than most screens. The shell height is
+     rxova.org's own header, set only when the page is inside it. */
+  .window-bar {
+    position: sticky;
+    top: calc(var(--sl-nav-height) + var(--rx-shell-header-height, 0px));
+    z-index: 3;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--sl-color-hairline);
+    background: var(--sl-color-gray-6);
+  }
+
+  .window-bar[hidden],
+  .progress[hidden],
+  .play[hidden] {
+    display: none;
+  }
+
+  /* The scrubber: a full-width row under the tabs. The input is transparent
+     over a drawn track, so the fill, the ticks and the thumb share one line. */
+  .progress {
+    --progress: 0%;
+    position: relative;
+    flex-basis: 100%;
+    height: 1.5rem;
+    margin-inline: 0.375rem;
+  }
+
+  .progress::before,
+  .progress::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 4px;
+    border-radius: var(--rx-radius-pill);
+    translate: 0 -50%;
+    pointer-events: none;
+  }
+
+  .progress::before {
+    right: 0;
+    background: var(--sl-color-gray-5);
+  }
+
+  .progress::after {
+    width: var(--progress);
+    background: var(--sl-color-text-accent);
+  }
+
+  .progress :global(.tick) {
+    position: absolute;
+    top: 50%;
+    z-index: 1;
+    width: 2px;
+    height: 10px;
+    border-radius: 1px;
+    background: var(--sl-color-gray-3);
+    translate: -50% -50%;
+    pointer-events: none;
+  }
+
+  .progress input {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  .progress input::-webkit-slider-runnable-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .progress input::-moz-range-track {
+    background: transparent;
+  }
+
+  .progress input::-webkit-slider-thumb {
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.25rem;
+    border: 2px solid var(--sl-color-bg);
+    border-radius: 50%;
+    background: var(--sl-color-text-accent);
+    appearance: none;
+  }
+
+  .progress input::-moz-range-thumb {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--sl-color-bg);
+    border-radius: 50%;
+    background: var(--sl-color-text-accent);
+  }
+
+  .progress input:focus-visible {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 2px;
+    border-radius: var(--rx-radius-sm);
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding-inline: 0.875rem;
+    border: 1px solid transparent;
+    border-radius: var(--rx-radius-sm);
+    background: transparent;
+    color: var(--sl-color-gray-2);
+    font: inherit;
+    font-size: var(--sl-text-sm);
+    cursor: pointer;
+  }
+
+  button:hover {
+    color: var(--sl-color-white);
+  }
+
+  .tabs button[aria-pressed='true'] {
+    border-color: var(--sl-color-hairline-light);
+    background: var(--sl-color-bg);
+    color: var(--sl-color-white);
+  }
+
+  .panes {
+    position: relative;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* Pinned to the middle of the code, the way a video's control sits in the
+     middle of the video. `translate` centres it; `transform` is left free for
+     the scale it animates. */
+  .play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    display: grid;
+    place-items: center;
+    width: 4.5rem;
+    height: 4.5rem;
+    margin: 0;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--sl-color-white) 25%, transparent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--sl-color-black) 72%, transparent);
+    color: var(--sl-color-white);
+    box-shadow: 0 0.5rem 2rem color-mix(in srgb, var(--sl-color-black) 35%, transparent);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    transform: scale(0.85);
+    pointer-events: auto;
+  }
+
+  .play:hover {
+    color: var(--sl-color-white);
+    background: color-mix(in srgb, var(--sl-color-black) 85%, transparent);
+  }
+
+  .window:hover .play,
+  .play:focus-visible,
+  .play[data-state='paused'] {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* No hover on a touchscreen, so the control stays in sight, smaller. */
+  @media (hover: none) {
+    .play {
+      width: 3.25rem;
+      height: 3.25rem;
+      opacity: 0.9;
+      transform: none;
+    }
+  }
+
+  .icon {
+    display: none;
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .play[data-state='playing'] .pause,
+  .play[data-state='paused'] .resume,
+  .play[data-state='ended'] .replay {
+    display: block;
+  }
+
+  .tag {
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--rx-radius-sm);
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .tag.before {
+    background: var(--sl-color-red-low);
+    color: var(--sl-color-red-high);
+  }
+
+  .tag.after {
+    background: var(--sl-color-green-low);
+    color: var(--sl-color-green-high);
+  }
+
+  /* On a phone the tab says "Before" or "After"; the rest would wrap the bar. */
+  @media (max-width: 30rem) {
+    .tab-heading {
+      display: none;
+    }
+  }
+
+  .panes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pane {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+    padding: clamp(0.75rem, 2vw, 1.25rem);
+  }
+
+  .pane + .pane {
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+
+  .label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    color: var(--sl-color-white);
+    font-weight: 600;
+  }
+
+  /* With the script, both sides share one cell — the window is as tall as the
+     longer one, so switching never moves the page — and the tabs name them. */
+  .comparison[data-js] .pane {
+    grid-area: 1 / 1;
+    border-top: 0;
+  }
+
+  .comparison[data-js] .label {
+    display: none;
+  }
+
+  .comparison[data-show='before'] .pane.after,
+  .comparison[data-show='after'] .pane.before {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  .notes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 0.5rem 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: note;
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+    line-height: 1.45;
+  }
+
+  .note {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    gap: 0.5rem;
+    margin: 0;
+    counter-increment: note;
+  }
+
+  .note::before {
+    content: counter(note);
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+  }
+
+  .before .note::before {
+    background: var(--sl-color-red-low);
+    color: var(--sl-color-red-high);
+  }
+
+  .after .note::before {
+    background: var(--sl-color-green-low);
+    color: var(--sl-color-green-high);
+  }
+
+  .note :global(code) {
+    font-size: 0.9em;
+  }
+
+  .code {
+    min-width: 0;
+    /* Starlight's code blocks read this for their font size. */
+    --sl-text-code: clamp(0.75rem, calc(0.6rem + 0.4vw), 0.875rem);
+  }
+
+  .code :global(.expressive-code) {
+    margin: 0;
+    /* Room for the note numbers in the gutter, which would otherwise sit on
+       top of the first character of an unindented line. */
+    --ec-codePadInl: 2.25rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .play {
+      transition:
+        opacity 250ms ease,
+        transform 250ms ease;
+    }
+
+    .pane,
+    .note {
+      transition:
+        opacity 600ms ease,
+        transform 600ms ease,
+        visibility 600ms;
+    }
+
+    .code :global(.ec-line.part) {
+      transition: background-color 600ms ease;
+    }
+
+    .code :global(.ec-line.part .code::before) {
+      transition: opacity 600ms ease;
+    }
+
+    /* The sequence. Only present while it runs; its absence is the full view.
+       A note waiting its turn is dimmed, and its lines are plain code — no
+       highlight, no accent, no number — until the note lights. */
+    .comparison[data-anim] .note:not(.lit) {
+      opacity: 0.35;
+      transform: translateY(0.25rem);
+    }
+
+    .comparison[data-anim] .code :global(.ec-line.part:not(.lit)) {
+      background-color: transparent;
+    }
+
+    .comparison[data-anim] .code :global(.ec-line.part:not(.lit) .code) {
+      --ecLineBrdCol: transparent;
+    }
+
+    .comparison[data-anim] .code :global(.ec-line.part:not(.lit) .code::before) {
+      opacity: 0;
+    }
+  }
+</style>

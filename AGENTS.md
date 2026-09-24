@@ -40,14 +40,14 @@ pnpm + Turborepo monorepo. Node >= 22.13 to develop. TypeScript everywhere.
 
 ## Agent-facing files
 
-| File                                    | Read by                                                            | Kept in step by                                                                                       |
-| --------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `packages/ts-extended-errors/llms.txt`  | An agent using the library, from `node_modules`                    | `check-llms`: the `## API` table matches `src/index.ts` both ways; `pack-smoke`: it is in the tarball |
-| `packages/ts-extended-errors/README.md` | People, and agents that follow the `llms.txt` link                 | Nothing automatic: type-check and run an example after changing it                                    |
-| `llms.txt`                              | An agent that reaches the repository rather than the package       | `check-llms`: it links every published package's `llms.txt`                                           |
-| `apps/docs/src/content/docs/**`         | People and agents on rxova.org; each page also serves a `.md` twin | The docs build: `starlight-links-validator`, then `check-md-routes.mjs` over the emitted dist         |
-| `apps/docs/src/lib/llms.mjs`            | An agent fetching the site's `llms.txt` or `llms-full.txt`         | Its own unit tests, and the size budgets in `check-md-routes.mjs`                                     |
-| `AGENTS.md`                             | An agent editing this repository                                   | —                                                                                                     |
+| File                                    | Read by                                                                                | Kept in step by                                                                                       |
+| --------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `packages/ts-extended-errors/llms.txt`  | An agent using the library, from `node_modules`                                        | `check-llms`: the `## API` table matches `src/index.ts` both ways; `pack-smoke`: it is in the tarball |
+| `packages/ts-extended-errors/README.md` | People, and agents that follow the `llms.txt` link                                     | Nothing automatic: type-check and run an example after changing it                                    |
+| `llms.txt`                              | An agent that reaches the repository rather than the package                           | `check-llms`: it links every published package's `llms.txt`                                           |
+| `apps/docs/src/content/docs/**`         | People and agents on rxova.org; each page but the splash home page serves a `.md` twin | The docs build: `starlight-links-validator`, then `check-md-routes.mjs` over the emitted dist         |
+| `apps/docs/src/lib/llms.mjs`            | An agent fetching the site's `llms.txt` or `llms-full.txt`                             | Its own unit tests, and the size budgets in `check-md-routes.mjs`                                     |
+| `AGENTS.md`                             | An agent editing this repository                                                       | —                                                                                                     |
 
 `llms.txt` is hand-written. A renamed export fails `check-llms` until the table is updated, so
 rename the export and update the table in the same commit.

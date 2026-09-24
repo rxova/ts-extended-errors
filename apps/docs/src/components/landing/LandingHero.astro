@@ -1,0 +1,117 @@
+---
+// The home page's hero, registered as Starlight's `Hero` override in
+// astro.config.mjs.
+//
+// Starlight renders `Hero` for every page whose frontmatter has a `hero` key —
+// and its own 404 page has one. So this draws the landing hero for the home
+// entry only, and hands every other page back to Starlight's component.
+
+import { LinkButton } from '@astrojs/starlight/components'
+import StarlightHero from '@astrojs/starlight/components/Hero.astro'
+import { getProject } from '@rxova/brand'
+
+import { withBase } from '../../lib/base-url.mjs'
+import CodeComparison from './CodeComparison.astro'
+import CopyInstall from './CopyInstall.astro'
+
+const { entry } = Astro.locals.starlightRoute
+// Starlight normalizes the home page's id from the content layer's `index` to
+// `''` (`normalizeIndexSlug`), so this is not docs-pages.mjs's HOME.
+const isHome = entry.id === ''
+const { title = entry.data.title, tagline } = entry.data.hero ?? {}
+const { repo, npm } = getProject('ts-extended-errors')
+const gettingStarted = withBase('/learn/getting-started/', import.meta.env.BASE_URL)
+---
+
+{
+  isHome ? (
+    <div class="landing-hero">
+      <p class="eyebrow">TypeScript · zero dependencies · Node, browsers, workers</p>
+      {/* Starlight's PAGE_TITLE_ID. It lives in `@astrojs/starlight/constants`,
+          which the package does not export, so the value is written out: the
+          "skip to content" link and the table of contents both target it. */}
+      <h1 id="_top" data-page-title set:html={title} />
+      {tagline && <p class="tagline" set:html={tagline} />}
+      <div class="actions">
+        <LinkButton href={gettingStarted} icon="right-arrow">
+          Get started
+        </LinkButton>
+        <LinkButton href={repo} variant="secondary" icon="github" iconPlacement="start">
+          GitHub
+        </LinkButton>
+      </div>
+      <div class="install">
+        <CopyInstall />
+        <a class="npm" href={npm}>
+          ts-extended-errors on npm
+        </a>
+      </div>
+      <CodeComparison />
+    </div>
+  ) : (
+    <StarlightHero />
+  )
+}
+
+<style>
+  .landing-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    padding-block: clamp(1.5rem, calc(0.5rem + 6vmin), 4.5rem) 1rem;
+    text-align: center;
+  }
+
+  .eyebrow {
+    margin: 0;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-sm);
+    letter-spacing: 0.02em;
+  }
+
+  h1 {
+    max-width: 18ch;
+    margin: 0;
+    color: var(--sl-color-white);
+    font-size: clamp(var(--sl-text-3xl), calc(0.5rem + 5.5vw), var(--sl-text-6xl));
+    font-weight: 600;
+    line-height: var(--sl-line-height-headings);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .tagline {
+    max-width: 44rem;
+    margin: 0;
+    color: var(--sl-color-gray-2);
+    font-size: clamp(var(--sl-text-base), calc(0.25rem + 1.6vw), var(--sl-text-xl));
+    text-wrap: pretty;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .install {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem 1.25rem;
+    max-width: 100%;
+  }
+
+  .npm {
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+  }
+
+  .npm:hover {
+    color: var(--sl-color-white);
+  }
+</style>
