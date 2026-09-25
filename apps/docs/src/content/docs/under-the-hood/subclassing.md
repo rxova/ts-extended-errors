@@ -15,8 +15,8 @@ constructor(message: string, options: ExtendedErrorOptions<Context> = {}) {
   Object.setPrototypeOf(this, constructedBy.prototype)
 
   this.name = constructedBy.name
-  this.code = constructedBy.code
-  this.context = options.context
+  if (constructedBy.code !== undefined) this.code = constructedBy.code
+  if (options.context !== undefined) this.context = options.context
 
   captureStack(this, constructedBy)
 }
@@ -65,6 +65,11 @@ read a static off.
 
 A class that declares no `code` of its own gets its base's, which is what you want for a leaf that
 callers distinguish by `instanceof` rather than by code.
+
+Both `code` and `context` are written only when there is a value. Reading an absent one still gives
+`undefined`; what changes is that Node's `console.log(error)`, which prints an error's own
+enumerable properties after its stack, no longer appends `code: undefined, context: undefined` to
+every error that has neither.
 
 ## `cause`, only when there was one
 

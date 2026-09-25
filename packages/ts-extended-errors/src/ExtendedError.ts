@@ -69,11 +69,18 @@ export class ExtendedError<Context extends object = ErrorContext> extends Error 
    */
   override readonly name: string
 
-  /** The static {@link ExtendedError.code} of the constructed class, copied onto the instance so it survives serialization. */
-  readonly code: string | undefined
+  /**
+   * The static {@link ExtendedError.code} of the constructed class, copied
+   * onto the instance so it survives serialization.
+   *
+   * `declare`, like `context`: an own property only when there is a value, so
+   * `console.log(error)` does not print `code: undefined` after the stack of
+   * every error that has none. Reading it still gives `undefined`.
+   */
+  declare readonly code: string | undefined
 
-  /** Structured data describing this failure. */
-  readonly context: Context | undefined
+  /** Structured data describing this failure. An own property only when one was given. */
+  declare readonly context: Context | undefined
 
   constructor(message: string, options: ExtendedErrorOptions<Context> = {}) {
     super(message, superOptions(options))
@@ -89,8 +96,8 @@ export class ExtendedError<Context extends object = ErrorContext> extends Error 
     Object.setPrototypeOf(this, constructedBy.prototype)
 
     this.name = constructedBy.name
-    this.code = constructedBy.code
-    this.context = options.context
+    if (constructedBy.code !== undefined) this.code = constructedBy.code
+    if (options.context !== undefined) this.context = options.context
 
     captureStack(this, constructedBy)
   }

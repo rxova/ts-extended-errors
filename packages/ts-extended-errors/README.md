@@ -131,14 +131,14 @@ isExtendedError(new Error('x')) // false
 | `cause`   | `unknown` | `error.cause`, the native `Error` cause         |
 | `context` | `Context` | `error.context`, typed by the class's `Context` |
 
-| Member     | Value                                                                   |
-| ---------- | ----------------------------------------------------------------------- |
-| `name`     | The class name                                                          |
-| `code`     | The class's static `code`, or `undefined`                               |
-| `context`  | `options.context`, or `undefined`                                       |
-| `cause`    | `options.cause`. The property exists only when a cause was passed       |
-| `stack`    | Starts at the line that created the error, not inside the constructor   |
-| `toJSON()` | `serializeError(this)`, so `JSON.stringify(error)` includes every field |
+| Member     | Value                                                                    |
+| ---------- | ------------------------------------------------------------------------ |
+| `name`     | The class name                                                           |
+| `code`     | The class's static `code`, or `undefined`. An own property only when set |
+| `context`  | `options.context`, or `undefined`. An own property only when set         |
+| `cause`    | `options.cause`. The property exists only when a cause was passed        |
+| `stack`    | Starts at the line that created the error, not inside the constructor    |
+| `toJSON()` | `serializeError(this)`, so `JSON.stringify(error)` includes every field  |
 
 `isExtendedError(value)` returns `value instanceof ExtendedError`, typed as a type guard.
 

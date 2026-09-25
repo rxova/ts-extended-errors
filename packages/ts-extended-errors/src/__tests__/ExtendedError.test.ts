@@ -1,3 +1,4 @@
+import { inspect } from 'node:util'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { ExtendedError, isExtendedError } from '../ExtendedError'
 import { serializeError } from '../serialize'
@@ -128,6 +129,22 @@ describe('ExtendedError', () => {
     })
 
     expect(new Set(Object.keys(error))).toEqual(new Set(['name', 'code', 'context']))
+  })
+
+  it('defines code and context only when there is one', () => {
+    // Otherwise Node prints `code: undefined, context: undefined` after the
+    // stack of every error that has neither.
+    expect(Object.keys(new ExtendedError('boom'))).toEqual(['name'])
+    expect(Object.keys(new ConfigError('boom'))).toEqual(['name', 'code'])
+    expect(new ExtendedError('boom').code).toBeUndefined()
+    expect(new ExtendedError('boom').context).toBeUndefined()
+
+    const printed = inspect(new ExtendedError('boom'))
+    expect(printed.startsWith('ExtendedError: boom\n')).toBe(true)
+    expect(printed).not.toContain('undefined')
+    expect(inspect(new ConfigError('boom', { context: { file: 'a.json' } }))).toContain(
+      "context: { file: 'a.json' }",
+    )
   })
 
   it('types context from the class parameter', () => {

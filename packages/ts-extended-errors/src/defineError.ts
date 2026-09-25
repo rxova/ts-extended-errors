@@ -176,8 +176,9 @@ const extendBase = (base: ErrorClass, code: string | undefined) =>
     static readonly code: string | undefined = code
 
     override readonly name: string
-    readonly code: string | undefined
-    readonly context: ErrorContext | undefined
+    // Own properties only when present, as on ExtendedError.
+    declare readonly code: string | undefined
+    declare readonly context: ErrorContext | undefined
 
     constructor(message: string, options: ExtendedErrorOptions = {}) {
       super(message, superOptions(options))
@@ -189,8 +190,8 @@ const extendBase = (base: ErrorClass, code: string | undefined) =>
       Object.setPrototypeOf(this, constructedBy.prototype)
 
       this.name = constructedBy.name
-      this.code = constructedBy.code
-      this.context = options.context
+      if (constructedBy.code !== undefined) this.code = constructedBy.code
+      if (options.context !== undefined) this.context = options.context
 
       captureStack(this, constructedBy)
     }
