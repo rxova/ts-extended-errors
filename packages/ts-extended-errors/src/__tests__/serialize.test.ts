@@ -594,6 +594,13 @@ describe('isErrorLike', () => {
   })
 })
 
+/** A class whose instances have no enumerable field of their own, so JSON writes `{}` for them. */
+class Widget {
+  size(): number {
+    return 1
+  }
+}
+
 describe('describeValue', () => {
   it('describes primitives readably', () => {
     expect(describeValue('boom')).toBe('boom')
@@ -603,6 +610,31 @@ describe('describeValue', () => {
     expect(describeValue(undefined)).toBe('undefined')
     expect(describeValue(10n)).toBe('10n')
     expect(describeValue(Symbol('tag'))).toBe('Symbol(tag)')
+  })
+
+  it('names a function rather than printing its source', () => {
+    function loadUser(): void {}
+
+    expect(describeValue(loadUser)).toBe('[Function: loadUser]')
+    expect(describeValue(() => 'secret')).toBe('[Function (anonymous)]')
+    expect(describeValue(Widget)).toBe('[Function: Widget]')
+    expect(describeValue(Object.defineProperty(() => 1, 'name', { value: 42 }))).toBe(
+      '[Function (anonymous)]',
+    )
+  })
+
+  it('describes a collection by its tag when JSON would write {}', () => {
+    expect(describeValue(new Map([[1, 2]]))).toBe('[object Map]')
+    expect(describeValue(new Set([1]))).toBe('[object Set]')
+    expect(describeValue(new WeakMap())).toBe('[object WeakMap]')
+    expect(describeValue(/re/)).toBe('[object RegExp]')
+    // A plain empty object, and an instance with no enumerable fields, are
+    // still `{}`: the tag would say nothing more.
+    expect(describeValue({})).toBe('{}')
+    expect(describeValue(new Widget())).toBe('{}')
+    // JSON that has something to say wins over the tag.
+    expect(describeValue(new Date(0))).toBe('"1970-01-01T00:00:00.000Z"')
+    expect(describeValue(new Uint8Array([1]))).toBe('{"0":1}')
   })
 
   it('serializes plain objects and arrays', () => {

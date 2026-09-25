@@ -574,8 +574,14 @@ describeValue(42) // '42'
 describeValue(10n) // '10n'
 describeValue(Symbol('id')) // 'Symbol(id)'
 describeValue({ status: 500 }) // '{"status":500}'
+describeValue(new Map([[1, 2]])) // '[object Map]'
+describeValue(function loadUser() {}) // '[Function: loadUser]'
 describeValue(undefined) // 'undefined'
 ```
+
+Objects go through `JSON.stringify`. When that writes `{}` for something whose string tag says it
+is not a plain object — a `Map`, a `Set`, a `RegExp` — the tag is used instead. A function is named
+rather than printed as source.
 
 ## Types
 

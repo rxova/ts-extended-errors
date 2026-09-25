@@ -36,6 +36,15 @@ describe('toError', () => {
     expect(toError(undefined).message).toBe('undefined')
   })
 
+  it('wraps a thrown function by name, not by source', () => {
+    const thrown = function loadUser(): string {
+      return 'not a secret, but not a message either'
+    }
+
+    expect(toError(thrown).message).toBe('[Function: loadUser]')
+    expect(toError(thrown).cause).toBe(thrown)
+  })
+
   it('rebuilds an error-shaped value, keeping its name and stack', () => {
     const foreign = { name: 'ForeignError', message: 'from elsewhere', stack: 'ForeignError: …' }
     const error = toError(foreign)
