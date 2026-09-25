@@ -52,7 +52,7 @@ export const captureStack = (
  * })
  * ```
  */
-export class ExtendedError<Context extends ErrorContext = ErrorContext> extends Error {
+export class ExtendedError<Context extends object = ErrorContext> extends Error {
   /**
    * A stable, machine-readable discriminator shared by every instance of a
    * subclass — the thing to branch on, since `message` is prose and will be

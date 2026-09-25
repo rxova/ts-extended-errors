@@ -27,14 +27,15 @@ import type {
 type ErrorContext = Readonly<Record<string, unknown>>
 ```
 
-The constraint on every `Context` type parameter. Keep what you put in it serializable —
-`serializeError` copies it through a JSON round trip, so a `Date` arrives as a string and a `Map` as
-`{}`.
+The default of every `Context` type parameter. The constraint itself is `object`, so any object type
+can take its place — an `interface` included, which a `Record<string, unknown>` constraint would
+refuse for lack of an index signature. Keep what you put in it serializable — `serializeError`
+copies it through a JSON round trip, so a `Date` arrives as a string and a `Map` as `{}`.
 
 ## `ExtendedErrorOptions`
 
 ```ts
-interface ExtendedErrorOptions<Context extends ErrorContext = ErrorContext> {
+interface ExtendedErrorOptions<Context extends object = ErrorContext> {
   readonly cause?: unknown
   readonly context?: Context
 }
@@ -82,7 +83,7 @@ The option bags of the two functions. Their fields are tabulated in the
 ## `DefineErrorOptions`
 
 ```ts
-interface DefineErrorOptions<Context extends ErrorContext = ErrorContext> {
+interface DefineErrorOptions<Context extends object = ErrorContext> {
   readonly code?: string
   readonly base?: ExtendedErrorConstructor<Context>
 }
@@ -95,7 +96,7 @@ that is not an `ExtendedError`, declare their own object types inline.
 
 ```ts
 interface ExtendedErrorConstructor<
-  Context extends ErrorContext = ErrorContext,
+  Context extends object = ErrorContext,
   Instance extends Error = ExtendedError<Context>,
 > {
   new (message: string, options?: ExtendedErrorOptions<Context>): Instance
@@ -110,7 +111,7 @@ The class `defineError` returns.
 
 ```ts
 interface MessageErrorConstructor<
-  Context extends ErrorContext = ErrorContext,
+  Context extends object = ErrorContext,
   Instance extends Error = ExtendedError<Context>,
 > {
   new (
@@ -146,7 +147,7 @@ the class being an `ErrorClass`. See
 ## `ExtendedErrorMembers`
 
 ```ts
-interface ExtendedErrorMembers<Context extends ErrorContext = ErrorContext> {
+interface ExtendedErrorMembers<Context extends object = ErrorContext> {
   readonly name: string
   readonly code: string | undefined
   readonly context: Context | undefined

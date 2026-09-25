@@ -15,7 +15,7 @@ export type ErrorClass<Instance extends Error = Error> = new (
  * What every class {@link defineError} returns adds to its instances, whatever
  * it extends. An {@link ExtendedError} has all of it.
  */
-export interface ExtendedErrorMembers<Context extends ErrorContext = ErrorContext> {
+export interface ExtendedErrorMembers<Context extends object = ErrorContext> {
   readonly name: string
   readonly code: string | undefined
   readonly context: Context | undefined
@@ -24,7 +24,7 @@ export interface ExtendedErrorMembers<Context extends ErrorContext = ErrorContex
 
 /** The class {@link defineError} returns. */
 export interface ExtendedErrorConstructor<
-  Context extends ErrorContext = ErrorContext,
+  Context extends object = ErrorContext,
   Instance extends Error = ExtendedError<Context>,
 > {
   new (message: string, options?: ExtendedErrorOptions<Context>): Instance
@@ -46,7 +46,7 @@ export interface ExtendedErrorConstructor<
  * A context type with no required fields keeps `Context | undefined`: there the
  * options argument really is optional, and an instance really can have none.
  */
-type WithContext<Instance, Context extends ErrorContext> =
+type WithContext<Instance, Context extends object> =
   Partial<Context> extends Context ? Instance : Instance & { readonly context: Context }
 
 /**
@@ -65,7 +65,7 @@ type WithContext<Instance, Context extends ErrorContext> =
  * an `ErrorClass`, so it defaults one instead — see {@link withMessage}.
  */
 export interface MessageErrorConstructor<
-  Context extends ErrorContext = ErrorContext,
+  Context extends object = ErrorContext,
   Instance extends Error = ExtendedError<Context>,
 > {
   new (
@@ -80,7 +80,7 @@ export interface MessageErrorConstructor<
 }
 
 /** Options for {@link defineError}. */
-export interface DefineErrorOptions<Context extends ErrorContext = ErrorContext> {
+export interface DefineErrorOptions<Context extends object = ErrorContext> {
   /**
    * The machine-readable discriminator for this class. Omit it and the class
    * inherits its base's code, which is usually what you want for a leaf that
@@ -152,7 +152,7 @@ const extendBase = (base: ErrorClass, code: string | undefined) =>
  * one formatted again from context that went through JSON, where a `Date` is
  * now a string.
  */
-const withMessage = (Defined: ErrorClass, format: (context: ErrorContext) => string) =>
+const withMessage = (Defined: ErrorClass, format: (context: object) => string) =>
   class extends Defined {
     constructor(first?: unknown, second?: ExtendedErrorOptions) {
       if (typeof first === 'string') {
@@ -187,8 +187,8 @@ const withMessage = (Defined: ErrorClass, format: (context: ErrorContext) => str
  * throw, and the context with it would be lost.
  */
 const formatMessage = (
-  format: (context: ErrorContext) => string,
-  context: ErrorContext,
+  format: (context: object) => string,
+  context: object,
   fallback: string,
 ): string => {
   try {
@@ -218,7 +218,7 @@ const formatMessage = (
  * error.message // '"2026-02-30" is not a valid date'
  * ```
  */
-export function defineError<Context extends ErrorContext = ErrorContext>(
+export function defineError<Context extends object = ErrorContext>(
   name: string,
   options: DefineErrorOptions<Context> & { readonly message: (context: Context) => string },
 ): MessageErrorConstructor<Context>
@@ -236,10 +236,7 @@ export function defineError<Context extends ErrorContext = ErrorContext>(
  * new PageError({ context: { page: 0 } }) instanceof RangeError // true
  * ```
  */
-export function defineError<
-  Context extends ErrorContext = ErrorContext,
-  Base extends Error = Error,
->(
+export function defineError<Context extends object = ErrorContext, Base extends Error = Error>(
   name: string,
   options: {
     readonly code?: string
@@ -259,7 +256,7 @@ export function defineError<
  * ```
  */
 export function defineError<
-  Context extends ErrorContext = ErrorContext,
+  Context extends object = ErrorContext,
   Instance extends Error = ExtendedError<Context>,
 >(
   name: string,
@@ -289,7 +286,7 @@ export function defineError<
  * error.code                     // 'HTTP_NOT_FOUND'
  * ```
  */
-export function defineError<Context extends ErrorContext = ErrorContext>(
+export function defineError<Context extends object = ErrorContext>(
   name: string,
   options?: DefineErrorOptions<Context>,
 ): ExtendedErrorConstructor<Context>
@@ -316,10 +313,7 @@ export function defineError<Context extends ErrorContext = ErrorContext>(
  * new OutOfRangeError('page 0') instanceof RangeError // true
  * ```
  */
-export function defineError<
-  Context extends ErrorContext = ErrorContext,
-  Base extends Error = Error,
->(
+export function defineError<Context extends object = ErrorContext, Base extends Error = Error>(
   name: string,
   options: { readonly code?: string; readonly base: ErrorClass<Base> },
 ): ExtendedErrorConstructor<Context, Base & ExtendedErrorMembers<Context>>
@@ -328,7 +322,7 @@ export function defineError(
   options: {
     readonly code?: string
     readonly base?: ErrorClass
-    readonly message?: (context: ErrorContext) => string
+    readonly message?: (context: object) => string
   } = {},
 ): ErrorClass {
   const base = options.base ?? ExtendedError

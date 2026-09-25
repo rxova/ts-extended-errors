@@ -128,7 +128,7 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
 | `toError` | function | An `Error` for any value; errors are returned unchanged |
 | `isErrorLike` | function | Whether a value is an object with a string `message` |
 | `describeValue` | function | A one-line string for any value |
-| `ErrorContext` | type | `Readonly<Record<string, unknown>>`, the constraint on `context` |
+| `ErrorContext` | type | `Readonly<Record<string, unknown>>`, the default type of `context`; any object type, an `interface` included, may replace it |
 | `ExtendedErrorOptions` | type | `{ cause?: unknown; context?: Context }` |
 | `SerializedError` | type | The object `serializeError` returns |
 | `SerializedErrorWithProperties` | type | `SerializedError` plus other fields, from `includeOwnProperties: true` |

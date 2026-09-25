@@ -171,7 +171,7 @@ new GoneError('deleted').code // 'HTTP'
 | `base`    | error class           | `ExtendedError`   | The class to extend; see [other bases](#other-bases)      |
 | `message` | `(context) => string` | none              | Writes the message; see [fixed messages](#fixed-messages) |
 
-The first type parameter types `context`:
+The first type parameter types `context`. Any object type will do, an `interface` included:
 
 ```ts
 import { defineError } from 'ts-extended-errors'
@@ -562,19 +562,19 @@ describeValue(undefined) // 'undefined'
 
 ## Types
 
-| Type                                          | Description                                                                                                             |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `ErrorContext`                                | `Readonly<Record<string, unknown>>`, the constraint on `context`                                                        |
-| `ExtendedErrorOptions<Context>`               | `{ cause?: unknown; context?: Context }`                                                                                |
-| `SerializedError`                             | `{ name; message; code?; stack?; context?; cause?; errors?; errorsOmitted? }`                                           |
-| `SerializedErrorWithProperties`               | `SerializedError` plus other fields, from `includeOwnProperties: true`                                                  |
-| `SerializeErrorOptions`                       | Options of `serializeError`                                                                                             |
-| `DeserializeErrorOptions`                     | Options of `deserializeError`                                                                                           |
-| `DefineErrorOptions<Context>`                 | Options of `defineError`                                                                                                |
-| `ExtendedErrorConstructor<Context, Instance>` | The class `defineError` returns                                                                                         |
-| `MessageErrorConstructor<Context, Instance>`  | The class `defineError` returns with `message`; `context` is present on its instances when the throw site must pass one |
-| `ExtendedErrorMembers<Context>`               | `name`, `code`, `context` and `toJSON`, added to any `defineError` class                                                |
-| `ErrorClass<Instance>`                        | An error class whose constructor takes `(message, options)`                                                             |
+| Type                                          | Description                                                                                                                  |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `ErrorContext`                                | `Readonly<Record<string, unknown>>`, the default type of `context`; any object type, an `interface` included, may replace it |
+| `ExtendedErrorOptions<Context>`               | `{ cause?: unknown; context?: Context }`                                                                                     |
+| `SerializedError`                             | `{ name; message; code?; stack?; context?; cause?; errors?; errorsOmitted? }`                                                |
+| `SerializedErrorWithProperties`               | `SerializedError` plus other fields, from `includeOwnProperties: true`                                                       |
+| `SerializeErrorOptions`                       | Options of `serializeError`                                                                                                  |
+| `DeserializeErrorOptions`                     | Options of `deserializeError`                                                                                                |
+| `DefineErrorOptions<Context>`                 | Options of `defineError`                                                                                                     |
+| `ExtendedErrorConstructor<Context, Instance>` | The class `defineError` returns                                                                                              |
+| `MessageErrorConstructor<Context, Instance>`  | The class `defineError` returns with `message`; `context` is present on its instances when the throw site must pass one      |
+| `ExtendedErrorMembers<Context>`               | `name`, `code`, `context` and `toJSON`, added to any `defineError` class                                                     |
+| `ErrorClass<Instance>`                        | An error class whose constructor takes `(message, options)`                                                                  |
 
 ## For coding agents
 

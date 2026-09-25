@@ -138,6 +138,18 @@ describe('ExtendedError', () => {
     const wrong = new ConfigError('boom', { context: { file: 1 } })
     expect(wrong).toBeInstanceOf(ConfigError)
   })
+
+  it('accepts an interface as the context type', () => {
+    interface FileContext {
+      file: string
+    }
+    class FileError extends ExtendedError<FileContext> {}
+
+    const error = new FileError('boom', { context: { file: 'a.json' } })
+
+    expectTypeOf(error.context).toEqualTypeOf<FileContext | undefined>()
+    expect(error.context).toEqual({ file: 'a.json' })
+  })
 })
 
 describe('isExtendedError', () => {
