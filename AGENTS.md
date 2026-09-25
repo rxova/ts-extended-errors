@@ -5,8 +5,7 @@ pnpm + Turborepo monorepo. Node >= 22.13 to develop. TypeScript everywhere.
 ## Layout
 
 - `packages/ts-extended-errors` — the library, published to npm as
-  `ts-extended-errors`. It supports Node >= 20.19, so it builds for Node 20, not the
-  preset's 22.
+  `ts-extended-errors`. It supports Node >= 22.12 and builds with the preset's Node 22 target.
 - `packages/*` — workspace packages, built dual ESM + CJS with tsdown.
 - `packages/config` — the shared vitest and tsdown presets. Coverage thresholds live here only.
 - `packages/tooling` — repo scripts (`verify`, `pack-smoke`, `check-llms`, `check-changeset`).

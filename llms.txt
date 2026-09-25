@@ -4,7 +4,7 @@
 > exceptions but need typed context, cause-chain inspection, and reliable JSON
 > round trips: a base class for custom errors, a one-line class factory,
 > `cause`-chain helpers, and a serializer that rebuilds the original classes.
-> One package, `ts-extended-errors`, published to npm. Node >= 20.19. MIT.
+> One package, `ts-extended-errors`, published to npm. Node >= 22.12. MIT.
 > Ships ESM and CommonJS.
 
 This file is an index. It points to the files that document the package and

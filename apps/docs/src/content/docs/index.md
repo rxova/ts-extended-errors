@@ -8,7 +8,7 @@ something has already gone wrong. It gives you error classes that behave the way
 JavaScript's to behave, and a way to move them across a boundary — a queue, a worker, an HTTP
 response, a log line — without losing what they were.
 
-Node.js 20.19 or newer, no runtime dependencies, no Node APIs (so it runs in browsers and workers
+Node.js 22.12 or newer, no runtime dependencies, no Node APIs (so it runs in browsers and workers
 too), ESM and CommonJS with type declarations. MIT.
 
 ```bash
