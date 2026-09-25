@@ -39,6 +39,16 @@ site, which is the trade that decides it. It is the single most common surprise 
 `Error` in TypeScript, and the one most likely to be discovered in production, since it only appears
 under a build configuration the tests may not use.
 
+Be precise about which build that is. The package ships native classes, so the line matters when a
+bundler transpiles the library to ES5 _along with_ your code: `ExtendedError` is then a function
+that calls `Error` the ES5 way, gets a fresh object back, and this line puts the subclass prototype
+on it. A project compiled to ES5 against the shipped build is a different case, and no line here can
+help it: `class ConfigError extends ExtendedError` compiled by `tsc` to ES5 throws
+`Class constructor ExtendedError cannot be invoked without 'new'`, as extending any native class
+does. The fix there is to let the bundler transpile `node_modules` too. Babel and SWC keep
+`new.target` through `Reflect.construct`, so under them the line finds the prototype already in
+place and writes it again.
+
 ## `name`
 
 `Error`'s `name` comes from the prototype and stays `'Error'` for a subclass that does not set it.

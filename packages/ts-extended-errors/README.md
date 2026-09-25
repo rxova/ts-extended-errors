@@ -23,8 +23,8 @@ Requires Node.js 20.19 or newer. Ships ESM and CommonJS with type declarations, 
 dependencies. The code uses no Node.js APIs, so it also runs in browsers and other JavaScript
 runtimes.
 
-- **Subclasses** — `name` is the class name, `instanceof` holds after downlevel compilation, and the
-  stack starts where the error was created
+- **Subclasses** — `name` is the class name, `instanceof` holds even when a bundler transpiles the
+  library to ES5 along with your code, and the stack starts where the error was created
 - **`code` and `context`** — a string code per class and a typed data object per error
 - **One-line classes** — `defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })`
 - **Cause chains** — find a cause by class or by predicate at any depth
