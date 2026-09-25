@@ -50,9 +50,9 @@ try {
 
 ## What it gives you
 
-- **Subclasses that work.** `name` is the class name, `instanceof` holds after downlevel
-  compilation, and the stack starts at the throw site rather than inside the constructor. See
-  [Subclassing `Error`](./under-the-hood/subclassing.md).
+- **Subclasses that work.** `name` is the class name, `instanceof` holds even when a bundler
+  transpiles the library to ES5 along with your code, and the stack starts at the throw site rather
+  than inside the constructor. See [Subclassing `Error`](./under-the-hood/subclassing.md).
 - **A code and a context.** A stable string per class to branch on, and a typed data object per
   error, so failure details stop being interpolated into prose and parsed back out.
 - **One-line classes.** `defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })`
