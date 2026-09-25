@@ -37,6 +37,26 @@ It is declared once on the class rather than at each throw site, and copied onto
 it survives serialization. A class with no `code` of its own inherits its base's — which is usually
 right for a leaf that callers handle by `instanceof`.
 
+Its type is the literal you wrote, on the class and on every instance, and an inherited code is
+typed as the base's literal. That is what lets a `switch` over a taxonomy's codes be exhaustive:
+
+```ts
+function status(error: InstanceType<typeof NotFoundError> | InstanceType<typeof ForbiddenError>) {
+  switch (error.code) {
+    case 'HTTP_NOT_FOUND':
+      return 404
+    case 'HTTP_FORBIDDEN':
+      return 403
+  }
+}
+```
+
+One caveat: TypeScript infers all of a call's type arguments or none, so
+`defineError<{ retryAfterMs: number }>('RateLimitedError', { code: 'RATE_LIMITED' })` types `code`
+as `string | undefined`. Name the second parameter too to keep the literal,
+`defineError<{ retryAfterMs: number }, 'RATE_LIMITED'>(…)`, or let a `message` function type the
+context instead.
+
 ## `context`
 
 Structured data about this particular failure. Type it with the first type parameter, or let it be
@@ -163,7 +183,18 @@ error.location // 'app.config.json:port'
 
 `code` is a `static` field, declared once for the class. The constructor reads it from the class
 that was actually constructed, so a subclass that declares its own `code` gets that one and one that
-does not inherits its parent's.
+does not inherits its parent's. On a class declared this way its type is `string | undefined`: the
+instance type cannot see the static field.
+
+A class-syntax subclass of a `defineError` class cannot declare a different `code`. Its instance
+type is fixed by the base, which already says `'HTTP'`, so `static override readonly code = 'TEAPOT'`
+is a type error. Define the leaf with `defineError` and extend that when it needs members:
+
+```ts
+class TeapotError extends defineError('TeapotError', { base: HttpError, code: 'TEAPOT' }) {
+  readonly retryAfter = 30
+}
+```
 
 ## Which to use
 

@@ -3,6 +3,7 @@ export { defineError } from './defineError'
 export type {
   DefineErrorOptions,
   ErrorClass,
+  ErrorCode,
   ExtendedErrorConstructor,
   ExtendedErrorMembers,
   MessageErrorConstructor,

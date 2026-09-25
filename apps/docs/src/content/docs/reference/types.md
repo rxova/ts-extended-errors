@@ -18,6 +18,7 @@ import type {
   MessageErrorConstructor,
   ExtendedErrorMembers,
   ErrorClass,
+  ErrorCode,
 } from 'ts-extended-errors'
 ```
 
@@ -83,14 +84,21 @@ The option bags of the two functions. Their fields are tabulated in the
 ## `DefineErrorOptions`
 
 ```ts
-interface DefineErrorOptions<Context extends object = ErrorContext> {
-  readonly code?: string
-  readonly base?: ExtendedErrorConstructor<Context>
+interface DefineErrorOptions<
+  Context extends object = ErrorContext,
+  Code extends ErrorCode = ErrorCode,
+  BaseCode extends ErrorCode = ErrorCode,
+> {
+  readonly code?: Code
+  readonly base?: ExtendedErrorConstructor<Context, ExtendedError<Context>, BaseCode>
 }
 ```
 
-The options of `defineError` in its plain form. The overloads that take a `message`, or a `base`
-that is not an `ExtendedError`, declare their own object types inline.
+The options of `defineError` in its plain form. `Code` is inferred from the literal written as
+`code`, and `BaseCode` from the class passed as `base`; the class returned carries `Code` when one
+was declared and `BaseCode` otherwise, which is the runtime rule `code ?? base.code` on types. The
+overloads that take a `message`, or a `base` that is not an `ExtendedError`, declare their own
+object types inline.
 
 ## `ExtendedErrorConstructor`
 
@@ -98,14 +106,21 @@ that is not an `ExtendedError`, declare their own object types inline.
 interface ExtendedErrorConstructor<
   Context extends object = ErrorContext,
   Instance extends Error = ExtendedError<Context>,
+  Code extends ErrorCode = ErrorCode,
 > {
-  new (message: string, options?: ExtendedErrorOptions<Context>): Instance
-  readonly prototype: Instance
-  readonly code: string | undefined
+  new (message: string, options?: ExtendedErrorOptions<Context>): WithCode<Instance, Code>
+  readonly prototype: WithCode<Instance, Code>
+  readonly code: Code
 }
 ```
 
-The class `defineError` returns.
+The class `defineError` returns. `Code` is the literal type of its `code`, on the class and, through
+`WithCode`, on its instances: `Instance & { readonly code: Code }` when one was declared, and
+`Instance` unchanged when `Code` is the whole `string | undefined`. Like `WithContext` below, it is
+not exported.
+
+TypeScript infers all of a call's type arguments or none, so `defineError<Context>(…)` leaves `Code`
+at `string | undefined`; name it as well, `defineError<Context, 'X'>(…)`, to keep the literal.
 
 ## `MessageErrorConstructor`
 
@@ -113,15 +128,19 @@ The class `defineError` returns.
 interface MessageErrorConstructor<
   Context extends object = ErrorContext,
   Instance extends Error = ExtendedError<Context>,
+  Code extends ErrorCode = ErrorCode,
 > {
   new (
     ...options: Partial<Context> extends Context
       ? [options?: ExtendedErrorOptions<Context>]
       : [options: ExtendedErrorOptions<Context> & { readonly context: Context }]
-  ): WithContext<Instance, Context>
-  new (message: string, options?: ExtendedErrorOptions<Context>): WithContext<Instance, Context>
-  readonly prototype: WithContext<Instance, Context>
-  readonly code: string | undefined
+  ): WithCode<WithContext<Instance, Context>, Code>
+  new (
+    message: string,
+    options?: ExtendedErrorOptions<Context>,
+  ): WithCode<WithContext<Instance, Context>, Code>
+  readonly prototype: WithCode<WithContext<Instance, Context>, Code>
+  readonly code: Code
 }
 ```
 
@@ -170,3 +189,12 @@ type ErrorClass<Instance extends Error = Error> = new (
 Any error class whose constructor takes `(message, options)` the way the built-ins do. It is the
 type of `base` on the non-`ExtendedError` overloads, and of the entries in `deserializeError`'s
 `classes`.
+
+## `ErrorCode`
+
+```ts
+type ErrorCode = string | undefined
+```
+
+The constraint on every `Code` type parameter: a string literal for a class that declares its
+`code`, `string` for one whose code was a variable, `undefined` for none.

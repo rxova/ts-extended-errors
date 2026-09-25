@@ -165,6 +165,12 @@ NotFoundError.code // 'HTTP_NOT_FOUND'
 new GoneError('deleted').code // 'HTTP'
 ```
 
+`code` is typed as the literal the class declares, on the class and on its instances, and a class
+without one is typed with its base's. `error.code` above is `'HTTP_NOT_FOUND'`, not `string`, so a
+`switch` over the codes of a taxonomy can be exhaustive and a `findCause` predicate can narrow on
+one. The `code` of a class that declares none and has no base to inherit from is
+`string | undefined`.
+
 | Option    | Type                  | Default           | Description                                               |
 | --------- | --------------------- | ----------------- | --------------------------------------------------------- |
 | `code`    | `string`              | the base's `code` | Copied to every instance                                  |
@@ -184,6 +190,10 @@ new RateLimitError('slow down', { context: { retryAfter: 30 } }).context?.retryA
 new RateLimitError('slow down', { context: { retryAfter: '30' } })
 ```
 
+TypeScript infers all of a call's type arguments or none, so naming `Context` leaves `code` typed
+as `string | undefined`. Name the second parameter as well to keep the literal:
+`defineError<{ retryAfter: number }, 'RATE_LIMIT'>('RateLimitError', { code: 'RATE_LIMIT' })`.
+
 The returned class can be extended like any other:
 
 ```ts
@@ -200,6 +210,12 @@ error.name // 'ServiceUnavailableError'
 error.code // 'HTTP'
 error.retryAfter // 30
 ```
+
+Such a subclass keeps its base's `code`, in type and at runtime. A subclass that needs a code of its
+own is defined with `defineError` and extended from there:
+`class TeapotError extends defineError('TeapotError', { base: HttpError, code: 'TEAPOT' }) {}`.
+Declaring a different `static override readonly code` on a class-syntax subclass is a type error,
+since the instance type it inherits already says `'HTTP'`.
 
 ### Fixed messages
 
@@ -562,19 +578,20 @@ describeValue(undefined) // 'undefined'
 
 ## Types
 
-| Type                                          | Description                                                                                                                  |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `ErrorContext`                                | `Readonly<Record<string, unknown>>`, the default type of `context`; any object type, an `interface` included, may replace it |
-| `ExtendedErrorOptions<Context>`               | `{ cause?: unknown; context?: Context }`                                                                                     |
-| `SerializedError`                             | `{ name; message; code?; stack?; context?; cause?; errors?; errorsOmitted? }`                                                |
-| `SerializedErrorWithProperties`               | `SerializedError` plus other fields, from `includeOwnProperties: true`                                                       |
-| `SerializeErrorOptions`                       | Options of `serializeError`                                                                                                  |
-| `DeserializeErrorOptions`                     | Options of `deserializeError`                                                                                                |
-| `DefineErrorOptions<Context>`                 | Options of `defineError`                                                                                                     |
-| `ExtendedErrorConstructor<Context, Instance>` | The class `defineError` returns                                                                                              |
-| `MessageErrorConstructor<Context, Instance>`  | The class `defineError` returns with `message`; `context` is present on its instances when the throw site must pass one      |
-| `ExtendedErrorMembers<Context>`               | `name`, `code`, `context` and `toJSON`, added to any `defineError` class                                                     |
-| `ErrorClass<Instance>`                        | An error class whose constructor takes `(message, options)`                                                                  |
+| Type                                                | Description                                                                                                                  |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `ErrorContext`                                      | `Readonly<Record<string, unknown>>`, the default type of `context`; any object type, an `interface` included, may replace it |
+| `ExtendedErrorOptions<Context>`                     | `{ cause?: unknown; context?: Context }`                                                                                     |
+| `SerializedError`                                   | `{ name; message; code?; stack?; context?; cause?; errors?; errorsOmitted? }`                                                |
+| `SerializedErrorWithProperties`                     | `SerializedError` plus other fields, from `includeOwnProperties: true`                                                       |
+| `SerializeErrorOptions`                             | Options of `serializeError`                                                                                                  |
+| `DeserializeErrorOptions`                           | Options of `deserializeError`                                                                                                |
+| `DefineErrorOptions<Context>`                       | Options of `defineError`                                                                                                     |
+| `ExtendedErrorConstructor<Context, Instance, Code>` | The class `defineError` returns; `Code` is the literal type of its `code`                                                    |
+| `MessageErrorConstructor<Context, Instance, Code>`  | The class `defineError` returns with `message`; `context` is present on its instances when the throw site must pass one      |
+| `ExtendedErrorMembers<Context>`                     | `name`, `code`, `context` and `toJSON`, added to any `defineError` class                                                     |
+| `ErrorClass<Instance>`                              | An error class whose constructor takes `(message, options)`                                                                  |
+| `ErrorCode`                                         | `string \| undefined`, the constraint on a `Code` type parameter                                                             |
 
 ## For coding agents
 

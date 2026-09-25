@@ -157,6 +157,81 @@ describe('defineError', () => {
     >()
   })
 
+  it('types code as the literal the class declares, on the class and its instances', () => {
+    expectTypeOf(NotFoundError.code).toEqualTypeOf<'HTTP_NOT_FOUND'>()
+    expectTypeOf(new NotFoundError('boom').code).toEqualTypeOf<'HTTP_NOT_FOUND'>()
+    expectTypeOf(findCauseOf(null, NotFoundError)?.code).toEqualTypeOf<
+      'HTTP_NOT_FOUND' | undefined
+    >()
+
+    // Which is what makes a switch over codes exhaustive.
+    const describe = (
+      error: InstanceType<typeof HttpError> | InstanceType<typeof NotFoundError>,
+    ) => {
+      switch (error.code) {
+        case 'HTTP':
+          return 'http'
+        case 'HTTP_NOT_FOUND':
+          return 'not found'
+      }
+    }
+    expectTypeOf(describe).returns.toEqualTypeOf<'http' | 'not found'>()
+    expect(describe(new NotFoundError('boom'))).toBe('not found')
+  })
+
+  it("types an inherited code as the base's literal", () => {
+    expectTypeOf(GoneError.code).toEqualTypeOf<'HTTP'>()
+    expectTypeOf(new GoneError('boom').code).toEqualTypeOf<'HTTP'>()
+  })
+
+  it('types code as string | undefined when nothing declares one', () => {
+    const Plain = defineError('PlainError')
+
+    expectTypeOf(Plain.code).toEqualTypeOf<string | undefined>()
+    expectTypeOf(new Plain('boom').code).toEqualTypeOf<string | undefined>()
+  })
+
+  it('types a code that was a variable as what the variable was', () => {
+    const fromString = 'FROM_STRING' as string
+    const maybe = undefined as string | undefined
+
+    // A `string | undefined` infers as `string`, the way any optional property
+    // does; what the runtime does is `code ?? base.code`.
+    expectTypeOf(
+      defineError('A', { base: HttpError, code: fromString }).code,
+    ).toEqualTypeOf<string>()
+    expectTypeOf(defineError('B', { base: HttpError, code: maybe }).code).toEqualTypeOf<string>()
+    expect(defineError('B', { base: HttpError, code: maybe }).code).toBe('HTTP')
+  })
+
+  it('widens code to string | undefined when the context is given as a type argument', () => {
+    // TypeScript infers all of a call's type arguments or none, so an explicit
+    // `Context` leaves `Code` at its default. Name `Code` too to keep the literal.
+    const Loose = defineError<{ retryAfter: number }>('Loose', { base: HttpError, code: 'RATE' })
+    const Exact = defineError<{ retryAfter: number }, 'RATE'>('Exact', { code: 'RATE' })
+
+    expectTypeOf(Loose.code).toEqualTypeOf<string | undefined>()
+    expect(Loose.code).toBe('RATE')
+    expectTypeOf(Exact.code).toEqualTypeOf<'RATE'>()
+  })
+
+  it('refuses a class-syntax subclass that declares a different code', () => {
+    // The instance type of a subclass is fixed by its base, so a static `code`
+    // that differs from the base's literal would make the instances lie.
+    // Define the leaf with `defineError` instead, and extend that.
+    // @ts-expect-error: 'TEAPOT' is not 'HTTP'
+    class TeapotError extends HttpError {
+      static override readonly code = 'TEAPOT'
+    }
+    class BrewingError extends defineError('BrewingError', { base: HttpError, code: 'BREWING' }) {
+      readonly retryAfter = 30
+    }
+
+    expect(new TeapotError('boom').code).toBe('TEAPOT')
+    expectTypeOf(new BrewingError('boom').code).toEqualTypeOf<'BREWING'>()
+    expect(new BrewingError('boom').retryAfter).toBe(30)
+  })
+
   it('accepts an interface as the context type', () => {
     // An interface has no index signature, so a `Record<string, unknown>`
     // constraint refused every context declared with one. `object` does not.
@@ -333,7 +408,10 @@ describe('defineError on a class other than ExtendedError', () => {
     const error = new OutOfRangeError('page 0')
 
     expectTypeOf(error).toExtend<RangeError>()
-    expectTypeOf(error.code).toEqualTypeOf<string | undefined>()
+    expectTypeOf(error.code).toEqualTypeOf<'OUT_OF_RANGE'>()
+    expectTypeOf(new (defineError('Plain', { base: RangeError }))('x').code).toEqualTypeOf<
+      string | undefined
+    >()
     expectTypeOf(error.toJSON()).toEqualTypeOf<SerializedError>()
 
     const PageError = defineError<{ page: number }, RangeError>('PageError', { base: RangeError })
@@ -488,7 +566,9 @@ describe('defineError with a message', () => {
 
   it('leaves the type of classes defined without a message as it was', () => {
     expectTypeOf(defineError('Plain')).toEqualTypeOf<ExtendedErrorConstructor>()
-    expectTypeOf(defineError('Leaf', { base: HttpError })).toEqualTypeOf<ExtendedErrorConstructor>()
+    expectTypeOf(defineError('Leaf', { base: HttpError })).toEqualTypeOf<
+      ExtendedErrorConstructor<ErrorContext, ExtendedError, 'HTTP'>
+    >()
   })
 
   it('lets a class defined on it write its own message', () => {
@@ -534,6 +614,17 @@ describe('defineError with a message', () => {
     // One `?.` for "was it found", and none for the context: the class requires
     // one at every throw site, so the instance has one.
     expect(findCauseOf(error, InvalidDateError)?.context.value).toBe('x')
+  })
+
+  it('types code as the literal declared next to message', () => {
+    expectTypeOf(InvalidDateError.code).toEqualTypeOf<'INVALID_DATE'>()
+    expectTypeOf(
+      new InvalidDateError({ context: { value: 'x' } }).code,
+    ).toEqualTypeOf<'INVALID_DATE'>()
+    expectTypeOf(new ConfigMissingError().code).toEqualTypeOf<string | undefined>()
+    expectTypeOf(
+      defineError('PastDateError', { base: InvalidDateError }).code,
+    ).toEqualTypeOf<'INVALID_DATE'>()
   })
 
   it('types context from the parameter of message, and requires it when it has required fields', () => {
