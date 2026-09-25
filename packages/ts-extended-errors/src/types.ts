@@ -32,8 +32,11 @@ export interface ExtendedErrorOptions<Context extends object = ErrorContext> {
 export interface SerializedError {
   readonly name: string
   readonly message: string
-  /** Present only when the error carries one. */
-  readonly code?: string | undefined
+  /**
+   * Present only when the error carries one: a string like Node's `ENOENT`,
+   * or a number like a `DOMException`'s. An {@link ExtendedError}'s is a string.
+   */
+  readonly code?: string | number | undefined
   /** Omitted when `includeStack` is false. */
   readonly stack?: string | undefined
   /** A copy of the error's `context`, taken through a JSON round trip. */

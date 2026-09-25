@@ -78,6 +78,18 @@ export const AGGREGATE_FIELDS: ReadonlySet<string> = new Set([
 
 const NO_FIELDS: ReadonlySet<string> = new Set()
 
+/**
+ * Reads a `code` as errors carry them: a string, as Node's system errors and
+ * this package's classes do, or a finite number, as a `DOMException` and many
+ * driver errors do. Anything else is not a code, and is left to
+ * `includeOwnProperties`.
+ */
+export const readCode = (value: object): string | number | undefined => {
+  const code = read(value, 'code')
+  if (typeof code === 'string') return code
+  return typeof code === 'number' && Number.isFinite(code) ? code : undefined
+}
+
 const isObject = (value: unknown): value is object => typeof value === 'object' && value !== null
 
 /**
@@ -257,7 +269,7 @@ export function serializeError(
     const serialized: {
       name: string
       message: string
-      code?: string
+      code?: string | number
       stack?: string
       context?: ErrorContext
       cause?: SerializedErrorWithProperties
@@ -268,7 +280,7 @@ export function serializeError(
       message,
     }
 
-    const code = readString(current, 'code')
+    const code = readCode(current)
     if (code !== undefined) serialized.code = code
 
     if (includeStack) {

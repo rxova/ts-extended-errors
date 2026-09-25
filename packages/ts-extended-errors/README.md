@@ -360,7 +360,8 @@ causeChain(null) // []
 ## `serializeError(value, options?)`
 
 Returns a plain, JSON-safe object: `name`, `message`, and `code`, `stack`, `context` and `cause`
-when present. `cause` is serialized the same way, recursively, and so are the `errors` of an
+when present. `code` is read as a string or a finite number, so Node's `ENOENT` and a
+`DOMException`'s numeric code both survive. `cause` is serialized the same way, recursively, and so are the `errors` of an
 `AggregateError`.
 
 ```ts
@@ -582,7 +583,7 @@ describeValue(undefined) // 'undefined'
 | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `ErrorContext`                                      | `Readonly<Record<string, unknown>>`, the default type of `context`; any object type, an `interface` included, may replace it |
 | `ExtendedErrorOptions<Context>`                     | `{ cause?: unknown; context?: Context }`                                                                                     |
-| `SerializedError`                                   | `{ name; message; code?; stack?; context?; cause?; errors?; errorsOmitted? }`                                                |
+| `SerializedError`                                   | `{ name; message; code?; stack?; context?; cause?; errors?; errorsOmitted? }`; `code` is a string or a number                |
 | `SerializedErrorWithProperties`                     | `SerializedError` plus other fields, from `includeOwnProperties: true`                                                       |
 | `SerializeErrorOptions`                             | Options of `serializeError`                                                                                                  |
 | `DeserializeErrorOptions`                           | Options of `deserializeError`                                                                                                |

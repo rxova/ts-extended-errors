@@ -1,6 +1,6 @@
 import type { ErrorClass } from './defineError'
 import { ExtendedError } from './ExtendedError'
-import { AGGREGATE_FIELDS, DEFAULT_MAX_DEPTH, FIXED_FIELDS } from './serialize'
+import { AGGREGATE_FIELDS, DEFAULT_MAX_DEPTH, FIXED_FIELDS, readCode } from './serialize'
 import { arrayItems, has, isInstanceOf, keys, read, readString, tryRead } from './safe'
 import { toError } from './toError'
 import type { ErrorContext } from './types'
@@ -160,7 +160,7 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
 
     if (error.name !== name) restore(error, 'name', name, false)
 
-    const code = readString(current, 'code')
+    const code = readCode(current)
     if (code !== undefined) restore(error, 'code', code, true)
 
     // A built-in class ignores `context` in its options.

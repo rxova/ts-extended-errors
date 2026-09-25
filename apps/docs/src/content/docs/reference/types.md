@@ -50,7 +50,7 @@ The second argument of every error constructor here.
 interface SerializedError {
   readonly name: string
   readonly message: string
-  readonly code?: string | undefined
+  readonly code?: string | number | undefined
   readonly stack?: string | undefined
   readonly context?: ErrorContext | undefined
   readonly cause?: SerializedError | undefined
@@ -60,7 +60,8 @@ interface SerializedError {
 ```
 
 What `serializeError` returns, and what `JSON.stringify` produces for any error in this package.
-`code` and `context` appear only when the error carries them; `stack` is omitted under
+`code` and `context` appear only when the error carries them, and `code` may be a number, as a
+`DOMException`'s is; `stack` is omitted under
 `includeStack: false`; `errors` and `errorsOmitted` appear only for an `AggregateError`.
 
 ## `SerializedErrorWithProperties`
