@@ -1,5 +1,62 @@
 # ts-extended-errors
 
+## 1.0.0
+
+### Major Changes
+
+- [#37](https://github.com/rxova/ts-extended-errors/pull/37) [`aa60b07`](https://github.com/rxova/ts-extended-errors/commit/aa60b07d091aebebb73dd4e50de73faeb63d21ed) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Require Node.js 22.12 or newer. Node 20 reached end of life in April 2026, and a major release is
+  the one moment the floor can move without surprising anyone. The code uses no Node.js APIs, so
+  browsers and other runtimes are unaffected; the build now uses the workspace's Node 22 target.
+
+- [#37](https://github.com/rxova/ts-extended-errors/pull/37) [`1a1eef0`](https://github.com/rxova/ts-extended-errors/commit/1a1eef0dc4a3b8e0b1b371da1e951993c65b514d) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Version 1.0.0. The API that shipped through the 0.x releases is now stable: `ExtendedError`,
+  `defineError`, the five cause-chain helpers, `serializeError`, `deserializeError`, `toError`,
+  `isErrorLike`, `describeValue` and the exported types. From here, a breaking change to any of them,
+  to the serialized shape, or to the defaults of `toJSON` and `serializeError` means a new major.
+  
+  What 1.0 settles on purpose: `JSON.stringify(error)` includes `stack` by default and is meant for
+  logs, with `includeStack: false` for anything client-facing; a thrown value that is not an error
+  serializes under `name: typeof value`; and cause chains are linear, following `cause` and never an
+  `AggregateError`'s `errors`.
+
+### Minor Changes
+
+- [#37](https://github.com/rxova/ts-extended-errors/pull/37) [`9b8d427`](https://github.com/rxova/ts-extended-errors/commit/9b8d427ad9973467f4087a072dd1aadea6300730) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Accept any object type as a `context` type, an `interface` included. The `Context` type parameters of
+  `ExtendedError`, `defineError` and the exported constructor types were constrained to
+  `Readonly<Record<string, unknown>>`, which an `interface` fails for lack of an index signature, so
+  `defineError<UserContext>(…)` was a type error whenever `UserContext` was declared with `interface`.
+  The constraint is now `object`; `ErrorContext` stays the default.
+
+- [#37](https://github.com/rxova/ts-extended-errors/pull/37) [`5e77158`](https://github.com/rxova/ts-extended-errors/commit/5e771582f13136c3071ffc77d7afa56ce18da0ab) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Type `code` as the literal a class declares. `defineError('NotFoundError', { code: 'HTTP_NOT_FOUND' })`
+  now types `code` as `'HTTP_NOT_FOUND'` on the class and on its instances, and a class defined without
+  one is typed with its base's, so a `switch` over a taxonomy's codes can be exhaustive and a
+  `findCause` predicate can narrow on one. `ExtendedErrorConstructor`, `MessageErrorConstructor` and
+  `DefineErrorOptions` gain a `Code` type parameter after their existing ones, and `ErrorCode`, its
+  constraint, is exported.
+  
+  Two consequences. Naming `Context` as a type argument leaves `code` at `string | undefined`, because
+  TypeScript infers all of a call's type arguments or none; name `Code` as well,
+  `defineError<Context, 'X'>(…)`, to keep the literal. And a class-syntax subclass of a `defineError`
+  class can no longer declare a different static `code`, since its instance type already carries the
+  base's literal; define the leaf with `defineError` and extend that.
+
+- [#37](https://github.com/rxova/ts-extended-errors/pull/37) [`51303b3`](https://github.com/rxova/ts-extended-errors/commit/51303b32d6faad761ee5ba2ee3b343249c8a42fc) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Keep a numeric `code` through `serializeError` and `deserializeError`. A `DOMException` and many
+  driver errors carry a number there, and it was dropped, even under `includeOwnProperties`, because
+  `code` is a fixed field read only as a string. `SerializedError.code` is now `string | number`; a
+  code that is neither a string nor a finite number is still left out. An `ExtendedError`'s own `code`
+  stays a string.
+
+### Patch Changes
+
+- [#37](https://github.com/rxova/ts-extended-errors/pull/37) [`8b0633f`](https://github.com/rxova/ts-extended-errors/commit/8b0633f383fc17f461151dd8ba7a40d8a846b76b) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - `describeValue` names a function, `'[Function: loadUser]'`, instead of printing its source, and
+  describes an object whose JSON is `{}` by its string tag when that says more: `'[object Map]'`
+  rather than `'{}'` for a `Map`, a `Set` or a `RegExp`. `toError` and `serializeError` use it for a
+  thrown value that is not an error, so those messages change the same way.
+
+- [#37](https://github.com/rxova/ts-extended-errors/pull/37) [`6f75bde`](https://github.com/rxova/ts-extended-errors/commit/6f75bdeb19f6dc3a62c4ed5876cbe7203a7bfc12) Thanks [@jonatankruszewski](https://github.com/jonatankruszewski)! - Define `code` and `context` on an instance only when there is a value. Both were own enumerable
+  properties on every instance, so Node's `console.log(error)` printed
+  `code: undefined, context: undefined` after the stack of every error that had neither. Reading an
+  absent one still gives `undefined`; `Object.keys(error)` no longer lists it.
+
 ## 0.4.4
 
 ### Patch Changes
