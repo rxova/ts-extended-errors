@@ -80,12 +80,16 @@ describeValue('nope') // 'nope'
 describeValue(404) // '404'
 describeValue(10n) // '10n'
 describeValue({ a: 1 }) // '{"a":1}'
+describeValue(new Map([[1, 2]])) // '[object Map]'
+describeValue(function loadUser() {}) // '[Function: loadUser]'
 describeValue(undefined) // 'undefined'
 ```
 
 A value JSON cannot write — a cycle, a `toJSON` that throws — is described by its string tag
-(`'[object Object]'`) rather than costing you the throw. If the value refuses string-tag inspection
-too, the fallback is `'<uninspectable object>'`.
+(`'[object Object]'`) rather than costing you the throw. So is one JSON would write as `{}` while
+the tag says it is a `Map`, a `Set` or a `RegExp`. If the value refuses string-tag inspection too,
+the fallback is `'<uninspectable object>'`. A function is named, `'[Function: loadUser]'`, rather
+than printed as source.
 
 ## A complete handler
 

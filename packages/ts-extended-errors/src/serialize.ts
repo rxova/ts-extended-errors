@@ -132,20 +132,33 @@ const omittedEarlier = (error: object): number => {
 
 /**
  * Best-effort one-line description of a thrown value that is not an error.
- * An object that refuses both JSON and string-tag inspection becomes
- * `'<uninspectable object>'`.
+ *
+ * A function is named rather than printed, since its source is not a
+ * description and may be long. An object whose JSON is `{}` but whose string
+ * tag says it is something else — a `Map`, a `Set`, a `WeakRef` — is described
+ * by the tag, as JSON has nothing to say about it. An object that refuses both
+ * JSON and string-tag inspection becomes `'<uninspectable object>'`.
  */
 export const describeValue = (value: unknown): string => {
   if (typeof value === 'string') return value
   if (typeof value === 'symbol') return value.toString()
   if (typeof value === 'bigint') return `${value.toString()}n`
+  if (typeof value === 'function') {
+    const name = read(value, 'name')
+    return typeof name === 'string' && name !== ''
+      ? `[Function: ${name}]`
+      : '[Function (anonymous)]'
+  }
   if (!isObject(value)) return String(value)
 
   try {
     // Deliberately `unknown`: the lib types stringify as returning `string`,
     // but it genuinely returns undefined for a value whose `toJSON` does.
     const json: unknown = JSON.stringify(value)
-    return typeof json === 'string' ? json : (objectTag(value) ?? '<uninspectable object>')
+    if (typeof json !== 'string') return objectTag(value) ?? '<uninspectable object>'
+    if (json !== '{}') return json
+    const tag = objectTag(value)
+    return tag === undefined || tag === '[object Object]' ? json : tag
   } catch {
     // Cyclic, or a `toJSON` that throws. Neither is a reason to lose the throw.
     return objectTag(value) ?? '<uninspectable object>'
