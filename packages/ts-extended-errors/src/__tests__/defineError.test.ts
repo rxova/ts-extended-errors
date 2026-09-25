@@ -342,6 +342,17 @@ describe('defineError on a class other than ExtendedError', () => {
     expect(error.cause).toBe(cause)
   })
 
+  it('defines code and context only when there is one', () => {
+    const Plain = defineError('PlainError', { base: RangeError })
+
+    expect(Object.keys(new Plain('x'))).toEqual(['name'])
+    expect(Object.keys(new OutOfRangeError('x', { context: { page: 0 } }))).toEqual([
+      'name',
+      'code',
+      'context',
+    ])
+  })
+
   it('does not define cause when none was passed', () => {
     expect('cause' in new OutOfRangeError('page 0')).toBe(false)
     expect('cause' in new OutOfRangeError('page 0', { cause: undefined })).toBe(true)
