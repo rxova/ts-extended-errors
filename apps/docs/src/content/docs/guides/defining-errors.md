@@ -40,7 +40,8 @@ right for a leaf that callers handle by `instanceof`.
 ## `context`
 
 Structured data about this particular failure. Type it with the first type parameter, or let it be
-inferred from a `message` function (below).
+inferred from a `message` function (below). Any object type is accepted, an `interface` as readily
+as a type literal.
 
 ```ts
 const RateLimitedError = defineError<{ retryAfterMs: number }>('RateLimitedError', {

@@ -156,6 +156,24 @@ describe('defineError', () => {
       { line: number } | undefined
     >()
   })
+
+  it('accepts an interface as the context type', () => {
+    // An interface has no index signature, so a `Record<string, unknown>`
+    // constraint refused every context declared with one. `object` does not.
+    interface UserContext {
+      userId: number
+    }
+    const UserError = defineError<UserContext>('UserError')
+    const NoUserError = defineError('NoUserError', {
+      message: (context: UserContext) => `no user ${String(context.userId)}`,
+    })
+
+    expectTypeOf(new UserError('boom', { context: { userId: 7 } }).context).toEqualTypeOf<
+      UserContext | undefined
+    >()
+    expectTypeOf(new NoUserError({ context: { userId: 7 } }).context).toEqualTypeOf<UserContext>()
+    expect(new NoUserError({ context: { userId: 7 } }).message).toBe('no user 7')
+  })
 })
 
 const OutOfRangeError = defineError('OutOfRangeError', { base: RangeError, code: 'OUT_OF_RANGE' })

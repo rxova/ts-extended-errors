@@ -2,6 +2,11 @@
  * Structured data attached to an error — the fields you would otherwise
  * interpolate into the message and then have to parse back out.
  *
+ * The default type of `context`, for a class that declares none. Any object
+ * type is accepted in its place, an `interface` included: the constraint is
+ * `object`, not this record, because an interface has no index signature and
+ * would otherwise be refused.
+ *
  * Keep it serializable: {@link SerializedError} is what ends up in a log line,
  * and `serializeError` copies it through a JSON round trip, so a `Date` there
  * becomes a string and a `Map` an empty object.
@@ -9,7 +14,7 @@
 export type ErrorContext = Readonly<Record<string, unknown>>
 
 /** Second argument of every {@link ExtendedError} constructor. */
-export interface ExtendedErrorOptions<Context extends ErrorContext = ErrorContext> {
+export interface ExtendedErrorOptions<Context extends object = ErrorContext> {
   /**
    * The error (or value) that caused this one. Forwarded to the native
    * `Error` `cause`, so it is visible to anything that already understands it.
