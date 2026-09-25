@@ -106,6 +106,25 @@ The chain may contain values that are not errors. `causeChain` returns them as `
 `findCauseOf` simply will not match them; and [`toError`](./unknown-values.md) turns any one of them
 into a real `Error` when you need to log it.
 
+## An `AggregateError` is not entered
+
+The chain is linear by design: it follows `cause` and nothing else. An `AggregateError` holds its
+failures in `errors`, a list, and the walkers do not descend into it — `findCauseOf(aggregate,
+TimeoutError)` finds a timeout under the aggregate's `cause`, not among its `errors`. That keeps
+`causeChain` a sequence rather than a flattened tree, and keeps `rootCause` meaning one thing. When
+the failure you want may be in the list, search the list:
+
+```ts
+const timeout =
+  findCauseOf(error, TimeoutError) ??
+  (error instanceof AggregateError
+    ? error.errors.map((item) => findCauseOf(item, TimeoutError)).find(Boolean)
+    : undefined)
+```
+
+`serializeError` does write `errors`, each serialized like a `cause`, so the list survives a JSON
+round trip even though the walkers leave it alone.
+
 ## Across a serialization boundary
 
 Causes survive the JSON round trip. `serializeError` walks the chain to a depth limit, and

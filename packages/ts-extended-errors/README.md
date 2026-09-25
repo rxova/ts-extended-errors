@@ -317,7 +317,9 @@ Instances have the same members as an `ExtendedError` (`name`, `code`, `context`
 ## Cause chains
 
 Five functions walk `error`, `error.cause`, `error.cause.cause` and so on. The chain includes `error`
-itself. All of them accept `unknown`, and a cycle ends the walk.
+itself. All of them accept `unknown`, and a cycle ends the walk. The chain is linear by design: an
+`AggregateError`'s `errors` are not entered, so `findCauseOf(aggregate, TimeoutError)` finds one
+only under its `cause`. Search `errors` yourself when that is where it may be.
 
 ```ts
 import {

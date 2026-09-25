@@ -156,6 +156,9 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
 - **A class with a built-in `base` is not an `ExtendedError`.**
   `defineError(name, { base: RangeError })` has the same members, but
   `instanceof ExtendedError` and `isExtendedError` return `false`.
+- **Cause chains are linear.** `causeChain`, `findCauseOf` and the rest follow
+  `cause` only; an `AggregateError`'s `errors` are not entered. Search that
+  list yourself when the failure may be in it.
 - **Depth is limited.** `serializeError` and `deserializeError` process 8
   `cause` levels by default; set `maxDepth` to change it.
 - **Width is limited too.** `serializeError` keeps 10 of the `errors` of
