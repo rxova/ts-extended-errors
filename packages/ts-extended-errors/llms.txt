@@ -7,7 +7,7 @@
 > `defineError` creates such a class in one line; five functions search the
 > `cause` chain; `serializeError` and `deserializeError` round-trip errors
 > through JSON and rebuild them as the original classes. Every function accepts
-> `unknown`. Node >= 20.19, no runtime dependencies and no Node.js APIs, so it
+> `unknown`. Node >= 22.12, no runtime dependencies and no Node.js APIs, so it
 > also runs in browsers. MIT. Ships ESM and CommonJS with type declarations.
 
 ## Install

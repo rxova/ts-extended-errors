@@ -21,8 +21,8 @@ Security issues do not go in an issue — see [SECURITY.md](SECURITY.md).
 ## Development setup
 
 A pnpm workspace driven by Turborepo. The toolchain needs Node.js 22.13 or newer
-(pnpm 11 requires it); the published package supports Node.js 20.19 and up,
-which CI verifies by packing the tarball and running it under Node 20.
+(pnpm 11 requires it); the published package supports Node.js 22.12 and up,
+which CI verifies by packing the tarball and running it under that floor.
 
 ```bash
 corepack enable

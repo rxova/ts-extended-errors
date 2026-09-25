@@ -7,7 +7,7 @@
 typed context, cause-chain inspection, and reliable JSON round trips. This repository holds one
 published package, [`ts-extended-errors`](packages/ts-extended-errors): a base class for custom
 errors, a one-line class factory, helpers that search `cause` chains, and a serializer that rebuilds
-the original classes. Node.js 20.19 or newer, browsers too, no runtime dependencies, ESM and CommonJS. MIT.
+the original classes. Node.js 22.12 or newer, browsers too, no runtime dependencies, ESM and CommonJS. MIT.
 
 ```ts
 import { defineError, deserializeError, findCauseOf, serializeError } from 'ts-extended-errors'

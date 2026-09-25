@@ -121,9 +121,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The package supports Node >= 20.19, but pnpm 11 needs >= 22.13 to
-        # install, so 20 is exercised by `compat` below against the real tarball
-        # rather than here against the workspace.
+        # The package supports Node >= 22.12, but pnpm needs >= 22.13 to
+        # install, so the floor is exercised by `compat` below against the real
+        # tarball rather than here against the workspace.
         node-version: [22, 24]
     steps:
       - uses: actions/checkout@v7
@@ -167,7 +167,7 @@ jobs:
         run: pnpm run pack:smoke
 
   compat:
-    name: published package on node 20
+    name: published package on the engines floor
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

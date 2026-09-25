@@ -35,7 +35,7 @@ const SUMMARY = [
   '`deserializeError` take an error through JSON and rebuild it as the classes it',
   'was. Every function accepts `unknown`, because a `catch` binding is `unknown`',
   'and JavaScript permits throwing anything. No runtime dependencies and no',
-  'Node.js APIs, so it runs in browsers and workers as well as on Node >= 20.19.',
+  'Node.js APIs, so it runs in browsers and workers as well as on Node >= 22.12.',
   'Ships ESM and CommonJS with type declarations. Published to npm. MIT.',
 ]
 

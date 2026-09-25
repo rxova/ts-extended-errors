@@ -9,7 +9,7 @@ description: Install the package, declare an error class, throw it with context,
 npm install ts-extended-errors
 ```
 
-No peer dependencies and nothing else to configure. Node.js 20.19 or newer; the package uses no Node
+No peer dependencies and nothing else to configure. Node.js 22.12 or newer; the package uses no Node
 APIs, so bundlers targeting browsers and workers are equally fine. Both ESM and CommonJS entry
 points ship, with type declarations for each.
 

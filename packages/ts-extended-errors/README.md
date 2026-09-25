@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/coverage%20threshold-95%25-brightgreen" alt="Coverage threshold: 95% per file" />
   <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white" alt="TypeScript strict mode" />
   <img src="https://img.shields.io/badge/dependencies-0-44cc11" alt="Zero runtime dependencies" />
-  <img src="https://img.shields.io/badge/node-%E2%89%A520.19-5fa04e?logo=node.js&logoColor=white" alt="Node 20.19 or newer" />
+  <img src="https://img.shields.io/badge/node-%E2%89%A522.12-5fa04e?logo=node.js&logoColor=white" alt="Node 22.12 or newer" />
   <a href="https://github.com/rxova/ts-extended-errors/blob/main/packages/ts-extended-errors/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license" /></a>
 </p>
 
@@ -19,7 +19,7 @@ the original classes.
 npm install ts-extended-errors
 ```
 
-Requires Node.js 20.19 or newer. Ships ESM and CommonJS with type declarations, and has no runtime
+Requires Node.js 22.12 or newer. Ships ESM and CommonJS with type declarations, and has no runtime
 dependencies. The code uses no Node.js APIs, so it also runs in browsers and other JavaScript
 runtimes.
 
