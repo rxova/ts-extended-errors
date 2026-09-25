@@ -106,6 +106,15 @@ describe('deserializeError', () => {
     expect(new Set(Object.keys(back))).toEqual(new Set(['name', 'code', 'context']))
   })
 
+  it('restores a numeric code', () => {
+    const back = deserializeError({ name: 'AbortError', message: 'aborted', code: 20 })
+
+    expect(Reflect.get(back, 'code')).toBe(20)
+    expect(Reflect.has(deserializeError({ name: 'Error', message: 'x', code: null }), 'code')).toBe(
+      false,
+    )
+  })
+
   it('puts code and context on a built-in error as fields, leaving name on the prototype', () => {
     const back = deserializeError({
       name: 'TypeError',
@@ -125,8 +134,13 @@ describe('deserializeError', () => {
     expect(deserializeError({ name: 42, message: 'boom' }).name).toBe('Error')
   })
 
-  it('ignores a code that is not a string and a context that is not an object', () => {
-    const back = deserializeError({ name: 'Error', message: 'boom', code: 42, context: 'no' })
+  it('ignores a code that is neither a string nor a number, and a context that is not an object', () => {
+    const back = deserializeError({
+      name: 'Error',
+      message: 'boom',
+      code: { n: 42 },
+      context: 'no',
+    })
 
     expect('code' in back).toBe(false)
     expect('context' in back).toBe(false)

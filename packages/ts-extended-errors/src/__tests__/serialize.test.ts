@@ -131,10 +131,28 @@ describe('serializeError', () => {
     })
   })
 
-  it('ignores a code that is not a string and a context that is not an object', () => {
-    const error = Object.assign(new Error('boom'), { code: 404, context: 'not an object' })
+  it('keeps a numeric code, the way a DOMException or a driver error carries one', () => {
+    const error = Object.assign(new Error('boom'), { code: 404 })
 
     expect(serializeError(error, { includeStack: false })).toEqual({
+      name: 'Error',
+      message: 'boom',
+      code: 404,
+    })
+    expect(
+      serializeError(new DOMException('aborted', 'AbortError'), { includeStack: false }),
+    ).toEqual({ name: 'AbortError', message: 'aborted', code: DOMException.ABORT_ERR })
+  })
+
+  it('ignores a code that is neither a string nor a finite number, and a context that is not an object', () => {
+    const error = Object.assign(new Error('boom'), { code: { status: 404 }, context: 'no' })
+    const infinite = Object.assign(new Error('boom'), { code: Number.POSITIVE_INFINITY })
+
+    expect(serializeError(error, { includeStack: false })).toEqual({
+      name: 'Error',
+      message: 'boom',
+    })
+    expect(serializeError(infinite, { includeStack: false })).toEqual({
       name: 'Error',
       message: 'boom',
     })
@@ -210,11 +228,11 @@ describe('serializeError with includeOwnProperties', () => {
   })
 
   it('never lets a field overwrite one of the fixed fields', () => {
-    // `code: 404` is own and enumerable, but not a string: the fixed field
-    // stays absent rather than changing type.
+    // `code` and `context` are own and enumerable, but not what the fixed
+    // fields take: they stay absent rather than changing type.
     const error = Object.assign(new Error('boom'), {
       name: 'RenamedError',
-      code: 404,
+      code: { status: 404 },
       context: 'not an object',
     })
 
