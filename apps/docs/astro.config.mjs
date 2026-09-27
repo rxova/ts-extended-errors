@@ -57,11 +57,9 @@ export default defineConfig({
     }),
     starlight({
       ...sharedStarlightConfig({
-        // `@rxova/brand` resolves this id against its own PROJECTS list — the
-        // one the docs switcher, the footer and the social card are built from
-        // — and throws for an id it does not know. So this build needs
-        // @rxova/brand >= 0.14.0, the release that adds ts-extended-errors to
-        // that list.
+        // Resolved against @rxova/brand's PROJECTS — the list the docs switcher,
+        // the footer and the social card are built from — which throws for an
+        // id it does not know.
         project: 'ts-extended-errors',
         // These docs ship as a page component: rxova.org composes each rendered
         // body into its own header and footer, so this build must not draw the
