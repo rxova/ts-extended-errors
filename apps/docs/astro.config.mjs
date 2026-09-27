@@ -61,10 +61,6 @@ export default defineConfig({
         // the footer and the social card are built from — which throws for an
         // id it does not know.
         project: 'ts-extended-errors',
-        // These docs ship as a page component: rxova.org composes each rendered
-        // body into its own header and footer, so this build must not draw the
-        // umbrella footer itself.
-        pageComponent: true,
         sidebar: [
           { label: 'Learn', items: [{ autogenerate: { directory: 'learn' } }] },
           { label: 'Guides', items: [{ autogenerate: { directory: 'guides' } }] },
