@@ -20,13 +20,5 @@ export default {
       // site's root. Knip reads imports, so the path is invisible to it.
       ignoreDependencies: ['@rxova/brand'],
     },
-    'packages/tooling': {
-      // Repo scripts, invoked by name from package.json and CI, never imported.
-      entry: ['src/*.ts'],
-      // `tsx` is spawned, not imported: check-changeset.test.ts runs the script
-      // under test with `execFileSync(process.execPath, ['--import', 'tsx', …])`.
-      // Knip reads imports, so a loader named in an argument list is invisible.
-      ignoreDependencies: ['tsx'],
-    },
   },
 } satisfies KnipConfig

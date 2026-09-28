@@ -54,12 +54,13 @@
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "check:exports": "publint --strict && attw --pack .",
-    "pack:smoke": "node --import tsx ../tooling/src/pack-smoke.ts",
+    "pack:smoke": "rxova-repo-config pack-smoke",
     "prepack": "pnpm build"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
-    "@repo/config": "workspace:*",
+    "@rxova/repo-config": "^0.1.0",
+    "@rxova/ts-utils": "^0.1.0",
     "@types/node": "^26.6.1",
     "@vitest/coverage-v8": "^5.0.1",
     "publint": "^0.3.24",

@@ -7,8 +7,12 @@ pnpm + Turborepo monorepo. Node >= 22.13 to develop. TypeScript everywhere.
 - `packages/ts-extended-errors` — the library, published to npm as
   `ts-extended-errors`. It supports Node >= 22.12 and builds with the preset's Node 22 target.
 - `packages/*` — workspace packages, built dual ESM + CJS with tsdown.
-- `packages/config` — the shared vitest and tsdown presets. Coverage thresholds live here only.
-- `packages/tooling` — repo scripts (`verify`, `pack-smoke`, `check-llms`, `check-changeset`).
+- `@rxova/repo-config` (dev dependency) — the repo scripts (`rxova-repo-config verify`,
+  `pack-smoke`, `check-llms`, `check-changeset`, `node-floor`) and the shared tsdown, vitest,
+  ESLint, commitlint and tsconfig presets. Coverage thresholds live in its vitest preset only. The
+  `verify` steps are listed under `repoConfig.verify.steps` in the root `package.json`.
+- `@rxova/ts-utils` (dev dependency of the library) — the safe property-read helpers, inlined by
+  tsdown so the published package keeps no runtime dependencies.
 - `.changeset` — pending release notes. A change to the library adds one (`pnpm changeset`); CI
   checks. A pull request that publishes nothing (a dev dependency bump) is labelled `skip-changeset`.
 - `apps/docs` — the Astro + Starlight documentation site, published as part of rxova.org at
@@ -19,7 +23,7 @@ pnpm + Turborepo monorepo. Node >= 22.13 to develop. TypeScript everywhere.
 
 - `pnpm run verify` — the pre-push gate, in CI's order. Every check CI runs except two:
   `audit:check`, left to CI on purpose so a newly disclosed advisory cannot block an unrelated
-  push (`verify.test.ts` pins that omission), and `pack:smoke`. Run it before saying work is done.
+  push (left out of `repoConfig.verify.steps` on purpose), and `pack:smoke`. Run it before saying work is done.
 - `pnpm test` / `pnpm typecheck` / `pnpm lint` / `pnpm format` — the pieces.
 - `pnpm --filter <package> test` — one package.
 - `pnpm run check:llms` — each `llms.txt` against the package exports; part of `verify`.

@@ -53,8 +53,6 @@ A pnpm + Turborepo workspace.
 ```text
 packages/
   ts-extended-errors/  the library, published as ts-extended-errors
-  config/              shared vitest and tsdown presets; the only home of the coverage thresholds
-  tooling/             repo scripts: verify, pack-smoke, check-llms, check-changeset
 apps/
   docs/                the Astro + Starlight site, mounted on rxova.org
 .changeset/            release notes waiting for the next version
@@ -64,6 +62,11 @@ apps/
 The library builds dual ESM + CJS with tsdown and is checked with publint and attw. Across the
 workspace: TypeScript 6 in strict mode, ESLint 10 with `strictTypeChecked`, Prettier, and Vitest 5
 with 95% coverage required per file.
+
+The repo scripts (verify, pack-smoke, check-llms, check-changeset, node-floor) and the shared
+tsdown, vitest, ESLint, commitlint and tsconfig presets come from
+[`@rxova/repo-config`](https://github.com/rxova/shared/tree/main/packages/repo-config). The
+`verify` steps are listed under `repoConfig` in the root `package.json`.
 
 ## Development
 

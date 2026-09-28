@@ -68,8 +68,8 @@ not handle, if a `.md` link lands nowhere, or if `llms.txt` outgrows its budget.
 ## Tests
 
 - Source in `src/`, tests in `src/**/__tests__/`.
-- Coverage is enforced at 95% per file, from `packages/config`. Thresholds may be
-  raised, never lowered.
+- Coverage is enforced at 95% per file, from the `@rxova/repo-config` vitest preset.
+  Thresholds may be raised, never lowered.
 - Never skip, delete or weaken a test to make a change pass, and never make one
   pass by hardcoding the answer it was checking.
 
