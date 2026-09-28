@@ -182,6 +182,7 @@ jobs:
       # is read from the published manifests, so lowering it moves the check
       # with it. Plain `node` from here on: pnpm 11 does not start below 22.13,
       # so the installed bin is called by path rather than through `pnpm exec`.
+      # The bin lives at the workspace root, where @rxova/repo-config is declared.
       - name: Read the Node floor from engines
         id: floor
         run: pnpm exec rxova-repo-config node-floor
@@ -193,7 +194,7 @@ jobs:
         working-directory: packages/ts-extended-errors
         run: |
           node --version
-          node_modules/.bin/rxova-repo-config pack-smoke
+          ../../node_modules/.bin/rxova-repo-config pack-smoke
 
   supply-chain:
     name: audit · dedupe
