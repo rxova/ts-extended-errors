@@ -1,4 +1,13 @@
-import { arrayItems, isInstanceOf, keys, objectTag, read, readString } from './safe'
+import {
+  arrayItems,
+  isError,
+  isInstanceOf,
+  isObjectLike,
+  objectTag,
+  readProperty,
+  readString,
+  safeKeys,
+} from '@rxova/ts-utils'
 import type { ErrorContext, SerializedError, SerializedErrorWithProperties } from './types'
 
 /** Options for {@link serializeError}. */
@@ -85,30 +94,17 @@ const NO_FIELDS: ReadonlySet<string> = new Set()
  * `includeOwnProperties`.
  */
 export const readCode = (value: object): string | number | undefined => {
-  const code = read(value, 'code')
+  const code = readProperty(value, 'code')
   if (typeof code === 'string') return code
   return typeof code === 'number' && Number.isFinite(code) ? code : undefined
 }
-
-const isObject = (value: unknown): value is object => typeof value === 'object' && value !== null
 
 /**
  * True for anything Error-shaped, including the cross-realm errors that fail
  * `instanceof Error`. A throwing `message` getter or proxy trap returns false.
  */
 export const isErrorLike = (value: unknown): value is Error =>
-  isObject(value) && typeof read(value, 'message') === 'string'
-
-/**
- * True for a real error, from this realm or another.
- *
- * Stricter than {@link isErrorLike} on purpose, for the values held in an
- * error's own fields: `{ message: 'Not found', status: 404 }` there is data,
- * and walking it as an error would relabel it `Error`. The tag check is what
- * recognises an error from a vm context, which fails `instanceof`.
- */
-const isRealError = (value: unknown): boolean =>
-  isInstanceOf(value, Error) || (isObject(value) && objectTag(value) === '[object Error]')
+  isObjectLike(value) && typeof readProperty(value, 'message') === 'string'
 
 /**
  * True for an AggregateError, from this realm or another.
@@ -126,7 +122,7 @@ const isAggregateError = (value: object): boolean =>
  * an earlier hop wrote `errorsOmitted`, and deserializeError put it back.
  */
 const omittedEarlier = (error: object): number => {
-  const omitted = read(error, 'errorsOmitted')
+  const omitted = readProperty(error, 'errorsOmitted')
   return typeof omitted === 'number' && Number.isSafeInteger(omitted) && omitted > 0 ? omitted : 0
 }
 
@@ -144,12 +140,12 @@ export const describeValue = (value: unknown): string => {
   if (typeof value === 'symbol') return value.toString()
   if (typeof value === 'bigint') return `${value.toString()}n`
   if (typeof value === 'function') {
-    const name = read(value, 'name')
+    const name = readProperty(value, 'name')
     return typeof name === 'string' && name !== ''
       ? `[Function: ${name}]`
       : '[Function (anonymous)]'
   }
-  if (!isObject(value)) return String(value)
+  if (!isObjectLike(value)) return String(value)
 
   try {
     // Deliberately `unknown`: the lib types stringify as returning `string`,
@@ -194,10 +190,10 @@ const copyFields = (
   skip: ReadonlySet<string>,
   copy: (value: unknown) => unknown,
 ): void => {
-  for (const key of keys(source)) {
+  for (const key of safeKeys(source)) {
     if (skip.has(key)) continue
 
-    const value = read(source, key)
+    const value = readProperty(source, key)
     if (value === undefined || typeof value === 'function') continue
 
     const copied = copy(value)
@@ -262,7 +258,7 @@ export function serializeError(
   const path = new Set<unknown>()
 
   const walk = (current: unknown, depth: number): SerializedErrorWithProperties => {
-    if (!isObject(current)) {
+    if (!isObjectLike(current)) {
       return { name: typeof current, message: describeValue(current) }
     }
 
@@ -301,17 +297,17 @@ export function serializeError(
       if (stack !== undefined) serialized.stack = stack
     }
 
-    const context = read(current, 'context')
-    if (isObject(context)) serialized.context = copyContext(context)
+    const context = readProperty(current, 'context')
+    if (isObjectLike(context)) serialized.context = copyContext(context)
 
-    const cause = read(current, 'cause')
+    const cause = readProperty(current, 'cause')
     if (cause !== undefined) {
       const serializedCause = descend(cause)
       if (serializedCause !== undefined) serialized.cause = serializedCause
     }
 
     const aggregate = isAggregateError(current)
-    const errors = aggregate ? arrayItems(read(current, 'errors')) : undefined
+    const errors = aggregate ? arrayItems(readProperty(current, 'errors')) : undefined
     // At maxDepth the list goes the way a cause does, rather than coming out
     // empty and claiming there was nothing in it.
     if (errors !== undefined && depth < maxDepth) {
@@ -338,8 +334,11 @@ export function serializeError(
     }
 
     if (includeOwnProperties) {
+      // `isError`, not `isErrorLike`: `{ message: 'Not found', status: 404 }`
+      // in an error's own field is data, and walking it as an error would
+      // relabel it `Error`. Its tag check still recognises a vm-context error.
       copyFields(current, serialized, aggregate ? AGGREGATE_FIELDS : FIXED_FIELDS, (field) =>
-        isRealError(field) ? descend(field) : toJsonSafe(field),
+        isError(field) ? descend(field) : toJsonSafe(field),
       )
     }
 

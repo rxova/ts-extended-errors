@@ -1,7 +1,15 @@
 import type { ErrorClass } from './defineError'
 import { ExtendedError } from './ExtendedError'
 import { AGGREGATE_FIELDS, DEFAULT_MAX_DEPTH, FIXED_FIELDS, readCode } from './serialize'
-import { arrayItems, has, isInstanceOf, keys, read, readString, tryRead } from './safe'
+import {
+  arrayItems,
+  hasProperty,
+  isInstanceOf,
+  safeKeys,
+  readProperty,
+  readString,
+  tryRead,
+} from '@rxova/ts-utils'
 import { toError } from './toError'
 import type { ErrorContext } from './types'
 
@@ -44,7 +52,7 @@ const BUILT_IN_CLASSES: readonly ErrorClass[] = [
 
 /** True for a value that {@link serializeError} could have produced from an error. */
 const hasName = (value: unknown): boolean =>
-  typeof value === 'object' && value !== null && typeof read(value, 'name') === 'string'
+  typeof value === 'object' && value !== null && typeof readProperty(value, 'name') === 'string'
 
 /**
  * Puts a serialized field back on a rebuilt error.
@@ -136,17 +144,19 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
     // An AggregateError's `errors`, rebuilt the way a cause is. Read under that
     // name only: other classes keep other things there.
     const errors =
-      name === 'AggregateError' ? arrayItems(read(current, 'errors'))?.map(descend) : undefined
+      name === 'AggregateError'
+        ? arrayItems(readProperty(current, 'errors'))?.map(descend)
+        : undefined
 
     // Handed to the constructor, so the class sets them the way it would for
     // any other throw; `cause` only when there was one, for the reason
     // ExtendedError gives.
     const constructorOptions: { cause?: unknown; context?: ErrorContext } = {}
-    if (has(current, 'cause')) {
+    if (hasProperty(current, 'cause')) {
       const cause = tryRead(current, 'cause')
       if (cause.ok) constructorOptions.cause = descend(cause.value)
     }
-    const context = read(current, 'context')
+    const context = readProperty(current, 'context')
     if (typeof context === 'object' && context !== null) {
       constructorOptions.context = context as ErrorContext
     }
@@ -174,12 +184,12 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
       // Already in place on an AggregateError; a class of your own by that name
       // gets it the same way, as a field that is not enumerable.
       restore(error, 'errors', errors, false)
-      const omitted = read(current, 'errorsOmitted')
+      const omitted = readProperty(current, 'errorsOmitted')
       if (typeof omitted === 'number') restore(error, 'errorsOmitted', omitted, false)
     }
 
     const fixed = errors === undefined ? FIXED_FIELDS : AGGREGATE_FIELDS
-    for (const key of keys(current)) {
+    for (const key of safeKeys(current)) {
       if (fixed.has(key)) continue
       const field = tryRead(current, key)
       if (!field.ok) continue
