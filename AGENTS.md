@@ -7,12 +7,13 @@ pnpm + Turborepo monorepo. Node >= 22.13 to develop. TypeScript everywhere.
 - `packages/ts-extended-errors` — the library, published to npm as
   `ts-extended-errors`. It supports Node >= 22.12 and builds with the preset's Node 22 target.
 - `packages/*` — workspace packages, built dual ESM + CJS with tsdown.
-- `@rxova/repo-config` (dev dependency) — the repo scripts (`rxova-repo-config verify`,
+- `@rxova/repo-config` (root dev dependency) — the repo scripts (`rxova-repo-config verify`,
   `pack-smoke`, `check-llms`, `check-changeset`, `node-floor`) and the shared tsdown, vitest,
   ESLint, commitlint and tsconfig presets. Coverage thresholds live in its vitest preset only. The
   `verify` steps are listed under `repoConfig.verify.steps` in the root `package.json`.
-- `@rxova/ts-utils` (dev dependency of the library) — the safe property-read helpers, inlined by
-  tsdown so the published package keeps no runtime dependencies.
+- `@rxova/ts-utils` (root dev dependency) — the safe property-read helpers, inlined by tsdown so
+  the published package keeps no runtime dependencies. Both `@rxova/*` tooling packages are
+  declared once in the root `package.json`, never in a workspace package.
 - `.changeset` — pending release notes. A change to the library adds one (`pnpm changeset`); CI
   checks. A pull request that publishes nothing (a dev dependency bump) is labelled `skip-changeset`.
 - `apps/docs` — the Astro + Starlight documentation site, published as part of rxova.org at
