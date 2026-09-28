@@ -179,13 +179,12 @@ jobs:
 
       # Everything else runs on the Node in .nvmrc, while `engines` promises
       # less — and until this job existed nothing checked the promise. The floor
-      # is read from the manifest, so lowering it moves the check with it. Plain
-      # `node` from here on: pnpm 11 does not start below 22.13.
+      # is read from the published manifests, so lowering it moves the check
+      # with it. Plain `node` from here on: pnpm 11 does not start below 22.13,
+      # so the installed bin is called by path rather than through `pnpm exec`.
       - name: Read the Node floor from engines
         id: floor
-        run: >-
-          node -p "'version=' + require('./packages/ts-extended-errors/package.json').engines.node.replace(/^>=/, '')"
-          >> "$GITHUB_OUTPUT"
+        run: pnpm exec rxova-repo-config node-floor
       - name: Switch to Node ${{ steps.floor.outputs.version }}
         uses: actions/setup-node@v7
         with:
@@ -194,7 +193,7 @@ jobs:
         working-directory: packages/ts-extended-errors
         run: |
           node --version
-          node --import tsx ../tooling/src/pack-smoke.ts
+          node_modules/.bin/rxova-repo-config pack-smoke
 
   supply-chain:
     name: audit · dedupe
@@ -247,7 +246,8 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-        run: node --import tsx ./packages/tooling/src/check-changeset.ts
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: pnpm exec rxova-repo-config check-changeset
 
   # The single context branch protection (and the org ruleset) requires.
   #
