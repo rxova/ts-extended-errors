@@ -1,5 +1,5 @@
 import { ExtendedError } from './ExtendedError'
-import { isInstanceOf, readString } from './safe'
+import { isInstanceOf, readString } from '@rxova/ts-utils'
 import { describeValue } from './serialize'
 
 const defineOwn = (target: object, key: string, value: unknown): void => {

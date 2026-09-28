@@ -1,5 +1,5 @@
 import { serializeError } from './serialize'
-import { isInstanceOf } from './safe'
+import { isInstanceOf } from '@rxova/ts-utils'
 import type { ErrorContext, ExtendedErrorOptions, SerializedError } from './types'
 
 /**

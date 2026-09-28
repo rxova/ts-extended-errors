@@ -1,4 +1,4 @@
-import { isInstanceOf, read } from './safe'
+import { isInstanceOf, readProperty } from '@rxova/ts-utils'
 
 /**
  * Walks `error` and everything under its `cause`, outermost first.
@@ -24,7 +24,7 @@ export function causeChain(error: unknown): unknown[] {
     if (typeof current !== 'object') break
     seen.add(current)
 
-    const next = read(current, 'cause')
+    const next = readProperty(current, 'cause')
     // Stopping on a value already on the chain is what makes a cycle terminate.
     if (seen.has(next)) break
     current = next
