@@ -12,9 +12,9 @@ down it.
 
 ```ts
 try {
-  return await fetchUser(id)
+  return await fetchUser(id);
 } catch (cause) {
-  throw new ProfileError('loading the profile failed', { cause })
+  throw new ProfileError("loading the profile failed", { cause });
 }
 ```
 
@@ -37,8 +37,8 @@ catch (thrown) {
 version of that check that looks at the whole chain:
 
 ```ts
-const timeout = findCauseOf(thrown, TimeoutError)
-if (timeout) return retryLater(timeout.context)
+const timeout = findCauseOf(thrown, TimeoutError);
+if (timeout) return retryLater(timeout.context);
 ```
 
 ## The helpers
@@ -53,7 +53,7 @@ The first value in the chain that is an instance of `Class`, typed as that class
 This is the one you reach for in a `catch`.
 
 ```ts
-findCauseOf(error, NotFoundError)?.context // typed as the class's context
+findCauseOf(error, NotFoundError)?.context; // typed as the class's context
 ```
 
 ### `hasCauseOf(error, Class)`
@@ -61,7 +61,7 @@ findCauseOf(error, NotFoundError)?.context // typed as the class's context
 The same question when you only need the boolean.
 
 ```ts
-if (hasCauseOf(error, TimeoutError)) return respond(504)
+if (hasCauseOf(error, TimeoutError)) return respond(504);
 ```
 
 ### `findCause(error, predicate)`
@@ -72,8 +72,8 @@ For a condition that is not "is an instance of". Pass a type guard and the resul
 const withStatus = findCause(
   error,
   (candidate): candidate is { status: number } =>
-    typeof candidate === 'object' && candidate !== null && 'status' in candidate,
-)
+    typeof candidate === "object" && candidate !== null && "status" in candidate,
+);
 ```
 
 ### `rootCause(error)`
@@ -82,7 +82,7 @@ The deepest value in the chain — the original failure. Returns `error` itself 
 cause, so it is safe to call unconditionally.
 
 ```ts
-logger.error({ reported: toError(error), root: rootCause(error) })
+logger.error({ reported: toError(error), root: rootCause(error) });
 ```
 
 ### `causeChain(error)`
@@ -93,7 +93,7 @@ it when you want to render the sequence rather than search it.
 ```ts
 causeChain(error)
   .map((link) => toError(link).message)
-  .join(' ← ')
+  .join(" ← ");
 ```
 
 ## Cycles and non-errors
@@ -119,7 +119,7 @@ const timeout =
   findCauseOf(error, TimeoutError) ??
   (error instanceof AggregateError
     ? error.errors.map((item) => findCauseOf(item, TimeoutError)).find(Boolean)
-    : undefined)
+    : undefined);
 ```
 
 `serializeError` does write `errors`, each serialized like a `cause`, so the list survives a JSON

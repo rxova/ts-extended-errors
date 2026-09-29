@@ -74,7 +74,7 @@ every error that has neither.
 ## `cause`, only when there was one
 
 ```ts
-const superOptions = (options) => ('cause' in options ? { cause: options.cause } : undefined)
+const superOptions = (options) => ("cause" in options ? { cause: options.cause } : undefined);
 ```
 
 `super(message, { cause: undefined })` still _defines_ the property. `'cause' in error` would then

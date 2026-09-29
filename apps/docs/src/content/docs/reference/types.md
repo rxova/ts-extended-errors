@@ -19,13 +19,13 @@ import type {
   ExtendedErrorMembers,
   ErrorClass,
   ErrorCode,
-} from 'ts-extended-errors'
+} from "ts-extended-errors";
 ```
 
 ## `ErrorContext`
 
 ```ts
-type ErrorContext = Readonly<Record<string, unknown>>
+type ErrorContext = Readonly<Record<string, unknown>>;
 ```
 
 The default of every `Context` type parameter. The constraint itself is `object`, so any object type
@@ -37,8 +37,8 @@ copies it through a JSON round trip, so a `Date` arrives as a string and a `Map`
 
 ```ts
 interface ExtendedErrorOptions<Context extends object = ErrorContext> {
-  readonly cause?: unknown
-  readonly context?: Context
+  readonly cause?: unknown;
+  readonly context?: Context;
 }
 ```
 
@@ -48,14 +48,14 @@ The second argument of every error constructor here.
 
 ```ts
 interface SerializedError {
-  readonly name: string
-  readonly message: string
-  readonly code?: string | number | undefined
-  readonly stack?: string | undefined
-  readonly context?: ErrorContext | undefined
-  readonly cause?: SerializedError | undefined
-  readonly errors?: readonly SerializedError[] | undefined
-  readonly errorsOmitted?: number | undefined
+  readonly name: string;
+  readonly message: string;
+  readonly code?: string | number | undefined;
+  readonly stack?: string | undefined;
+  readonly context?: ErrorContext | undefined;
+  readonly cause?: SerializedError | undefined;
+  readonly errors?: readonly SerializedError[] | undefined;
+  readonly errorsOmitted?: number | undefined;
 }
 ```
 
@@ -68,9 +68,9 @@ What `serializeError` returns, and what `JSON.stringify` produces for any error 
 
 ```ts
 interface SerializedErrorWithProperties extends SerializedError {
-  readonly cause?: SerializedErrorWithProperties | undefined
-  readonly errors?: readonly SerializedErrorWithProperties[] | undefined
-  readonly [field: string]: unknown
+  readonly cause?: SerializedErrorWithProperties | undefined;
+  readonly errors?: readonly SerializedErrorWithProperties[] | undefined;
+  readonly [field: string]: unknown;
 }
 ```
 
@@ -90,8 +90,8 @@ interface DefineErrorOptions<
   Code extends ErrorCode = ErrorCode,
   BaseCode extends ErrorCode = ErrorCode,
 > {
-  readonly code?: Code
-  readonly base?: ExtendedErrorConstructor<Context, ExtendedError<Context>, BaseCode>
+  readonly code?: Code;
+  readonly base?: ExtendedErrorConstructor<Context, ExtendedError<Context>, BaseCode>;
 }
 ```
 
@@ -109,9 +109,9 @@ interface ExtendedErrorConstructor<
   Instance extends Error = ExtendedError<Context>,
   Code extends ErrorCode = ErrorCode,
 > {
-  new (message: string, options?: ExtendedErrorOptions<Context>): WithCode<Instance, Code>
-  readonly prototype: WithCode<Instance, Code>
-  readonly code: Code
+  new (message: string, options?: ExtendedErrorOptions<Context>): WithCode<Instance, Code>;
+  readonly prototype: WithCode<Instance, Code>;
+  readonly code: Code;
 }
 ```
 
@@ -135,13 +135,13 @@ interface MessageErrorConstructor<
     ...options: Partial<Context> extends Context
       ? [options?: ExtendedErrorOptions<Context>]
       : [options: ExtendedErrorOptions<Context> & { readonly context: Context }]
-  ): WithCode<WithContext<Instance, Context>, Code>
+  ): WithCode<WithContext<Instance, Context>, Code>;
   new (
     message: string,
     options?: ExtendedErrorOptions<Context>,
-  ): WithCode<WithContext<Instance, Context>, Code>
-  readonly prototype: WithCode<WithContext<Instance, Context>, Code>
-  readonly code: Code
+  ): WithCode<WithContext<Instance, Context>, Code>;
+  readonly prototype: WithCode<WithContext<Instance, Context>, Code>;
+  readonly code: Code;
 }
 ```
 
@@ -154,8 +154,8 @@ rebuild it and what lets it be the `base` of another class.
 context the instance's is typed as present rather than `Context | undefined`:
 
 ```ts
-const found = findCauseOf(thrown, InvalidDateError)
-found?.context.value // string — no second `?.` for a case that cannot happen
+const found = findCauseOf(thrown, InvalidDateError);
+found?.context.value; // string — no second `?.` for a case that cannot happen
 ```
 
 It is not exported; it exists so that the call site's guarantee and the instance type cannot drift
@@ -168,10 +168,10 @@ the class being an `ErrorClass`. See
 
 ```ts
 interface ExtendedErrorMembers<Context extends object = ErrorContext> {
-  readonly name: string
-  readonly code: string | undefined
-  readonly context: Context | undefined
-  toJSON(): SerializedError
+  readonly name: string;
+  readonly code: string | undefined;
+  readonly context: Context | undefined;
+  toJSON(): SerializedError;
 }
 ```
 
@@ -184,7 +184,7 @@ the return type of a non-`ExtendedError` base readable: `RangeError & ExtendedEr
 type ErrorClass<Instance extends Error = Error> = new (
   message: string,
   options?: ErrorOptions,
-) => Instance
+) => Instance;
 ```
 
 Any error class whose constructor takes `(message, options)` the way the built-ins do. It is the
@@ -194,7 +194,7 @@ type of `base` on the non-`ExtendedError` overloads, and of the entries in `dese
 ## `ErrorCode`
 
 ```ts
-type ErrorCode = string | undefined
+type ErrorCode = string | undefined;
 ```
 
 The constraint on every `Code` type parameter: a string literal for a class that declares its
