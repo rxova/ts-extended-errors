@@ -1,4 +1,4 @@
-import { isInstanceOf, readProperty } from '@rxova/ts-utils'
+import { isInstanceOf, readProperty } from "@rxova/ts-utils";
 
 /**
  * Walks `error` and everything under its `cause`, outermost first.
@@ -13,24 +13,24 @@ import { isInstanceOf, readProperty } from '@rxova/ts-utils'
  * error must not replace it with an inspection failure.
  */
 export function causeChain(error: unknown): unknown[] {
-  const chain: unknown[] = []
-  const seen = new Set<unknown>()
-  let current: unknown = error
+  const chain: unknown[] = [];
+  const seen = new Set<unknown>();
+  let current: unknown = error;
 
   while (current !== undefined && current !== null) {
-    chain.push(current)
+    chain.push(current);
 
     // A primitive cannot carry a cause, so the chain ends here.
-    if (typeof current !== 'object') break
-    seen.add(current)
+    if (typeof current !== "object") break;
+    seen.add(current);
 
-    const next = readProperty(current, 'cause')
+    const next = readProperty(current, "cause");
     // Stopping on a value already on the chain is what makes a cycle terminate.
-    if (seen.has(next)) break
-    current = next
+    if (seen.has(next)) break;
+    current = next;
   }
 
-  return chain
+  return chain;
 }
 
 /**
@@ -40,19 +40,19 @@ export function causeChain(error: unknown): unknown[] {
  * unconditionally.
  */
 export function rootCause(error: unknown): unknown {
-  const chain = causeChain(error)
-  return chain.length > 0 ? chain[chain.length - 1] : error
+  const chain = causeChain(error);
+  return chain.length > 0 ? chain[chain.length - 1] : error;
 }
 
 /** Finds the first value in the chain matching `predicate`, narrowing it. */
 export function findCause<T>(
   error: unknown,
   predicate: (candidate: unknown) => candidate is T,
-): T | undefined
+): T | undefined;
 /** Finds the first value in the chain matching `predicate`. */
-export function findCause(error: unknown, predicate: (candidate: unknown) => boolean): unknown
+export function findCause(error: unknown, predicate: (candidate: unknown) => boolean): unknown;
 export function findCause(error: unknown, predicate: (candidate: unknown) => boolean): unknown {
-  return causeChain(error).find((candidate) => predicate(candidate))
+  return causeChain(error).find((candidate) => predicate(candidate));
 }
 
 /**
@@ -73,7 +73,7 @@ export function findCauseOf<T>(
   error: unknown,
   constructor: abstract new (...args: never[]) => T,
 ): T | undefined {
-  return findCause(error, (candidate): candidate is T => isInstanceOf(candidate, constructor))
+  return findCause(error, (candidate): candidate is T => isInstanceOf(candidate, constructor));
 }
 
 /** Whether anything in the chain is an instance of `constructor`. */
@@ -81,5 +81,5 @@ export function hasCauseOf(
   error: unknown,
   constructor: abstract new (...args: never[]) => unknown,
 ): boolean {
-  return findCauseOf(error, constructor) !== undefined
+  return findCauseOf(error, constructor) !== undefined;
 }

@@ -10,21 +10,21 @@ errors, a one-line class factory, helpers that search `cause` chains, and a seri
 the original classes. Node.js 22.12 or newer, browsers too, no runtime dependencies, ESM and CommonJS. MIT.
 
 ```ts
-import { defineError, deserializeError, findCauseOf, serializeError } from 'ts-extended-errors'
+import { defineError, deserializeError, findCauseOf, serializeError } from "ts-extended-errors";
 
-const HttpError = defineError('HttpError', { code: 'HTTP' })
-const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
+const HttpError = defineError("HttpError", { code: "HTTP" });
+const NotFoundError = defineError("NotFoundError", { base: HttpError, code: "HTTP_NOT_FOUND" });
 
-const error = new HttpError('loading the profile failed', {
-  cause: new NotFoundError('no such user', { context: { userId: 42 } }),
-})
+const error = new HttpError("loading the profile failed", {
+  cause: new NotFoundError("no such user", { context: { userId: 42 } }),
+});
 
-findCauseOf(error, NotFoundError)?.context // { userId: 42 }
+findCauseOf(error, NotFoundError)?.context; // { userId: 42 }
 
 // Through JSON and back, as the same classes
-const line = JSON.stringify(serializeError(error, { includeStack: false }))
-const back = deserializeError(JSON.parse(line), { classes: [HttpError, NotFoundError] })
-back.cause instanceof NotFoundError // true
+const line = JSON.stringify(serializeError(error, { includeStack: false }));
+const back = deserializeError(JSON.parse(line), { classes: [HttpError, NotFoundError] });
+back.cause instanceof NotFoundError; // true
 ```
 
 ## Install

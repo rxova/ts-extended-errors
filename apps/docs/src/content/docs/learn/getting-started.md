@@ -23,14 +23,14 @@ return two different classes, and `instanceof` between them is false.
 
 ```ts
 // errors.ts
-import { defineError } from 'ts-extended-errors'
+import { defineError } from "ts-extended-errors";
 
-export const AppError = defineError('AppError', { code: 'APP' })
+export const AppError = defineError("AppError", { code: "APP" });
 
-export const NotFoundError = defineError<{ id: string }>('NotFoundError', {
+export const NotFoundError = defineError<{ id: string }>("NotFoundError", {
   base: AppError,
-  code: 'NOT_FOUND',
-})
+  code: "NOT_FOUND",
+});
 ```
 
 `base` is what makes it a family: `NotFoundError` is an `AppError`, so a handler can catch the whole
@@ -42,12 +42,12 @@ The second argument is an options object — `context` and `cause` are fields of
 arguments.
 
 ```ts
-import { NotFoundError } from './errors.js'
+import { NotFoundError } from "./errors.js";
 
 export function loadUser(id: string) {
-  const user = users.get(id)
-  if (!user) throw new NotFoundError(`no user ${id}`, { context: { id } })
-  return user
+  const user = users.get(id);
+  if (!user) throw new NotFoundError(`no user ${id}`, { context: { id } });
+  return user;
 }
 ```
 
@@ -57,13 +57,13 @@ When a failure crosses a layer, wrap it rather than replacing it. The original g
 nothing is lost.
 
 ```ts
-import { AppError } from './errors.js'
+import { AppError } from "./errors.js";
 
 export function loadProfile(id: string) {
   try {
-    return render(loadUser(id))
+    return render(loadUser(id));
   } catch (cause) {
-    throw new AppError('loading the profile failed', { cause })
+    throw new AppError("loading the profile failed", { cause });
   }
 }
 ```
@@ -74,18 +74,18 @@ A `catch` binding is `unknown`, because JavaScript permits throwing anything. `f
 `unknown`, searches the whole chain, and narrows to the class you asked for:
 
 ```ts
-import { findCauseOf, toError } from 'ts-extended-errors'
-import { NotFoundError } from './errors.js'
+import { findCauseOf, toError } from "ts-extended-errors";
+import { NotFoundError } from "./errors.js";
 
 try {
-  loadProfile('u_17')
+  loadProfile("u_17");
 } catch (thrown) {
-  const notFound = findCauseOf(thrown, NotFoundError)
-  if (notFound) return respond(404, { id: notFound.context?.id })
+  const notFound = findCauseOf(thrown, NotFoundError);
+  if (notFound) return respond(404, { id: notFound.context?.id });
 
   // Anything else: narrow to a real Error and let the logger have it.
-  logger.error(toError(thrown))
-  return respond(500)
+  logger.error(toError(thrown));
+  return respond(500);
 }
 ```
 
@@ -99,10 +99,10 @@ is the `AppError` wrapping it. That is the one mistake worth internalising early
 what is included, call `serializeError` directly:
 
 ```ts
-import { serializeError } from 'ts-extended-errors'
+import { serializeError } from "ts-extended-errors";
 
-logger.error(serializeError(error)) // with stacks, for your own logs
-response.json(serializeError(error, { includeStack: false })) // without, for a client
+logger.error(serializeError(error)); // with stacks, for your own logs
+response.json(serializeError(error, { includeStack: false })); // without, for a client
 ```
 
 On the receiving end, `deserializeError` turns that object back into the classes it was. See

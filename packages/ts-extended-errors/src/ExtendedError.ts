@@ -1,6 +1,6 @@
-import { serializeError } from './serialize'
-import { isInstanceOf } from '@rxova/ts-utils'
-import type { ErrorContext, ExtendedErrorOptions, SerializedError } from './types'
+import { serializeError } from "./serialize";
+import { isInstanceOf } from "@rxova/ts-utils";
+import type { ErrorContext, ExtendedErrorOptions, SerializedError } from "./types";
 
 /**
  * What an extended error's constructor passes to `super`.
@@ -14,7 +14,7 @@ import type { ErrorContext, ExtendedErrorOptions, SerializedError } from './type
  * is not an ExtendedError, which is why it is not exported from the package.
  */
 export const superOptions = (options: { readonly cause?: unknown }): ErrorOptions | undefined =>
-  'cause' in options ? { cause: options.cause } : undefined
+  "cause" in options ? { cause: options.cause } : undefined;
 
 /**
  * Starts `error`'s stack at the line that threw rather than inside its
@@ -28,10 +28,10 @@ export const captureStack = (
   error: Error,
   constructedBy: abstract new (...args: never[]) => unknown,
 ): void => {
-  if (typeof Error.captureStackTrace === 'function') {
-    Error.captureStackTrace(error, constructedBy)
+  if (typeof Error.captureStackTrace === "function") {
+    Error.captureStackTrace(error, constructedBy);
   }
-}
+};
 
 /**
  * The base class every error here extends.
@@ -61,13 +61,13 @@ export class ExtendedError<Context extends object = ErrorContext> extends Error 
    * Static, so a subclass declares it once rather than at every throw site.
    * {@link defineError} sets it for you.
    */
-  static readonly code: string | undefined = undefined
+  static readonly code: string | undefined = undefined;
 
   /**
    * The constructed class's name. Set from `new.target`, so a subclass reports
    * its own name without restating it.
    */
-  override readonly name: string
+  override readonly name: string;
 
   /**
    * The static {@link ExtendedError.code} of the constructed class, copied
@@ -77,29 +77,29 @@ export class ExtendedError<Context extends object = ErrorContext> extends Error 
    * `console.log(error)` does not print `code: undefined` after the stack of
    * every error that has none. Reading it still gives `undefined`.
    */
-  declare readonly code: string | undefined
+  declare readonly code: string | undefined;
 
   /** Structured data describing this failure. An own property only when one was given. */
-  declare readonly context: Context | undefined
+  declare readonly context: Context | undefined;
 
   constructor(message: string, options: ExtendedErrorOptions<Context> = {}) {
-    super(message, superOptions(options))
+    super(message, superOptions(options));
 
     // The class that was actually constructed, which for `new ConfigError(…)`
     // is ConfigError even though this code lives on the base.
-    const constructedBy = new.target
+    const constructedBy = new.target;
 
     // Restores the prototype chain. When this is compiled down to ES5 (or run
     // through a bundler that does), `super()` returns a fresh Error object and
     // `instanceof ConfigError` is false without this line. It costs a property
     // write here and is unfixable at the call site.
-    Object.setPrototypeOf(this, constructedBy.prototype)
+    Object.setPrototypeOf(this, constructedBy.prototype);
 
-    this.name = constructedBy.name
-    if (constructedBy.code !== undefined) this.code = constructedBy.code
-    if (options.context !== undefined) this.context = options.context
+    this.name = constructedBy.name;
+    if (constructedBy.code !== undefined) this.code = constructedBy.code;
+    if (options.context !== undefined) this.context = options.context;
 
-    captureStack(this, constructedBy)
+    captureStack(this, constructedBy);
   }
 
   /**
@@ -108,7 +108,7 @@ export class ExtendedError<Context extends object = ErrorContext> extends Error 
    * default serializer sees nothing at all.
    */
   toJSON(): SerializedError {
-    return serializeError(this)
+    return serializeError(this);
   }
 }
 
@@ -122,4 +122,4 @@ export class ExtendedError<Context extends object = ErrorContext> extends Error 
  * `false` rather than throwing from this guard.
  */
 export const isExtendedError = (value: unknown): value is ExtendedError =>
-  isInstanceOf(value, ExtendedError)
+  isInstanceOf(value, ExtendedError);

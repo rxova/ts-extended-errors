@@ -13,8 +13,8 @@ Extend `Error` and four things are quietly wrong:
 ```ts
 class ConfigError extends Error {}
 
-const error = new ConfigError('missing "port"')
-error.name // 'Error' — not 'ConfigError'
+const error = new ConfigError('missing "port"');
+error.name; // 'Error' — not 'ConfigError'
 ```
 
 `name` stays `'Error'`, so every log line and every `toString()` says `Error` for a class you
@@ -31,7 +31,7 @@ of it inherits the fixes rather than restating them.
 Without a stable discriminator, callers end up matching on prose:
 
 ```ts
-if (error.message.includes('not found')) {
+if (error.message.includes("not found")) {
   /* … */
 }
 ```
@@ -45,7 +45,7 @@ every throw site.
 The information a handler needs is usually formatted into the sentence and then unavailable:
 
 ```ts
-throw new Error(`user ${userId} not found in tenant ${tenantId}`)
+throw new Error(`user ${userId} not found in tenant ${tenantId}`);
 ```
 
 `context` is a typed object on the error, so the data stays data. The message is still a sentence

@@ -47,33 +47,33 @@ runtimes.
 ## Quick start
 
 ```ts
-import { defineError, findCauseOf, serializeError, toError } from 'ts-extended-errors'
+import { defineError, findCauseOf, serializeError, toError } from "ts-extended-errors";
 
-const HttpError = defineError('HttpError', { code: 'HTTP' })
-const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
+const HttpError = defineError("HttpError", { code: "HTTP" });
+const NotFoundError = defineError("NotFoundError", { base: HttpError, code: "HTTP_NOT_FOUND" });
 
 function loadUser(userId: number) {
-  throw new NotFoundError('no such user', { context: { userId } })
+  throw new NotFoundError("no such user", { context: { userId } });
 }
 
 function loadProfile(userId: number) {
   try {
-    return loadUser(userId)
+    return loadUser(userId);
   } catch (cause) {
-    throw new HttpError('loading the profile failed', { cause })
+    throw new HttpError("loading the profile failed", { cause });
   }
 }
 
 try {
-  loadProfile(42)
+  loadProfile(42);
 } catch (thrown) {
-  const error = toError(thrown) // `thrown` is `unknown`, `error` is an `Error`
+  const error = toError(thrown); // `thrown` is `unknown`, `error` is an `Error`
 
-  const notFound = findCauseOf(error, NotFoundError) // searches the whole chain
-  notFound?.code // 'HTTP_NOT_FOUND'
-  notFound?.context // { userId: 42 }
+  const notFound = findCauseOf(error, NotFoundError); // searches the whole chain
+  notFound?.code; // 'HTTP_NOT_FOUND'
+  notFound?.context; // { userId: 42 }
 
-  console.log(JSON.stringify(serializeError(error, { includeStack: false })))
+  console.log(JSON.stringify(serializeError(error, { includeStack: false })));
   // {"name":"HttpError","message":"loading the profile failed","code":"HTTP","cause":
   //   {"name":"NotFoundError","message":"no such user","code":"HTTP_NOT_FOUND","context":{"userId":42}}}
 }
@@ -100,28 +100,28 @@ unexpected failures still use native `throw` and `catch`.
 The base class. Extend it when an error needs fields or methods of its own.
 
 ```ts
-import { ExtendedError, isExtendedError } from 'ts-extended-errors'
+import { ExtendedError, isExtendedError } from "ts-extended-errors";
 
 class ConfigError extends ExtendedError<{ file: string }> {
-  static override readonly code = 'CONFIG'
+  static override readonly code = "CONFIG";
 }
 
 const error = new ConfigError('missing "port"', {
-  context: { file: 'app.config.json' },
-  cause: new SyntaxError('Unexpected token } in JSON'),
-})
+  context: { file: "app.config.json" },
+  cause: new SyntaxError("Unexpected token } in JSON"),
+});
 
-error.name // 'ConfigError'
-error.message // 'missing "port"'
-error.code // 'CONFIG'
-error.context // { file: 'app.config.json' }
-error.cause // SyntaxError: Unexpected token } in JSON
-error instanceof ConfigError // true
-error instanceof ExtendedError // true
-error.stack?.split('\n')[0] // 'ConfigError: missing "port"'
+error.name; // 'ConfigError'
+error.message; // 'missing "port"'
+error.code; // 'CONFIG'
+error.context; // { file: 'app.config.json' }
+error.cause; // SyntaxError: Unexpected token } in JSON
+error instanceof ConfigError; // true
+error instanceof ExtendedError; // true
+error.stack?.split("\n")[0]; // 'ConfigError: missing "port"'
 
-isExtendedError(error) // true
-isExtendedError(new Error('x')) // false
+isExtendedError(error); // true
+isExtendedError(new Error("x")); // false
 ```
 
 `new ExtendedError<Context>(message, options?)`
@@ -147,22 +147,22 @@ isExtendedError(new Error('x')) // false
 Returns a new error class. The result is the same as extending `ExtendedError` with a static `code`.
 
 ```ts
-import { ExtendedError, defineError } from 'ts-extended-errors'
+import { ExtendedError, defineError } from "ts-extended-errors";
 
-const HttpError = defineError('HttpError', { code: 'HTTP' })
-const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
-const GoneError = defineError('GoneError', { base: HttpError }) // no code: inherits 'HTTP'
+const HttpError = defineError("HttpError", { code: "HTTP" });
+const NotFoundError = defineError("NotFoundError", { base: HttpError, code: "HTTP_NOT_FOUND" });
+const GoneError = defineError("GoneError", { base: HttpError }); // no code: inherits 'HTTP'
 
-const error = new NotFoundError('no such user', { context: { userId: 42 } })
+const error = new NotFoundError("no such user", { context: { userId: 42 } });
 
-error.name // 'NotFoundError'
-error.code // 'HTTP_NOT_FOUND'
-error.context // { userId: 42 }
-error instanceof NotFoundError // true
-error instanceof HttpError // true
-error instanceof ExtendedError // true
-NotFoundError.code // 'HTTP_NOT_FOUND'
-new GoneError('deleted').code // 'HTTP'
+error.name; // 'NotFoundError'
+error.code; // 'HTTP_NOT_FOUND'
+error.context; // { userId: 42 }
+error instanceof NotFoundError; // true
+error instanceof HttpError; // true
+error instanceof ExtendedError; // true
+NotFoundError.code; // 'HTTP_NOT_FOUND'
+new GoneError("deleted").code; // 'HTTP'
 ```
 
 `code` is typed as the literal the class declares, on the class and on its instances, and a class
@@ -180,14 +180,16 @@ one. The `code` of a class that declares none and has no base to inherit from is
 The first type parameter types `context`. Any object type will do, an `interface` included:
 
 ```ts
-import { defineError } from 'ts-extended-errors'
+import { defineError } from "ts-extended-errors";
 
-const RateLimitError = defineError<{ retryAfter: number }>('RateLimitError', { code: 'RATE_LIMIT' })
+const RateLimitError = defineError<{ retryAfter: number }>("RateLimitError", {
+  code: "RATE_LIMIT",
+});
 
-new RateLimitError('slow down', { context: { retryAfter: 30 } }).context?.retryAfter // 30
+new RateLimitError("slow down", { context: { retryAfter: 30 } }).context?.retryAfter; // 30
 
 // @ts-expect-error: retryAfter is a number
-new RateLimitError('slow down', { context: { retryAfter: '30' } })
+new RateLimitError("slow down", { context: { retryAfter: "30" } });
 ```
 
 TypeScript infers all of a call's type arguments or none, so naming `Context` leaves `code` typed
@@ -197,18 +199,18 @@ as `string | undefined`. Name the second parameter as well to keep the literal:
 The returned class can be extended like any other:
 
 ```ts
-import { defineError } from 'ts-extended-errors'
+import { defineError } from "ts-extended-errors";
 
-const HttpError = defineError('HttpError', { code: 'HTTP' })
+const HttpError = defineError("HttpError", { code: "HTTP" });
 
 class ServiceUnavailableError extends HttpError {
-  readonly retryAfter = 30
+  readonly retryAfter = 30;
 }
 
-const error = new ServiceUnavailableError('try again later')
-error.name // 'ServiceUnavailableError'
-error.code // 'HTTP'
-error.retryAfter // 30
+const error = new ServiceUnavailableError("try again later");
+error.name; // 'ServiceUnavailableError'
+error.code; // 'HTTP'
+error.retryAfter; // 30
 ```
 
 Such a subclass keeps its base's `code`, in type and at runtime. A subclass that needs a code of its
@@ -223,31 +225,31 @@ With `message`, the class writes its own message from `context`, so a throw site
 options:
 
 ```ts
-import { defineError } from 'ts-extended-errors'
+import { defineError } from "ts-extended-errors";
 
-const InvalidDateError = defineError('InvalidDateError', {
-  code: 'INVALID_DATE',
+const InvalidDateError = defineError("InvalidDateError", {
+  code: "INVALID_DATE",
   message: (context: { value: string }) => `"${context.value}" is not a valid date`,
-})
+});
 
-const error = new InvalidDateError({ context: { value: '2026-02-30' } })
+const error = new InvalidDateError({ context: { value: "2026-02-30" } });
 
-error.message // '"2026-02-30" is not a valid date'
-error.context // { value: '2026-02-30' }
-error.code // 'INVALID_DATE'
+error.message; // '"2026-02-30" is not a valid date'
+error.context; // { value: '2026-02-30' }
+error.code; // 'INVALID_DATE'
 
 // @ts-expect-error: `context` is required, because `value` is
-new InvalidDateError()
+new InvalidDateError();
 ```
 
 Because the throw site has to pass a context, the instance's `context` is typed as present rather
 than `Context | undefined` — so a caller reads a field off it directly:
 
 ```ts
-import { findCauseOf } from 'ts-extended-errors'
+import { findCauseOf } from "ts-extended-errors";
 
-const found = findCauseOf(thrown, InvalidDateError)
-found?.context.value // string — no second `?.` and no `?? ''` for a case that cannot happen
+const found = findCauseOf(thrown, InvalidDateError);
+found?.context.value; // string — no second `?.` and no `?? ''` for a case that cannot happen
 ```
 
 The type of `context` comes from the parameter of `message`. When that type has no required fields,
@@ -255,14 +257,14 @@ the options are optional as well — and then `context` really can be absent, so
 `Context | undefined`. `cause` goes next to `context`, as for any other class:
 
 ```ts
-import { defineError } from 'ts-extended-errors'
+import { defineError } from "ts-extended-errors";
 
-const ConfigMissingError = defineError('ConfigMissingError', {
-  message: () => 'no config file found',
-})
+const ConfigMissingError = defineError("ConfigMissingError", {
+  message: () => "no config file found",
+});
 
-new ConfigMissingError().message // 'no config file found'
-new ConfigMissingError({ cause: new Error('ENOENT') }).cause // Error: ENOENT
+new ConfigMissingError().message; // 'no config file found'
+new ConfigMissingError({ cause: new Error("ENOENT") }).cause; // Error: ENOENT
 ```
 
 A string first argument is still taken as the message: `new InvalidDateError('custom', { context })`.
@@ -275,14 +277,14 @@ instance type honest when a payload arrives carrying no `context` at all.
 `message` of its own writes the message the same way, and takes the same options:
 
 ```ts
-import { defineError } from 'ts-extended-errors'
+import { defineError } from "ts-extended-errors";
 
-const InvalidDateError = defineError<{ value: string }>('InvalidDateError', {
+const InvalidDateError = defineError<{ value: string }>("InvalidDateError", {
   message: ({ value }) => `"${value}" is not a valid date`,
-})
-const PastDateError = defineError('PastDateError', { base: InvalidDateError })
+});
+const PastDateError = defineError("PastDateError", { base: InvalidDateError });
 
-new PastDateError({ context: { value: '1999-01-01' } }).message // '"1999-01-01" is not a valid date'
+new PastDateError({ context: { value: "1999-01-01" } }).message; // '"1999-01-01" is not a valid date'
 ```
 
 When `message` throws, for example on a `BigInt` passed to `JSON.stringify`, the error is still
@@ -295,20 +297,20 @@ to throw, not the formatter's `TypeError`.
 constructor takes `(message, options)`. To type `context` as well, pass both type parameters.
 
 ```ts
-import { ExtendedError, defineError, isExtendedError } from 'ts-extended-errors'
+import { ExtendedError, defineError, isExtendedError } from "ts-extended-errors";
 
-const OutOfRangeError = defineError<{ page: number }, RangeError>('OutOfRangeError', {
+const OutOfRangeError = defineError<{ page: number }, RangeError>("OutOfRangeError", {
   base: RangeError,
-  code: 'OUT_OF_RANGE',
-})
+  code: "OUT_OF_RANGE",
+});
 
-const error = new OutOfRangeError('page must be 1 or more', { context: { page: 0 } })
+const error = new OutOfRangeError("page must be 1 or more", { context: { page: 0 } });
 
-error instanceof RangeError // true
-error.code // 'OUT_OF_RANGE'
-error.context?.page // 0
-error instanceof ExtendedError // false
-isExtendedError(error) // false
+error instanceof RangeError; // true
+error.code; // 'OUT_OF_RANGE'
+error.context?.page; // 0
+error instanceof ExtendedError; // false
+isExtendedError(error); // false
 ```
 
 Instances have the same members as an `ExtendedError` (`name`, `code`, `context`, `cause`, `stack`,
@@ -331,24 +333,24 @@ import {
   hasCauseOf,
   isExtendedError,
   rootCause,
-} from 'ts-extended-errors'
+} from "ts-extended-errors";
 
-const HttpError = defineError('HttpError', { code: 'HTTP' })
-const TimeoutError = defineError<{ ms: number }>('TimeoutError', { code: 'TIMEOUT' })
+const HttpError = defineError("HttpError", { code: "HTTP" });
+const TimeoutError = defineError<{ ms: number }>("TimeoutError", { code: "TIMEOUT" });
 
-const timeout = new TimeoutError('upstream took 5000ms', { context: { ms: 5000 } })
-const request = new HttpError('GET /users/42 failed', { cause: timeout })
-const error = new ExtendedError('loading the profile failed', { cause: request })
+const timeout = new TimeoutError("upstream took 5000ms", { context: { ms: 5000 } });
+const request = new HttpError("GET /users/42 failed", { cause: timeout });
+const error = new ExtendedError("loading the profile failed", { cause: request });
 
-causeChain(error).length // 3: [error, request, timeout]
-rootCause(error) === timeout // true
-findCauseOf(error, TimeoutError)?.context?.ms // 5000
-findCauseOf(error, RangeError) // undefined
-hasCauseOf(error, HttpError) // true
-findCause(error, (cause) => isExtendedError(cause) && cause.code === 'TIMEOUT') === timeout // true
+causeChain(error).length; // 3: [error, request, timeout]
+rootCause(error) === timeout; // true
+findCauseOf(error, TimeoutError)?.context?.ms; // 5000
+findCauseOf(error, RangeError); // undefined
+hasCauseOf(error, HttpError); // true
+findCause(error, (cause) => isExtendedError(cause) && cause.code === "TIMEOUT") === timeout; // true
 
-causeChain(new Error('request failed', { cause: 'ECONNRESET' })).at(-1) // 'ECONNRESET'
-causeChain(null) // []
+causeChain(new Error("request failed", { cause: "ECONNRESET" })).at(-1); // 'ECONNRESET'
+causeChain(null); // []
 ```
 
 | Function                      | Returns                                                                  |
@@ -367,26 +369,26 @@ when present. `code` is read as a string or a finite number, so Node's `ENOENT` 
 `AggregateError`.
 
 ```ts
-import { ExtendedError, defineError, serializeError } from 'ts-extended-errors'
+import { ExtendedError, defineError, serializeError } from "ts-extended-errors";
 
-const TimeoutError = defineError('TimeoutError', { code: 'TIMEOUT' })
+const TimeoutError = defineError("TimeoutError", { code: "TIMEOUT" });
 
-const error = new ExtendedError('loading the profile failed', {
-  cause: new TimeoutError('upstream took 5000ms', { context: { ms: 5000 } }),
-})
+const error = new ExtendedError("loading the profile failed", {
+  cause: new TimeoutError("upstream took 5000ms", { context: { ms: 5000 } }),
+});
 
-serializeError(error, { includeStack: false })
+serializeError(error, { includeStack: false });
 // {
 //   name: 'ExtendedError',
 //   message: 'loading the profile failed',
 //   cause: { name: 'TimeoutError', message: 'upstream took 5000ms', code: 'TIMEOUT', context: { ms: 5000 } }
 // }
 
-serializeError(error, { includeStack: false, maxDepth: 0 })
+serializeError(error, { includeStack: false, maxDepth: 0 });
 // { name: 'ExtendedError', message: 'loading the profile failed' }
 
-serializeError('timeout') // { name: 'string', message: 'timeout' }
-serializeError(null) // { name: 'object', message: 'null' }
+serializeError("timeout"); // { name: 'string', message: 'timeout' }
+serializeError(null); // { name: 'object', message: 'null' }
 ```
 
 | Option                 | Type      | Default | Description                                                          |
@@ -409,14 +411,14 @@ number across the whole output, nested `AggregateError`s included, and `errorsOm
 ones it cut:
 
 ```ts
-import { serializeError } from 'ts-extended-errors'
+import { serializeError } from "ts-extended-errors";
 
 const error = new AggregateError(
-  [new Error('mirror 1 timed out'), new Error('mirror 2 timed out'), new Error('mirror 3 refused')],
-  'every mirror failed',
-)
+  [new Error("mirror 1 timed out"), new Error("mirror 2 timed out"), new Error("mirror 3 refused")],
+  "every mirror failed",
+);
 
-serializeError(error, { includeStack: false, maxAggregatedErrors: 2 })
+serializeError(error, { includeStack: false, maxAggregatedErrors: 2 });
 // {
 //   name: 'AggregateError',
 //   message: 'every mirror failed',
@@ -435,7 +437,7 @@ By default only the fields above are read. `includeOwnProperties: true` also cop
 field of each error in the chain, and widens the return type to `SerializedErrorWithProperties`:
 
 ```ts
-import { serializeError } from 'ts-extended-errors'
+import { serializeError } from "ts-extended-errors";
 
 class DbError extends Error {
   constructor(
@@ -443,17 +445,17 @@ class DbError extends Error {
     readonly sortKey: string,
     readonly status: number,
   ) {
-    super(message)
-    this.name = 'DbError'
+    super(message);
+    this.name = "DbError";
   }
 }
 
-const error = new DbError('conditional check failed', 'user#42', 409)
+const error = new DbError("conditional check failed", "user#42", 409);
 
-serializeError(error, { includeStack: false })
+serializeError(error, { includeStack: false });
 // { name: 'DbError', message: 'conditional check failed' }
 
-serializeError(error, { includeStack: false, includeOwnProperties: true })
+serializeError(error, { includeStack: false, includeOwnProperties: true });
 // { name: 'DbError', message: 'conditional check failed', sortKey: 'user#42', status: 409 }
 ```
 
@@ -472,24 +474,24 @@ inaccessible field. An object that refuses both JSON and string-tag inspection i
 Rebuilds the output of `serializeError` as real errors, cause chain included.
 
 ```ts
-import { defineError, deserializeError, findCauseOf } from 'ts-extended-errors'
+import { defineError, deserializeError, findCauseOf } from "ts-extended-errors";
 
-const HttpError = defineError('HttpError', { code: 'HTTP' })
-const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
+const HttpError = defineError("HttpError", { code: "HTTP" });
+const NotFoundError = defineError("NotFoundError", { base: HttpError, code: "HTTP_NOT_FOUND" });
 
 // Sender
-const sent = new HttpError('GET /users/42 failed', {
-  cause: new NotFoundError('no such user', { context: { userId: 42 } }),
-})
-const payload = JSON.stringify(sent)
+const sent = new HttpError("GET /users/42 failed", {
+  cause: new NotFoundError("no such user", { context: { userId: 42 } }),
+});
+const payload = JSON.stringify(sent);
 
 // Receiver
-const error = deserializeError(JSON.parse(payload), { classes: [HttpError, NotFoundError] })
+const error = deserializeError(JSON.parse(payload), { classes: [HttpError, NotFoundError] });
 
-error instanceof HttpError // true
-error.cause instanceof NotFoundError // true
-findCauseOf(error, NotFoundError)?.context // { userId: 42 }
-error.stack === sent.stack // true
+error instanceof HttpError; // true
+error.cause instanceof NotFoundError; // true
+findCauseOf(error, NotFoundError)?.context; // { userId: 42 }
+error.stack === sent.stack; // true
 ```
 
 - Each error is created with the class whose `name` equals its `name` field. `Error`, `EvalError`,
@@ -506,13 +508,13 @@ error.stack === sent.stack // true
   `toError`.
 
 ```ts
-import { ExtendedError, deserializeError } from 'ts-extended-errors'
+import { ExtendedError, deserializeError } from "ts-extended-errors";
 
-const error = deserializeError({ name: 'PaymentError', message: 'card declined', code: 'CARD' })
+const error = deserializeError({ name: "PaymentError", message: "card declined", code: "CARD" });
 
-error.name // 'PaymentError'
-error instanceof ExtendedError // true
-deserializeError({ name: 'TypeError', message: 'x is not a function' }) instanceof TypeError // true
+error.name; // 'PaymentError'
+error instanceof ExtendedError; // true
+deserializeError({ name: "TypeError", message: "x is not a function" }) instanceof TypeError; // true
 ```
 
 | Option     | Type                    | Default | Description                                                       |
@@ -531,18 +533,18 @@ that constructor is caller-provided behavior.
 Returns an `Error` for any value, for use in `catch` blocks, where the caught value is `unknown`.
 
 ```ts
-import { ExtendedError, toError } from 'ts-extended-errors'
+import { ExtendedError, toError } from "ts-extended-errors";
 
-const original = new TypeError('x is not a function')
-toError(original) === original // true: errors are returned unchanged
+const original = new TypeError("x is not a function");
+toError(original) === original; // true: errors are returned unchanged
 
-const fromString = toError('timeout')
-fromString instanceof ExtendedError // true
-fromString.message // 'timeout'
-fromString.cause // 'timeout'
+const fromString = toError("timeout");
+fromString instanceof ExtendedError; // true
+fromString.message; // 'timeout'
+fromString.cause; // 'timeout'
 
-toError({ status: 500 }).message // '{"status":500}'
-toError({ name: 'TypeError', message: 'x is not a function' }).name // 'TypeError'
+toError({ status: 500 }).message; // '{"status":500}'
+toError({ name: "TypeError", message: "x is not a function" }).name; // 'TypeError'
 ```
 
 An object with a string `message` becomes an `ExtendedError` with its `name`, `message` and `stack`.
@@ -555,12 +557,12 @@ original value is kept as `cause`.
 `instanceof Error` is `false`.
 
 ```ts
-import { isErrorLike } from 'ts-extended-errors'
+import { isErrorLike } from "ts-extended-errors";
 
-isErrorLike(new Error('x')) // true
-isErrorLike({ message: 'x' }) // true
-isErrorLike({}) // false
-isErrorLike('x') // false
+isErrorLike(new Error("x")); // true
+isErrorLike({ message: "x" }); // true
+isErrorLike({}); // false
+isErrorLike("x"); // false
 ```
 
 ## `describeValue(value)`
@@ -569,16 +571,16 @@ A one-line string for any value. `serializeError` and `toError` use it for value
 errors.
 
 ```ts
-import { describeValue } from 'ts-extended-errors'
+import { describeValue } from "ts-extended-errors";
 
-describeValue('timeout') // 'timeout'
-describeValue(42) // '42'
-describeValue(10n) // '10n'
-describeValue(Symbol('id')) // 'Symbol(id)'
-describeValue({ status: 500 }) // '{"status":500}'
-describeValue(new Map([[1, 2]])) // '[object Map]'
-describeValue(function loadUser() {}) // '[Function: loadUser]'
-describeValue(undefined) // 'undefined'
+describeValue("timeout"); // 'timeout'
+describeValue(42); // '42'
+describeValue(10n); // '10n'
+describeValue(Symbol("id")); // 'Symbol(id)'
+describeValue({ status: 500 }); // '{"status":500}'
+describeValue(new Map([[1, 2]])); // '[object Map]'
+describeValue(function loadUser() {}); // '[Function: loadUser]'
+describeValue(undefined); // 'undefined'
 ```
 
 Objects go through `JSON.stringify`. When that writes `{}` for something whose string tag says it

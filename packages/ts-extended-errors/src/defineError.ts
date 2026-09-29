@@ -1,6 +1,6 @@
-import { ExtendedError, captureStack, superOptions } from './ExtendedError'
-import { serializeError } from './serialize'
-import type { ErrorContext, ExtendedErrorOptions, SerializedError } from './types'
+import { ExtendedError, captureStack, superOptions } from "./ExtendedError";
+import { serializeError } from "./serialize";
+import type { ErrorContext, ExtendedErrorOptions, SerializedError } from "./types";
 
 /**
  * Any error class whose constructor takes `(message, options)` the way the
@@ -9,17 +9,17 @@ import type { ErrorContext, ExtendedErrorOptions, SerializedError } from './type
 export type ErrorClass<Instance extends Error = Error> = new (
   message: string,
   options?: ErrorOptions,
-) => Instance
+) => Instance;
 
 /**
  * What every class {@link defineError} returns adds to its instances, whatever
  * it extends. An {@link ExtendedError} has all of it.
  */
 export interface ExtendedErrorMembers<Context extends object = ErrorContext> {
-  readonly name: string
-  readonly code: string | undefined
-  readonly context: Context | undefined
-  toJSON(): SerializedError
+  readonly name: string;
+  readonly code: string | undefined;
+  readonly context: Context | undefined;
+  toJSON(): SerializedError;
 }
 
 /**
@@ -27,7 +27,7 @@ export interface ExtendedErrorMembers<Context extends object = ErrorContext> {
  * `defineError('X', { code: 'X' })`, `string` for a code that was a variable,
  * `undefined` for none.
  */
-export type ErrorCode = string | undefined
+export type ErrorCode = string | undefined;
 
 /**
  * `Instance`, with `code` narrowed to `Code` when the class declares one.
@@ -39,7 +39,7 @@ export type ErrorCode = string | undefined
  */
 type WithCode<Instance, Code extends ErrorCode> = ErrorCode extends Code
   ? Instance
-  : Instance & { readonly code: Code }
+  : Instance & { readonly code: Code };
 
 /**
  * The `code` a class {@link defineError} returns carries: its own when the
@@ -56,7 +56,7 @@ type DeclaredCode<Code extends ErrorCode, BaseCode extends ErrorCode> = [Code] e
   ? BaseCode
   : ErrorCode extends Code
     ? BaseCode
-    : Code
+    : Code;
 
 /**
  * The class {@link defineError} returns.
@@ -72,10 +72,10 @@ export interface ExtendedErrorConstructor<
   Instance extends Error = ExtendedError<Context>,
   Code extends ErrorCode = ErrorCode,
 > {
-  new (message: string, options?: ExtendedErrorOptions<Context>): WithCode<Instance, Code>
-  readonly prototype: WithCode<Instance, Code>
+  new (message: string, options?: ExtendedErrorOptions<Context>): WithCode<Instance, Code>;
+  readonly prototype: WithCode<Instance, Code>;
   /** Inherited from the base class when this one does not declare its own. */
-  readonly code: Code
+  readonly code: Code;
 }
 
 /**
@@ -92,7 +92,7 @@ export interface ExtendedErrorConstructor<
  * options argument really is optional, and an instance really can have none.
  */
 type WithContext<Instance, Context extends object> =
-  Partial<Context> extends Context ? Instance : Instance & { readonly context: Context }
+  Partial<Context> extends Context ? Instance : Instance & { readonly context: Context };
 
 /**
  * The class {@link defineError} returns when given a `message`. A throw site
@@ -119,14 +119,14 @@ export interface MessageErrorConstructor<
     ...options: Partial<Context> extends Context
       ? [options?: ExtendedErrorOptions<Context>]
       : [options: ExtendedErrorOptions<Context> & { readonly context: Context }]
-  ): WithCode<WithContext<Instance, Context>, Code>
+  ): WithCode<WithContext<Instance, Context>, Code>;
   new (
     message: string,
     options?: ExtendedErrorOptions<Context>,
-  ): WithCode<WithContext<Instance, Context>, Code>
-  readonly prototype: WithCode<WithContext<Instance, Context>, Code>
+  ): WithCode<WithContext<Instance, Context>, Code>;
+  readonly prototype: WithCode<WithContext<Instance, Context>, Code>;
   /** Inherited from the base class when this one does not declare its own. */
-  readonly code: Code
+  readonly code: Code;
 }
 
 /** Options for {@link defineError}. */
@@ -143,7 +143,7 @@ export interface DefineErrorOptions<
    * Written as a literal, it is the literal type of `code` on the class and
    * its instances.
    */
-  readonly code?: Code
+  readonly code?: Code;
   /**
    * The class to extend. Defaults to {@link ExtendedError}.
    *
@@ -154,13 +154,13 @@ export interface DefineErrorOptions<
    * A built-in error class works too — see the second {@link defineError}
    * overload.
    */
-  readonly base?: ExtendedErrorConstructor<Context, ExtendedError<Context>, BaseCode>
+  readonly base?: ExtendedErrorConstructor<Context, ExtendedError<Context>, BaseCode>;
 }
 
 /** True for ExtendedError and its subclasses, whose constructor already does the work. */
 const isExtendedClass = (base: ErrorClass): base is typeof ExtendedError =>
   base === ExtendedError ||
-  Object.prototype.isPrototypeOf.call(ExtendedError.prototype, base.prototype)
+  Object.prototype.isPrototypeOf.call(ExtendedError.prototype, base.prototype);
 
 /**
  * A class on `base` that does what ExtendedError's constructor does: its own
@@ -173,33 +173,33 @@ const isExtendedClass = (base: ErrorClass): base is typeof ExtendedError =>
  */
 const extendBase = (base: ErrorClass, code: string | undefined) =>
   class extends base {
-    static readonly code: string | undefined = code
+    static readonly code: string | undefined = code;
 
-    override readonly name: string
+    override readonly name: string;
     // Own properties only when present, as on ExtendedError.
-    declare readonly code: string | undefined
-    declare readonly context: ErrorContext | undefined
+    declare readonly code: string | undefined;
+    declare readonly context: ErrorContext | undefined;
 
     constructor(message: string, options: ExtendedErrorOptions = {}) {
-      super(message, superOptions(options))
+      super(message, superOptions(options));
 
-      const constructedBy = new.target
+      const constructedBy = new.target;
 
       // The same fix as ExtendedError's constructor, for the same reason: a
       // base compiled down to ES5 hands back a plain Error from `super()`.
-      Object.setPrototypeOf(this, constructedBy.prototype)
+      Object.setPrototypeOf(this, constructedBy.prototype);
 
-      this.name = constructedBy.name
-      if (constructedBy.code !== undefined) this.code = constructedBy.code
-      if (options.context !== undefined) this.context = options.context
+      this.name = constructedBy.name;
+      if (constructedBy.code !== undefined) this.code = constructedBy.code;
+      if (options.context !== undefined) this.context = options.context;
 
-      captureStack(this, constructedBy)
+      captureStack(this, constructedBy);
     }
 
     toJSON(): SerializedError {
-      return serializeError(this)
+      return serializeError(this);
     }
-  }
+  };
 
 /**
  * A subclass of `Defined` that writes its message from the context.
@@ -213,7 +213,7 @@ const extendBase = (base: ErrorClass, code: string | undefined) =>
 const withMessage = (Defined: ErrorClass, format: (context: object) => string) =>
   class extends Defined {
     constructor(first?: unknown, second?: ExtendedErrorOptions) {
-      if (typeof first === 'string') {
+      if (typeof first === "string") {
         // The only way to reach a class with a required context without passing
         // one, and `deserializeError` takes it for every rebuild: a payload that
         // carries no `context` would otherwise produce an instance whose type
@@ -227,14 +227,14 @@ const withMessage = (Defined: ErrorClass, format: (context: object) => string) =
         // Built as a variable rather than inline: `Defined` is an `ErrorClass`,
         // whose options parameter is the native `ErrorOptions`, and an object
         // literal there is excess-property checked against it.
-        const options: ExtendedErrorOptions = { ...second, context: second?.context ?? {} }
-        super(first, options)
+        const options: ExtendedErrorOptions = { ...second, context: second?.context ?? {} };
+        super(first, options);
       } else {
-        const options = (first ?? {}) as ExtendedErrorOptions
-        super(formatMessage(format, options.context ?? {}, new.target.name), options)
+        const options = (first ?? {}) as ExtendedErrorOptions;
+        super(formatMessage(format, options.context ?? {}, new.target.name), options);
       }
     }
-  }
+  };
 
 /**
  * Calls `format`, and returns `fallback` when it throws.
@@ -250,11 +250,11 @@ const formatMessage = (
   fallback: string,
 ): string => {
   try {
-    return format(context)
+    return format(context);
   } catch {
-    return fallback
+    return fallback;
   }
-}
+};
 
 /**
  * Declares an error class that writes its own message, so a throw site passes
@@ -283,9 +283,9 @@ export function defineError<
 >(
   name: string,
   options: DefineErrorOptions<Context, Code, BaseCode> & {
-    readonly message: (context: Context) => string
+    readonly message: (context: Context) => string;
   },
-): MessageErrorConstructor<Context, ExtendedError<Context>, DeclaredCode<Code, BaseCode>>
+): MessageErrorConstructor<Context, ExtendedError<Context>, DeclaredCode<Code, BaseCode>>;
 /**
  * Declares an error class that writes its own message, on a base that is not
  * an {@link ExtendedError}, such as `RangeError`.
@@ -307,15 +307,15 @@ export function defineError<
 >(
   name: string,
   options: {
-    readonly code?: Code
-    readonly base: ErrorClass<Base>
-    readonly message: (context: Context) => string
+    readonly code?: Code;
+    readonly base: ErrorClass<Base>;
+    readonly message: (context: Context) => string;
   },
 ): MessageErrorConstructor<
   Context,
   Base & ExtendedErrorMembers<Context>,
   DeclaredCode<Code, ErrorCode>
->
+>;
 /**
  * Declares a subclass of a class that writes its own message. Without a
  * `message` of its own, it writes the message the way its base does.
@@ -335,10 +335,10 @@ export function defineError<
 >(
   name: string,
   options: {
-    readonly code?: Code
-    readonly base: MessageErrorConstructor<Context, Instance, BaseCode>
+    readonly code?: Code;
+    readonly base: MessageErrorConstructor<Context, Instance, BaseCode>;
   },
-): MessageErrorConstructor<Context, Instance, DeclaredCode<Code, BaseCode>>
+): MessageErrorConstructor<Context, Instance, DeclaredCode<Code, BaseCode>>;
 /**
  * Declares an error class in one line.
  *
@@ -370,7 +370,7 @@ export function defineError<
 >(
   name: string,
   options?: DefineErrorOptions<Context, Code, BaseCode>,
-): ExtendedErrorConstructor<Context, ExtendedError<Context>, DeclaredCode<Code, BaseCode>>
+): ExtendedErrorConstructor<Context, ExtendedError<Context>, DeclaredCode<Code, BaseCode>>;
 /**
  * Declares an error class on a base that is not an {@link ExtendedError}: a
  * built-in class such as `RangeError`, or any error class whose constructor
@@ -405,39 +405,39 @@ export function defineError<
   Context,
   Base & ExtendedErrorMembers<Context>,
   DeclaredCode<Code, ErrorCode>
->
+>;
 export function defineError(
   name: string,
   options: {
-    readonly code?: string
-    readonly base?: ErrorClass
-    readonly message?: (context: object) => string
+    readonly code?: string;
+    readonly base?: ErrorClass;
+    readonly message?: (context: object) => string;
   } = {},
 ): ErrorClass {
-  const base = options.base ?? ExtendedError
+  const base = options.base ?? ExtendedError;
 
   // Falls back to the base's code, so a leaf that callers handle by
   // `instanceof` keeps its family's code instead of shadowing it with
   // `undefined`. Read defensively: a built-in class has no `code`, and a class
   // of your own may keep anything there.
-  const inherited: unknown = (base as { readonly code?: unknown }).code
-  const code = options.code ?? (typeof inherited === 'string' ? inherited : undefined)
+  const inherited: unknown = (base as { readonly code?: unknown }).code;
+  const code = options.code ?? (typeof inherited === "string" ? inherited : undefined);
 
   const Defined = isExtendedClass(base)
     ? class extends base {
-        static override readonly code: string | undefined = code
+        static override readonly code: string | undefined = code;
       }
-    : extendBase(base, code)
+    : extendBase(base, code);
 
   // A class expression takes its name from the binding it is assigned to, so
   // without this every class defined here would be called `Defined` — and that
   // name is what `new.target.name` copies onto `error.name`.
-  Object.defineProperty(Defined, 'name', { value: name, configurable: true })
+  Object.defineProperty(Defined, "name", { value: name, configurable: true });
 
-  if (options.message === undefined) return Defined
+  if (options.message === undefined) return Defined;
 
-  const WithMessage = withMessage(Defined, options.message)
-  Object.defineProperty(WithMessage, 'name', { value: name, configurable: true })
+  const WithMessage = withMessage(Defined, options.message);
+  Object.defineProperty(WithMessage, "name", { value: name, configurable: true });
 
-  return WithMessage
+  return WithMessage;
 }

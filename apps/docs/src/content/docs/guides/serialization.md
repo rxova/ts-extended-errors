@@ -10,9 +10,9 @@ functions are the round trip.
 ## Out: `serializeError`
 
 ```ts
-import { serializeError } from 'ts-extended-errors'
+import { serializeError } from "ts-extended-errors";
 
-const payload = serializeError(error, { includeStack: false })
+const payload = serializeError(error, { includeStack: false });
 ```
 
 The result is a plain object, safe to hand to `JSON.stringify`:
@@ -62,8 +62,8 @@ and a `Map` becomes `{}`.
 ### What to include where
 
 ```ts
-logger.error(serializeError(error)) // your own logs: stacks are the point
-response.json(serializeError(error, { includeStack: false })) // a client: they are not
+logger.error(serializeError(error)); // your own logs: stacks are the point
+response.json(serializeError(error, { includeStack: false })); // a client: they are not
 ```
 
 `includeStack` defaults to `true` because a log line is the common case and a stackless log is
@@ -83,13 +83,13 @@ fields whose getter throws are skipped; and the fixed fields are never overwritt
 ## Back: `deserializeError`
 
 ```ts
-import { deserializeError } from 'ts-extended-errors'
-import { HttpError, NotFoundError } from './errors.js'
+import { deserializeError } from "ts-extended-errors";
+import { HttpError, NotFoundError } from "./errors.js";
 
-const error = deserializeError(JSON.parse(line), { classes: [HttpError, NotFoundError] })
+const error = deserializeError(JSON.parse(line), { classes: [HttpError, NotFoundError] });
 
-error instanceof HttpError // true
-findCauseOf(error, NotFoundError)?.context // { userId: 42 }
+error instanceof HttpError; // true
+findCauseOf(error, NotFoundError)?.context; // { userId: 42 }
 ```
 
 The class is chosen by the payload's `name`, looked up among the built-in error classes and whatever
@@ -135,23 +135,23 @@ Both are described in more detail, along with the cycle handling, in
 
 ```ts
 // producer.ts
-import { serializeError } from 'ts-extended-errors'
+import { serializeError } from "ts-extended-errors";
 
-await queue.push(JSON.stringify({ jobId, error: serializeError(cause) }))
+await queue.push(JSON.stringify({ jobId, error: serializeError(cause) }));
 ```
 
 ```ts
 // consumer.ts
-import { deserializeError, findCauseOf } from 'ts-extended-errors'
-import { RateLimitedError } from './errors.js'
+import { deserializeError, findCauseOf } from "ts-extended-errors";
+import { RateLimitedError } from "./errors.js";
 
-const { jobId, error: payload } = JSON.parse(message) as { jobId: string; error: unknown }
-const error = deserializeError(payload, { classes: [RateLimitedError] })
+const { jobId, error: payload } = JSON.parse(message) as { jobId: string; error: unknown };
+const error = deserializeError(payload, { classes: [RateLimitedError] });
 
-const limited = findCauseOf(error, RateLimitedError)
-if (limited) return retry(jobId, limited.context?.retryAfterMs ?? 1_000)
+const limited = findCauseOf(error, RateLimitedError);
+if (limited) return retry(jobId, limited.context?.retryAfterMs ?? 1_000);
 
-await deadLetter(jobId, error)
+await deadLetter(jobId, error);
 ```
 
 The consumer branches on a class, with typed context, on an error that was created in a different

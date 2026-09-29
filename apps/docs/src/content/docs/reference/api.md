@@ -21,7 +21,7 @@ import {
   toError,
   isErrorLike,
   describeValue,
-} from 'ts-extended-errors'
+} from "ts-extended-errors";
 ```
 
 ## Exports
@@ -48,8 +48,8 @@ The exported types are listed separately in [Types](./types.md).
 
 ```ts
 class ExtendedError<Context extends ErrorContext = ErrorContext> extends Error {
-  static readonly code: string | undefined
-  constructor(message: string, options?: ExtendedErrorOptions<Context>)
+  static readonly code: string | undefined;
+  constructor(message: string, options?: ExtendedErrorOptions<Context>);
 }
 ```
 
@@ -73,7 +73,7 @@ Declare `code` as a `static override readonly` field in a subclass. See
 ## `isExtendedError(value)`
 
 ```ts
-function isExtendedError(value: unknown): value is ExtendedError
+function isExtendedError(value: unknown): value is ExtendedError;
 ```
 
 `instanceof`, so it is false across two copies of the package in one process, and false for a class
@@ -85,7 +85,7 @@ built on a base that is not an `ExtendedError`.
 function defineError<Context extends ErrorContext = ErrorContext>(
   name: string,
   options?: DefineErrorOptions<Context>,
-): ExtendedErrorConstructor<Context>
+): ExtendedErrorConstructor<Context>;
 ```
 
 | Option    | Type                           | Effect                                                              |
@@ -106,21 +106,21 @@ See [Defining errors](../guides/defining-errors.md) for worked examples of each 
 ## Cause chain
 
 ```ts
-function causeChain(error: unknown): unknown[]
-function rootCause(error: unknown): unknown
+function causeChain(error: unknown): unknown[];
+function rootCause(error: unknown): unknown;
 function findCause<T>(
   error: unknown,
   predicate: (candidate: unknown) => candidate is T,
-): T | undefined
-function findCause(error: unknown, predicate: (candidate: unknown) => boolean): unknown
+): T | undefined;
+function findCause(error: unknown, predicate: (candidate: unknown) => boolean): unknown;
 function findCauseOf<T>(
   error: unknown,
   constructor: abstract new (...args: never[]) => T,
-): T | undefined
+): T | undefined;
 function hasCauseOf(
   error: unknown,
   constructor: abstract new (...args: never[]) => unknown,
-): boolean
+): boolean;
 ```
 
 `causeChain` yields `error` first, stops at a primitive, and stops on a value already in the chain,
@@ -133,8 +133,8 @@ so a cycle terminates. Everything else is built on it. See
 function serializeError(
   value: unknown,
   options: SerializeErrorOptions & { includeOwnProperties: true },
-): SerializedErrorWithProperties
-function serializeError(value: unknown, options?: SerializeErrorOptions): SerializedError
+): SerializedErrorWithProperties;
+function serializeError(value: unknown, options?: SerializeErrorOptions): SerializedError;
 ```
 
 | Option                 | Type      | Default | Effect                                                  |
@@ -150,7 +150,7 @@ Accepts any value. A non-error is returned as `{ name: typeof value, message: de
 ## `deserializeError(value, options?)`
 
 ```ts
-function deserializeError(value: unknown, options?: DeserializeErrorOptions): Error
+function deserializeError(value: unknown, options?: DeserializeErrorOptions): Error;
 ```
 
 | Option     | Type                    | Default | Effect                                         |
@@ -164,19 +164,19 @@ unmatched name becomes an `ExtendedError` keeping that name.
 ## `toError(value)`
 
 ```ts
-function toError(value: unknown): Error
+function toError(value: unknown): Error;
 ```
 
 ## `isErrorLike(value)`
 
 ```ts
-function isErrorLike(value: unknown): value is Error
+function isErrorLike(value: unknown): value is Error;
 ```
 
 ## `describeValue(value)`
 
 ```ts
-function describeValue(value: unknown): string
+function describeValue(value: unknown): string;
 ```
 
 All three are covered in [Working with unknown values](../guides/unknown-values.md).

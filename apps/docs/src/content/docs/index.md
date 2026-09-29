@@ -18,30 +18,30 @@ npm install ts-extended-errors
 ## In one example
 
 ```ts
-import { defineError, findCauseOf, serializeError, toError } from 'ts-extended-errors'
+import { defineError, findCauseOf, serializeError, toError } from "ts-extended-errors";
 
-const HttpError = defineError('HttpError', { code: 'HTTP' })
-const NotFoundError = defineError('NotFoundError', { base: HttpError, code: 'HTTP_NOT_FOUND' })
+const HttpError = defineError("HttpError", { code: "HTTP" });
+const NotFoundError = defineError("NotFoundError", { base: HttpError, code: "HTTP_NOT_FOUND" });
 
 function loadProfile(userId: number) {
   try {
-    throw new NotFoundError('no such user', { context: { userId } })
+    throw new NotFoundError("no such user", { context: { userId } });
   } catch (cause) {
-    throw new HttpError('loading the profile failed', { cause })
+    throw new HttpError("loading the profile failed", { cause });
   }
 }
 
 try {
-  loadProfile(42)
+  loadProfile(42);
 } catch (thrown) {
-  const error = toError(thrown) // `thrown` is `unknown`; `error` is an `Error`
+  const error = toError(thrown); // `thrown` is `unknown`; `error` is an `Error`
 
   // Searches the whole cause chain, not just the outermost error.
-  const notFound = findCauseOf(error, NotFoundError)
-  notFound?.code // 'HTTP_NOT_FOUND'
-  notFound?.context // { userId: 42 }
+  const notFound = findCauseOf(error, NotFoundError);
+  notFound?.code; // 'HTTP_NOT_FOUND'
+  notFound?.context; // { userId: 42 }
 
-  console.log(JSON.stringify(serializeError(error, { includeStack: false })))
+  console.log(JSON.stringify(serializeError(error, { includeStack: false })));
   // {"name":"HttpError","message":"loading the profile failed","code":"HTTP","cause":
   //   {"name":"NotFoundError","message":"no such user","code":"HTTP_NOT_FOUND",
   //    "context":{"userId":42}}}

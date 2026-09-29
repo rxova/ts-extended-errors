@@ -5,7 +5,7 @@ description: A catch binding is unknown and JavaScript permits throwing anything
 
 ```ts
 try {
-  await run()
+  await run();
 } catch (thrown) {
   // `thrown` is `unknown`. It may be an Error. It may be a string, a plain
   // object, `null`, or a rejected promise's value from a library you do not
@@ -21,9 +21,9 @@ whole job is dealing with it.
 Returns a real `Error` for any value.
 
 ```ts
-import { toError } from 'ts-extended-errors'
+import { toError } from "ts-extended-errors";
 
-logger.error(toError(thrown))
+logger.error(toError(thrown));
 ```
 
 Errors pass through unchanged — wrapping one would bury the stack that says where it came from.
@@ -59,8 +59,8 @@ The strict counterpart: `value instanceof ExtendedError`, typed as a type guard.
 
 ```ts
 if (isExtendedError(thrown)) {
-  thrown.code // string | undefined
-  thrown.context // ErrorContext | undefined
+  thrown.code; // string | undefined
+  thrown.context; // ErrorContext | undefined
 }
 ```
 
@@ -76,13 +76,13 @@ the same members. See [Defining errors](./defining-errors.md#other-bases).
 A one-line string for any value, for when you need a message rather than an error.
 
 ```ts
-describeValue('nope') // 'nope'
-describeValue(404) // '404'
-describeValue(10n) // '10n'
-describeValue({ a: 1 }) // '{"a":1}'
-describeValue(new Map([[1, 2]])) // '[object Map]'
-describeValue(function loadUser() {}) // '[Function: loadUser]'
-describeValue(undefined) // 'undefined'
+describeValue("nope"); // 'nope'
+describeValue(404); // '404'
+describeValue(10n); // '10n'
+describeValue({ a: 1 }); // '{"a":1}'
+describeValue(new Map([[1, 2]])); // '[object Map]'
+describeValue(function loadUser() {}); // '[Function: loadUser]'
+describeValue(undefined); // 'undefined'
 ```
 
 A value JSON cannot write — a cycle, a `toJSON` that throws — is described by its string tag
@@ -94,18 +94,18 @@ than printed as source.
 ## A complete handler
 
 ```ts
-import { findCauseOf, toError } from 'ts-extended-errors'
-import { NotFoundError, RateLimitedError } from './errors.js'
+import { findCauseOf, toError } from "ts-extended-errors";
+import { NotFoundError, RateLimitedError } from "./errors.js";
 
 export function handle(thrown: unknown) {
-  const limited = findCauseOf(thrown, RateLimitedError)
-  if (limited) return respond(429, { retryAfterMs: limited.context?.retryAfterMs })
+  const limited = findCauseOf(thrown, RateLimitedError);
+  if (limited) return respond(429, { retryAfterMs: limited.context?.retryAfterMs });
 
-  const notFound = findCauseOf(thrown, NotFoundError)
-  if (notFound) return respond(404, { id: notFound.context?.id })
+  const notFound = findCauseOf(thrown, NotFoundError);
+  if (notFound) return respond(404, { id: notFound.context?.id });
 
-  logger.error(toError(thrown))
-  return respond(500)
+  logger.error(toError(thrown));
+  return respond(500);
 }
 ```
 

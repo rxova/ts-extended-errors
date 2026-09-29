@@ -11,7 +11,7 @@
  * and `serializeError` copies it through a JSON round trip, so a `Date` there
  * becomes a string and a `Map` an empty object.
  */
-export type ErrorContext = Readonly<Record<string, unknown>>
+export type ErrorContext = Readonly<Record<string, unknown>>;
 
 /** Second argument of every {@link ExtendedError} constructor. */
 export interface ExtendedErrorOptions<Context extends object = ErrorContext> {
@@ -19,9 +19,9 @@ export interface ExtendedErrorOptions<Context extends object = ErrorContext> {
    * The error (or value) that caused this one. Forwarded to the native
    * `Error` `cause`, so it is visible to anything that already understands it.
    */
-  readonly cause?: unknown
+  readonly cause?: unknown;
   /** Structured data describing *this* failure, not the one below it. */
-  readonly context?: Context
+  readonly context?: Context;
 }
 
 /**
@@ -30,26 +30,26 @@ export interface ExtendedErrorOptions<Context extends object = ErrorContext> {
  * else.
  */
 export interface SerializedError {
-  readonly name: string
-  readonly message: string
+  readonly name: string;
+  readonly message: string;
   /**
    * Present only when the error carries one: a string like Node's `ENOENT`,
    * or a number like a `DOMException`'s. An {@link ExtendedError}'s is a string.
    */
-  readonly code?: string | number | undefined
+  readonly code?: string | number | undefined;
   /** Omitted when `includeStack` is false. */
-  readonly stack?: string | undefined
+  readonly stack?: string | undefined;
   /** A copy of the error's `context`, taken through a JSON round trip. */
-  readonly context?: ErrorContext | undefined
+  readonly context?: ErrorContext | undefined;
   /** The serialized `cause`, recursively, up to the configured depth. */
-  readonly cause?: SerializedError | undefined
+  readonly cause?: SerializedError | undefined;
   /** An AggregateError's `errors`, each serialized like a `cause`. Present only for one. */
-  readonly errors?: readonly SerializedError[] | undefined
+  readonly errors?: readonly SerializedError[] | undefined;
   /**
    * How many of an AggregateError's errors are missing from `errors`, cut by
    * `maxAggregatedErrors` here or on an earlier hop. Present only when some are.
    */
-  readonly errorsOmitted?: number | undefined
+  readonly errorsOmitted?: number | undefined;
 }
 
 /**
@@ -57,7 +57,7 @@ export interface SerializedError {
  * fields, plus whatever other fields the error carried, down the whole chain.
  */
 export interface SerializedErrorWithProperties extends SerializedError {
-  readonly cause?: SerializedErrorWithProperties | undefined
-  readonly errors?: readonly SerializedErrorWithProperties[] | undefined
-  readonly [field: string]: unknown
+  readonly cause?: SerializedErrorWithProperties | undefined;
+  readonly errors?: readonly SerializedErrorWithProperties[] | undefined;
+  readonly [field: string]: unknown;
 }
