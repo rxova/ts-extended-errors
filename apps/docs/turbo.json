@@ -6,7 +6,7 @@
       "outputs": ["dist/**"],
       // These decide the mount and therefore every emitted URL, so they belong
       // in the cache key: without them a root-base build could replay for the
-      // /packages/overlock/ build in CI, and nothing would notice until
+      // /packages/ts-extended-errors/ build in CI, and nothing would notice until
       // rxova.org served it.
       //
       // Declared here rather than on the root task so that setting them does not
@@ -14,14 +14,12 @@
       "env": ["DOCS_URL", "DOCS_BASE_URL"],
       "outputLogs": "new-only"
     },
-    // No `^build` and no coverage: every module under test is plain JavaScript
-    // over plain objects, which is the whole reason they are split out from the
-    // Astro-only adapter beside them.
-    "test": {
-      "dependsOn": [],
-      "outputs": [],
+    // The generated content and env types, for type-checked lint at the root.
+    "sync": {
+      "outputs": [".astro/**"],
       "outputLogs": "new-only"
     },
+    // `astro check` generates the content types it needs itself.
     "typecheck": {
       "dependsOn": [],
       "outputs": [],

@@ -1,24 +1,23 @@
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath } from "node:url";
 
-import { defineConfig } from 'astro/config'
-import { unified } from '@astrojs/markdown-remark'
-import starlight from '@astrojs/starlight'
-import starlightLinksValidator from 'starlight-links-validator'
-import sitemap from '@astrojs/sitemap'
-import { sharedStarlightConfig } from '@rxova/astro-ui/starlight'
-
-import { rehypeMdLinks } from './src/lib/rehype-md-links.mjs'
+import { defineConfig } from "astro/config";
+import { unified } from "@astrojs/markdown-remark";
+import starlight from "@astrojs/starlight";
+import starlightLinksValidator from "starlight-links-validator";
+import sitemap from "@astrojs/sitemap";
+import { sharedStarlightConfig } from "@rxova/astro-ui/starlight";
+import { rehypeMdLinks } from "@rxova/docs-kit";
 
 /**
- * The defaults keep a standalone build working — `pnpm --filter @repo/docs dev`
+ * The defaults keep a standalone build working — `pnpm docs`
  * serves the site at the root. docs.yml overrides both so the dist is built for
  * the path rxova.org actually mounts it at, `/packages/ts-extended-errors/`. An
  * absolute reference that only resolves at a domain root is invisible in a root
  * build and breaks the moment it is mounted, which is why the published build
  * never uses these values.
  */
-const site = process.env.DOCS_URL ?? 'https://rxova.org'
-const base = process.env.DOCS_BASE_URL ?? '/'
+const site = process.env.DOCS_URL ?? "https://rxova.org";
+const base = process.env.DOCS_BASE_URL ?? "/";
 
 export default defineConfig({
   site,
@@ -33,7 +32,7 @@ export default defineConfig({
       rehypePlugins: [
         [
           rehypeMdLinks,
-          { base, docsRoot: fileURLToPath(new URL('src/content/docs', import.meta.url)) },
+          { base, docsRoot: fileURLToPath(new URL("src/content/docs", import.meta.url)) },
         ],
       ],
     }),
@@ -53,21 +52,21 @@ export default defineConfig({
       // The canonical HTML pages only. Every one of them also has a `.md` twin,
       // and llms.txt is built from the same enumeration, so listing those here
       // would hand a search engine three URLs per page and ask it to pick.
-      filter: (page) => !page.endsWith('.md') && !/\/llms(?:-full)?\.txt$/.test(page),
+      filter: (page) => !page.endsWith(".md") && !/\/llms(?:-full)?\.txt$/.test(page),
     }),
     starlight({
       ...sharedStarlightConfig({
         // Resolved against @rxova/brand's PROJECTS — the list the docs switcher,
         // the footer and the social card are built from — which throws for an
         // id it does not know.
-        project: 'ts-extended-errors',
+        project: "ts-extended-errors",
         sidebar: [
-          { label: 'Learn', items: [{ autogenerate: { directory: 'learn' } }] },
-          { label: 'Guides', items: [{ autogenerate: { directory: 'guides' } }] },
-          { label: 'Reference', items: [{ autogenerate: { directory: 'reference' } }] },
+          { label: "Learn", items: [{ autogenerate: { directory: "learn" } }] },
+          { label: "Guides", items: [{ autogenerate: { directory: "guides" } }] },
+          { label: "Reference", items: [{ autogenerate: { directory: "reference" } }] },
           {
-            label: 'Under the hood',
-            items: [{ autogenerate: { directory: 'under-the-hood' } }],
+            label: "Under the hood",
+            items: [{ autogenerate: { directory: "under-the-hood" } }],
           },
         ],
       }),
@@ -75,7 +74,7 @@ export default defineConfig({
       // for this project, so the tab icon is the rxova mark as a PNG, copied
       // from @rxova/brand's asset. Starlight resolves `favicon` against this
       // site's own `public/`, so it cannot come from the package.
-      favicon: '/favicon.png',
+      favicon: "/favicon.png",
       plugins: [
         // Every page here links to several others, so a link that rots is a
         // page somebody renamed. Worth failing the build for.
@@ -83,4 +82,4 @@ export default defineConfig({
       ],
     }),
   ],
-})
+});

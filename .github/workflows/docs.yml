@@ -19,8 +19,8 @@ on:
   # on the site.
   pull_request:
     paths:
-      - 'apps/docs/**'
-      - '.github/workflows/docs.yml'
+      - "apps/docs/**"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:
@@ -42,21 +42,21 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup-pnpm
-      - uses: ./.github/actions/turbo-cache
+      - uses: rxova/shared/actions/setup-pnpm@main
+      - uses: rxova/shared/actions/turbo-cache@main
       - run: pnpm install --frozen-lockfile
 
       # Build at the path the aggregator actually serves these docs from.
       # Absolute references that only work at the domain root are invisible in a
       # root build and break silently once mounted. The build also runs
-      # starlight-links-validator and scripts/check-md-routes.mjs, so a broken
+      # starlight-links-validator and `rxova-docs-kit check-md-routes`, so a broken
       # internal link, a `.md` twin with markup the normalizer does not handle,
       # or an llms.txt over its size budget fails here.
       - name: Build the docs at the aggregator base path
         env:
           DOCS_URL: https://rxova.org
           DOCS_BASE_URL: /packages/ts-extended-errors/
-        run: pnpm --filter @repo/docs build
+        run: pnpm --filter docs build
 
       # The dist rxova.org publishes as built. `docs-dist` is the
       # fixed artifact name in the contract — the aggregator's ingest downloads
@@ -83,21 +83,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # No continue-on-error: the dispatch *is* the publish, so swallowing a
+      # failure would leave the site serving stale docs behind a green tick.
       - name: Dispatch the docs ingest to rxova.org
-        # No continue-on-error: the dispatch *is* the publish, so swallowing a
-        # failure would leave the site serving stale docs behind a green tick.
-        env:
-          GH_TOKEN: ${{ secrets.AGGREGATOR_DISPATCH_TOKEN }}
-        # `-F` only for schema, which the receiver compares as the number 1.
-        # Everything else goes through `-f` so it stays a string, and an
-        # all-digit ref or sha cannot arrive as a number.
-        run: |
-          gh api repos/rxova/rxova-website/dispatches \
-            -f event_type=docs \
-            -F 'client_payload[schema]=1' \
-            -f 'client_payload[project]=ts-extended-errors' \
-            -f "client_payload[ref]=${GITHUB_REF_NAME}" \
-            -f "client_payload[sha]=${GITHUB_SHA}" \
-            -f "client_payload[run_id]=${GITHUB_RUN_ID}" \
-            -f 'client_payload[base]=/packages/ts-extended-errors/' \
-            -f 'client_payload[framework]=astro'
+        uses: rxova/shared/actions/notify-website@main
+        with:
+          project: ts-extended-errors
+          token: ${{ secrets.AGGREGATOR_DISPATCH_TOKEN }}

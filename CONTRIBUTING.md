@@ -55,14 +55,13 @@ pnpm --filter ts-extended-errors exec vitest run src/__tests__/serialize.test.ts
 repository — `docs.yml` builds the dist and hands it to the aggregator.
 
 ```bash
-pnpm --filter @repo/docs dev    # localhost, served at the root
-pnpm --filter @repo/docs build  # build, validate links, check the .md twins
-pnpm --filter @repo/docs test   # the markdown normalizer and the llms.txt builders
+pnpm docs                   # localhost, served at the root
+pnpm --filter docs build    # build, validate links, check the .md twins
 ```
 
 Every page is also served as raw markdown at `<route>.md`, and `llms.txt` /
-`llms-full.txt` are generated from the same page enumeration. `scripts/check-md-routes.mjs`
-runs as part of the build and fails it if a page grows markup the normalizer does
+`llms-full.txt` are generated from the same page enumeration by `@rxova/docs-kit`, configured in
+`apps/docs/src/lib/docs.ts`. `rxova-docs-kit check-md-routes` runs as part of the build and fails it if a page grows markup the normalizer does
 not handle, if a `.md` link lands nowhere, or if `llms.txt` outgrows its budget.
 
 ## Tests

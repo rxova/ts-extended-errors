@@ -53,7 +53,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "check:exports": "publint --strict && attw --pack .",
+    "check:exports": "rxova-repo-config check-exports",
     "pack:smoke": "rxova-repo-config pack-smoke",
     "prepack": "pnpm build"
   },
