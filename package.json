@@ -2,6 +2,7 @@
   "name": "ts-extended-errors-workspace",
   "private": true,
   "description": "The workspace around the ts-extended-errors library.",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rxova/ts-extended-errors.git"
@@ -26,19 +27,13 @@
     "sherif:check": "sherif --fail-on-warnings",
     "knip:check": "knip",
     "check:exports": "turbo run check:exports",
-    "pack:smoke": "turbo run pack:smoke",
+    "pack:smoke": "turbo run pack:smoke --concurrency=1",
     "check:llms": "rxova-repo-config check-llms",
     "changeset": "changeset",
-    "release": "turbo run build --filter=ts-extended-errors && changeset publish",
+    "release": "turbo run build --filter=./packages/* && changeset publish",
     "verify": "rxova-repo-config verify",
-    "prepare": "husky"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx,mjs,cjs}": [
-      "eslint --fix --no-warn-ignored",
-      "prettier --write"
-    ],
-    "*.{json,jsonc,css,md,mdx,yaml,yml}": "prettier --write"
+    "prepare": "husky",
+    "docs": "pnpm --filter docs dev"
   },
   "repoConfig": {
     "verify": {
@@ -77,7 +72,7 @@
         },
         {
           "name": "build",
-          "command": "pnpm exec turbo run build --filter='!@repo/docs'"
+          "command": "pnpm exec turbo run build --filter='!docs'"
         },
         {
           "name": "package exports",
@@ -92,8 +87,9 @@
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^10.0.1",
-    "@rxova/repo-config": "^0.2.0",
-    "@rxova/ts-utils": "^0.1.0",
+    "@rxova/docs-kit": "^0.1.0",
+    "@rxova/repo-config": "^0.5.0",
+    "@rxova/ts-utils": "^0.2.1",
     "@types/node": "^26.6.1",
     "eslint": "^10.10.0",
     "globals": "^17.12.0",

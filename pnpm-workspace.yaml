@@ -16,16 +16,17 @@ fetchRetryMaxtimeout: 10000
 
 # The release-age quarantine holds a freshly published version back for a day, to
 # blunt supply-chain attacks on packages nobody here controls. @rxova/brand and
-# @rxova/astro-ui (from rxova/rxova-website) and @rxova/repo-config and
-# @rxova/ts-utils (from rxova/shared) are ours, so waiting one out only delays our
-# own changes — and without the exclusion `pnpm install` refuses the lockfile
+# @rxova/astro-ui (from rxova/rxova-website) and @rxova/repo-config,
+# @rxova/ts-utils and @rxova/docs-kit (from rxova/shared) are ours, so waiting
+# one out only delays our own changes — and without the exclusion `pnpm install` refuses the lockfile
 # outright on the day of a bump.
 #
 # By name rather than by version, matching rxova/rxova-website: `pnpm add` writes
 # the exact version if you let it, which leaves a line that means nothing a day
 # later and has to be renewed at every release.
 minimumReleaseAgeExclude:
-  - '@rxova/brand'
-  - '@rxova/astro-ui'
-  - '@rxova/repo-config'
-  - '@rxova/ts-utils'
+  - "@rxova/brand"
+  - "@rxova/astro-ui"
+  - "@rxova/docs-kit"
+  - "@rxova/repo-config"
+  - "@rxova/ts-utils"

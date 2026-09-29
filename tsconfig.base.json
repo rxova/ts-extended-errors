@@ -1,12 +1,11 @@
 {
-  // The shared strict preset, with three settings overridden. `exactOptionalPropertyTypes`
+  // The shared strict preset, with two settings overridden. `exactOptionalPropertyTypes`
   // stays off: most consumers compile without it, and the type tests pin what
   // they see (`code: string | undefined` passed to `defineError` infers `string`).
-  // The DOM libs and `jsx` are kept from the settings this repository had before.
+  // The DOM libs are kept because the library runs in browsers as well as on Node.
   "extends": "@rxova/repo-config/tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "jsx": "react-jsx",
     "exactOptionalPropertyTypes": false
   }
 }
