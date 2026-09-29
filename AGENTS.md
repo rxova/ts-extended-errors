@@ -20,7 +20,7 @@ pnpm + Turborepo monorepo. Node >= 22.13 to develop. TypeScript everywhere.
   `@main`; nothing lives under `.github/actions`.
 - `.changeset` — pending release notes. A change to the library adds one (`pnpm changeset`); CI
   checks. A pull request that publishes nothing (a dev dependency bump) is labelled `skip-changeset`.
-- `apps/docs` — the Astro + Starlight documentation site, published as part of rxova.org at
+- `apps/docs` — the Astro + Starlight documentation site, published as part of rxova.dev at
   `/packages/ts-extended-errors/`. `docs.yml` builds it and hands the dist to the aggregator; the
   aggregator never builds it. Excluded from `verify`'s build step for that reason.
 
@@ -53,7 +53,7 @@ pnpm + Turborepo monorepo. Node >= 22.13 to develop. TypeScript everywhere.
 | `packages/ts-extended-errors/llms.txt`  | An agent using the library, from `node_modules`                    | `check-llms`: the `## API` table matches `src/index.ts` both ways; `pack-smoke`: it is in the tarball |
 | `packages/ts-extended-errors/README.md` | People, and agents that follow the `llms.txt` link                 | Nothing automatic: type-check and run an example after changing it                                    |
 | `llms.txt`                              | An agent that reaches the repository rather than the package       | `check-llms`: it links every published package's `llms.txt`                                           |
-| `apps/docs/src/content/docs/**`         | People and agents on rxova.org; each page also serves a `.md` twin | The docs build: `starlight-links-validator`, then `rxova-docs-kit check-md-routes` over the dist      |
+| `apps/docs/src/content/docs/**`         | People and agents on rxova.dev; each page also serves a `.md` twin | The docs build: `starlight-links-validator`, then `rxova-docs-kit check-md-routes` over the dist      |
 | `apps/docs/src/lib/docs.ts`             | An agent fetching the site's `llms.txt` or `llms-full.txt`         | The size budgets in `rxova-docs-kit check-md-routes`                                                  |
 | `AGENTS.md`                             | An agent editing this repository                                   | —                                                                                                     |
 

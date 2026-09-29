@@ -194,10 +194,10 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
 ## Docs
 
 - Documentation site, with guides and the full reference:
-  https://rxova.org/packages/ts-extended-errors/ — every page is also raw
+  https://rxova.dev/packages/ts-extended-errors/ — every page is also raw
   markdown at the same URL plus `.md`
-- Index for an agent: https://rxova.org/packages/ts-extended-errors/llms.txt,
-  and https://rxova.org/packages/ts-extended-errors/llms-full.txt for every page
+- Index for an agent: https://rxova.dev/packages/ts-extended-errors/llms.txt,
+  and https://rxova.dev/packages/ts-extended-errors/llms-full.txt for every page
   in one fetch
 - README, with an example for every export:
   `node_modules/ts-extended-errors/README.md`, or

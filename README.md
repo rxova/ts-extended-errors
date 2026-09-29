@@ -35,15 +35,15 @@ npm install ts-extended-errors
 
 ## Documentation
 
-- [Documentation site](https://rxova.org/packages/ts-extended-errors/): guides, the full reference
-  and the design notes. Built from `apps/docs` and published as part of rxova.org.
+- [Documentation site](https://rxova.dev/packages/ts-extended-errors/): guides, the full reference
+  and the design notes. Built from `apps/docs` and published as part of rxova.dev.
 - [Package README](packages/ts-extended-errors/README.md): an example for every export, and the
   options and types tables.
 - [Changelog](packages/ts-extended-errors/CHANGELOG.md): every release, with its pull request.
 - [`llms.txt`](packages/ts-extended-errors/llms.txt): the API, a working example and the common
   mistakes, for a coding agent. It ships in the tarball. The docs site serves
-  [its own](https://rxova.org/packages/ts-extended-errors/llms.txt), plus an
-  [llms-full.txt](https://rxova.org/packages/ts-extended-errors/llms-full.txt).
+  [its own](https://rxova.dev/packages/ts-extended-errors/llms.txt), plus an
+  [llms-full.txt](https://rxova.dev/packages/ts-extended-errors/llms-full.txt).
 - [Published versions](https://www.npmjs.com/package/ts-extended-errors) on npm.
 
 ## Repository layout
@@ -54,7 +54,7 @@ A pnpm + Turborepo workspace.
 packages/
   ts-extended-errors/  the library, published as ts-extended-errors
 apps/
-  docs/                the Astro + Starlight site, mounted on rxova.org
+  docs/                the Astro + Starlight site, mounted on rxova.dev
 .changeset/            release notes waiting for the next version
 .github/               CI, CodeQL, the docs dispatch, the PR-title check, releases and Renovate
 ```
@@ -107,7 +107,7 @@ request changes the library, audits dependencies, runs the unit suite on Node 22
 installs and loads the tarball twice: on the Node.js in `.nvmrc`, and on the `engines` floor of the
 package. `codeql.yml` analyses the source weekly and on every pull request.
 
-The docs site is built by `docs.yml` rather than by the gate, at the base path rxova.org mounts it
+The docs site is built by `docs.yml` rather than by the gate, at the base path rxova.dev mounts it
 on — that build is the one whose output ships, and it validates every internal link, every `.md`
 twin and the `llms.txt` size budgets.
 

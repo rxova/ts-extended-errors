@@ -76,7 +76,7 @@ try {
 ## For coding agents
 
 Every page here is also served as raw markdown — add `.md` to any URL. There is an
-[`llms.txt`](https://rxova.org/packages/ts-extended-errors/llms.txt) index and an
-[`llms-full.txt`](https://rxova.org/packages/ts-extended-errors/llms-full.txt) with every page
+[`llms.txt`](https://rxova.dev/packages/ts-extended-errors/llms.txt) index and an
+[`llms-full.txt`](https://rxova.dev/packages/ts-extended-errors/llms-full.txt) with every page
 inlined. The package also ships its own `llms.txt` inside the tarball, readable from
 `node_modules/ts-extended-errors/llms.txt` with no network access.

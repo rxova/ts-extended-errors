@@ -51,7 +51,7 @@ pnpm --filter ts-extended-errors exec vitest run src/__tests__/serialize.test.ts
 ## The docs site
 
 `apps/docs` is an Astro + Starlight site, published as part of
-[rxova.org](https://rxova.org/packages/ts-extended-errors/) rather than from this
+[rxova.dev](https://rxova.dev/packages/ts-extended-errors/) rather than from this
 repository — `docs.yml` builds the dist and hands it to the aggregator.
 
 ```bash

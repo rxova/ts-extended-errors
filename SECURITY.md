@@ -4,7 +4,7 @@ Report security issues privately.
 
 ## How to report
 
-- Email: jonatan@rxova.org
+- Email: jonyk@rxova.dev
 - [GitHub security advisory form](https://github.com/rxova/ts-extended-errors/security/advisories/new)
 
 If the advisory form is unavailable, use email. Include the affected version, a minimal

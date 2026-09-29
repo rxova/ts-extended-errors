@@ -3,7 +3,7 @@
 - **Bug?** Open an [issue](https://github.com/rxova/ts-extended-errors/issues/new).
 - **Idea or missing feature?** Open an [issue](https://github.com/rxova/ts-extended-errors/issues/new).
 - **Security issue?** Follow [SECURITY.md](./SECURITY.md). Do not open a public issue.
-- **Something private?** Email [jonatan@rxova.org](mailto:jonatan@rxova.org).
+- **Something private?** Email [jonyk@rxova.dev](mailto:jonyk@rxova.dev).
 
 Before filing, check the [README](packages/ts-extended-errors/README.md). It has an example for
 every export, and each output comment is the value that example prints.
