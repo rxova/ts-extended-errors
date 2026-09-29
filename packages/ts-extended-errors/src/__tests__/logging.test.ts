@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ExtendedError, defineError, deserializeError, serializeError } from "../index";
 import type { SerializeErrorOptions, SerializedErrorWithProperties } from "../index";
@@ -62,7 +63,8 @@ describe("logging an error", () => {
   });
 
   it("logs a Node system error with its code, and its other fields only on request", () => {
-    const path = "/no/such/dir/customer-export.csv";
+    // Resolved, because that is the path Node reports: on Windows it gains a drive letter.
+    const path = resolve("/no/such/dir/customer-export.csv");
     let thrown: unknown;
     try {
       readFileSync(path);
