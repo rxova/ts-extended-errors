@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "The ts-extended-errors documentation site, mounted on rxova.org at /packages/ts-extended-errors/.",
+  "description": "The ts-extended-errors documentation site, mounted on rxova.dev at /packages/ts-extended-errors/.",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build && rxova-docs-kit check-md-routes",

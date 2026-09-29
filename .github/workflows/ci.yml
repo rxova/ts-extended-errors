@@ -28,7 +28,7 @@ jobs:
     uses: rxova/shared/.github/workflows/commit-messages.yml@main
 
   # The docs site is left out of the build here: docs.yml builds it at the base
-  # path rxova.org mounts it on, the only build of it whose output ships.
+  # path rxova.dev mounts it on, the only build of it whose output ships.
   checks:
     name: lint · format · types · build
     needs: [commitlint]

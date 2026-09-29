@@ -609,10 +609,10 @@ rather than printed as source.
 [`llms.txt`](llms.txt) ships in this tarball: the API table, a working example and the mistakes to
 avoid, readable from `node_modules/ts-extended-errors/llms.txt` with no network access.
 
-Online, the [documentation site](https://rxova.org/packages/ts-extended-errors/) serves every page
+Online, the [documentation site](https://rxova.dev/packages/ts-extended-errors/) serves every page
 as raw markdown at the same URL plus `.md`, with an
-[index](https://rxova.org/packages/ts-extended-errors/llms.txt) and an
-[everything-inlined](https://rxova.org/packages/ts-extended-errors/llms-full.txt) variant.
+[index](https://rxova.dev/packages/ts-extended-errors/llms.txt) and an
+[everything-inlined](https://rxova.dev/packages/ts-extended-errors/llms-full.txt) variant.
 
 ## License
 

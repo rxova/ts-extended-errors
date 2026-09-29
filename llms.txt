@@ -22,14 +22,14 @@ access. Read it when writing code that uses the library.
 
 ## Docs
 
-The documentation site is published as part of rxova.org. Every page there also
+The documentation site is published as part of rxova.dev. Every page there also
 exists as raw markdown — add `.md` to any URL.
 
-- [Documentation](https://rxova.org/packages/ts-extended-errors/): guides,
+- [Documentation](https://rxova.dev/packages/ts-extended-errors/): guides,
   reference and the design notes.
-- [llms.txt](https://rxova.org/packages/ts-extended-errors/llms.txt): the docs
+- [llms.txt](https://rxova.dev/packages/ts-extended-errors/llms.txt): the docs
   index, under 24 kB by budget.
-- [llms-full.txt](https://rxova.org/packages/ts-extended-errors/llms-full.txt):
+- [llms-full.txt](https://rxova.dev/packages/ts-extended-errors/llms-full.txt):
   every page inlined, when one fetch should be the whole thing.
 - [README](packages/ts-extended-errors/README.md): an example for every export,
   and tables for options and types. Also in the tarball.
