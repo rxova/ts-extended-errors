@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
-    "@rxova/astro-ui": "^0.6.2",
+    "@rxova/astro-ui": "^0.7.0",
     "@rxova/brand": "^1.4.0",
     "typescript": "6.0.3"
   },
