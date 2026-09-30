@@ -1,5 +1,13 @@
 # ts-extended-errors
 
+## 1.0.1
+
+### Patch Changes
+
+- [#51](https://github.com/rxova/ts-extended-errors/pull/51) [`280462b`](https://github.com/rxova/ts-extended-errors/commit/280462b3ef89eb49e49fedeebc6c4ab15814bcf2) - Point links at rxova.dev.
+
+- [#46](https://github.com/rxova/ts-extended-errors/pull/46) [`99388a7`](https://github.com/rxova/ts-extended-errors/commit/99388a7510f71599881b529cf5ed73f4e7698497) - Take the safe property-read helpers from `@rxova/ts-utils`, inlined at build time. No behavior change, and still no runtime dependencies.
+
 ## 1.0.0
 
 ### Major Changes

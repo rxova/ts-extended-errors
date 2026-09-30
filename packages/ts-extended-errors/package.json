@@ -1,6 +1,6 @@
 {
   "name": "ts-extended-errors",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "A zero-dependency error model for TypeScript applications that use native exceptions but need typed context, cause-chain inspection, and reliable JSON round trips.",
   "keywords": [
