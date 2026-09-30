@@ -182,8 +182,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))
       '@rxova/docs-kit':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.1.1
+        version: 0.1.1
       '@rxova/repo-config':
         specifier: ^0.5.0
         version: 0.5.0(@arethetypeswrong/cli@0.18.5)(@changesets/changelog-github@1.0.1)(@commitlint/config-conventional@21.2.2)(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.3)(@eslint/js@10.0.1(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2)))(@vitest/coverage-v8@5.0.1)(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))(globals@17.12.0)(knip@6.37.0)(prettier@3.9.7)(publint@0.3.24)(tsdown@0.23.0(@arethetypeswrong/core@0.18.5)(@volar/typescript@2.4.28(typescript@6.0.3))(oxc-resolver@11.24.2)(publint@0.3.24)(tsx@4.23.13)(typescript@6.0.3))(typescript-eslint@8.70.0(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(typescript@6.0.3)(vitest@5.0.1)
@@ -1559,8 +1559,8 @@ packages:
     resolution: {integrity: sha512-0h744WyoTAg2T+Zx2AynsbAM1HBtZ/tLgMbPf0kxn/Q3DJyCsr3ZO8PAHbSYv24j69ogmX52NwYS5S6inMM+2A==}
     engines: {node: '>=24.0.0'}
 
-  '@rxova/docs-kit@0.1.0':
-    resolution: {integrity: sha512-NWiPfp0AJVp64X9MK77meVNGgQZMXlDXdHVAxY9s8VAefm7V0i2KLw4aWe7HfIezFaUFwlf3oowHJ2Ih4MBU7Q==}
+  '@rxova/docs-kit@0.1.1':
+    resolution: {integrity: sha512-yizsZNcWGtDzH8NsGwy7oHxHn4bHqikGBturdEsrc576uA8fLFD45sni6BxDtm9IyQ6VLy6/Mem27BtboGIo1w==}
     engines: {node: '>=22.13'}
     hasBin: true
 
@@ -5491,7 +5491,7 @@ snapshots:
       '@fontsource/ibm-plex-mono': 5.3.0
       '@fontsource/space-grotesk': 5.3.0
 
-  '@rxova/docs-kit@0.1.0': {}
+  '@rxova/docs-kit@0.1.1': {}
 
   '@rxova/repo-config@0.5.0(@arethetypeswrong/cli@0.18.5)(@changesets/changelog-github@1.0.1)(@commitlint/config-conventional@21.2.2)(@emnapi/core@1.11.2)(@emnapi/runtime@1.11.3)(@eslint/js@10.0.1(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2)))(@vitest/coverage-v8@5.0.1)(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))(globals@17.12.0)(knip@6.37.0)(prettier@3.9.7)(publint@0.3.24)(tsdown@0.23.0(@arethetypeswrong/core@0.18.5)(@volar/typescript@2.4.28(typescript@6.0.3))(oxc-resolver@11.24.2)(publint@0.3.24)(tsx@4.23.13)(typescript@6.0.3))(typescript-eslint@8.70.0(eslint@10.10.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(typescript@6.0.3)(vitest@5.0.1)':
     dependencies:
