@@ -132,7 +132,7 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
 | `ExtendedErrorOptions` | type | `{ cause?: unknown; context?: Context }` |
 | `SerializedError` | type | The object `serializeError` returns |
 | `SerializedErrorWithProperties` | type | `SerializedError` plus other fields, from `includeOwnProperties: true` |
-| `SerializeErrorOptions` | type | `{ maxDepth?, includeStack?, includeOwnProperties?, maxAggregatedErrors? }` |
+| `SerializeErrorOptions` | type | `{ maxDepth?, includeStack?, includeOwnProperties?, maxAggregatedErrors?, keepCause? }`; `keepCause(cause)` cuts the chain at the first cause it returns `false` for |
 | `DeserializeErrorOptions` | type | `{ classes?, maxDepth?, fallback? }`; `fallback({ name, code })` picks a class for a name that matches none |
 | `DefineErrorOptions` | type | `{ code?, base?, meta? }` |
 | `ExtendedErrorConstructor` | type | The class `defineError` returns; its third type parameter is the literal type of `code` |

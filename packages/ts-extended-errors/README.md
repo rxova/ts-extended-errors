@@ -426,12 +426,32 @@ serializeError("timeout"); // { name: 'string', message: 'timeout' }
 serializeError(null); // { name: 'object', message: 'null' }
 ```
 
-| Option                 | Type      | Default | Description                                                          |
-| ---------------------- | --------- | ------- | -------------------------------------------------------------------- |
-| `maxDepth`             | `number`  | `8`     | How many `cause` levels to include below the top                     |
-| `includeStack`         | `boolean` | `true`  | Include `stack`                                                      |
-| `includeOwnProperties` | `boolean` | `false` | Also copy the error's other own fields (see below)                   |
-| `maxAggregatedErrors`  | `number`  | `10`    | How many `AggregateError` errors to include, across the whole output |
+| Option                 | Type                 | Default  | Description                                                          |
+| ---------------------- | -------------------- | -------- | -------------------------------------------------------------------- |
+| `maxDepth`             | `number`             | `8`      | How many `cause` levels to include below the top                     |
+| `includeStack`         | `boolean`            | `true`   | Include `stack`                                                      |
+| `includeOwnProperties` | `boolean`            | `false`  | Also copy the error's other own fields (see below)                   |
+| `maxAggregatedErrors`  | `number`             | `10`     | How many `AggregateError` errors to include, across the whole output |
+| `keepCause`            | `(cause) => boolean` | keep all | Cuts the `cause` chain at the first cause it returns `false` for     |
+
+`keepCause` keeps a chain that is yours down to a point, and stops at the first foreign error, such
+as a database driver's that carries a host name:
+
+```ts
+import { ExtendedError, isExtendedError, serializeError } from "ts-extended-errors";
+
+const driverError = new Error("connection to db-7.internal:5432 reset");
+const error = new ExtendedError("conflict", {
+  cause: new ExtendedError("link not minted", { cause: driverError }),
+});
+
+serializeError(error, { includeStack: false, keepCause: isExtendedError });
+// { name: 'ExtendedError', message: 'conflict',
+//   cause: { name: 'ExtendedError', message: 'link not minted' } }
+```
+
+It is asked about each `cause` in turn, not about the error passed in or an `AggregateError`'s
+`errors`.
 
 JSON-safe does not mean safe to send to a client. The serializer does not redact `message`, `code`
 or `context`, and a stack normally repeats the message in its first line. Build a public response

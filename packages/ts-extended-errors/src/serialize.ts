@@ -21,6 +21,20 @@ export interface SerializeErrorOptions {
    */
   readonly maxDepth?: number;
   /**
+   * Decides, for each `cause` down the chain, whether to keep it. The chain is
+   * cut at the first cause it returns `false` for, so that cause and
+   * everything below it are left out, as below `maxDepth`.
+   *
+   * For a chain that is yours down to a point: keep your own errors and stop
+   * at the first foreign one, such as a database driver's error that carries
+   * a query or a host name — `keepCause: (cause) => isExtendedError(cause)`.
+   * It is not asked about the value being serialized, nor about an
+   * AggregateError's `errors`. Exceptions it throws are not swallowed.
+   *
+   * @defaultValue every cause is kept
+   */
+  readonly keepCause?: (cause: unknown) => boolean;
+  /**
    * Whether to include `stack`. Off is the right choice for a response body and
    * the wrong one for a log line, so this defaults to `true` and expects the
    * response path to say otherwise.
@@ -301,7 +315,7 @@ export function serializeError(
     if (isObjectLike(context)) serialized.context = copyContext(context);
 
     const cause = readProperty(current, "cause");
-    if (cause !== undefined) {
+    if (cause !== undefined && (options.keepCause?.(cause) ?? true)) {
       const serializedCause = descend(cause);
       if (serializedCause !== undefined) serialized.cause = serializedCause;
     }

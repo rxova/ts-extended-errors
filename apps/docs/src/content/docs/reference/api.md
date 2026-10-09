@@ -138,12 +138,13 @@ function serializeError(
 function serializeError(value: unknown, options?: SerializeErrorOptions): SerializedError;
 ```
 
-| Option                 | Type      | Default | Effect                                                  |
-| ---------------------- | --------- | ------- | ------------------------------------------------------- |
-| `includeStack`         | `boolean` | `true`  | Include `stack`                                         |
-| `maxDepth`             | `number`  | `8`     | How far down the `cause` chain to walk                  |
-| `maxAggregatedErrors`  | `number`  | `10`    | `AggregateError` `errors` kept, across the whole output |
-| `includeOwnProperties` | `boolean` | `false` | Also copy the error's own enumerable fields             |
+| Option                 | Type                          | Default  | Effect                                                  |
+| ---------------------- | ----------------------------- | -------- | ------------------------------------------------------- |
+| `includeStack`         | `boolean`                     | `true`   | Include `stack`                                         |
+| `maxDepth`             | `number`                      | `8`      | How far down the `cause` chain to walk                  |
+| `maxAggregatedErrors`  | `number`                      | `10`     | `AggregateError` `errors` kept, across the whole output |
+| `keepCause`            | `(cause: unknown) => boolean` | keep all | Cuts the `cause` chain at the first cause it rejects    |
+| `includeOwnProperties` | `boolean`                     | `false`  | Also copy the error's own enumerable fields             |
 
 Accepts any value. A non-error is returned as `{ name: typeof value, message: describeValue(value) }`.
 `context` is copied through a JSON round trip. See [Serialization](../guides/serialization.md).

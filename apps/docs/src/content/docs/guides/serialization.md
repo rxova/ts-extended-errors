@@ -52,12 +52,13 @@ and a `Map` becomes `{}`.
 
 ### Options
 
-| Option                 | Default | What it does                                                                |
-| ---------------------- | ------- | --------------------------------------------------------------------------- |
-| `includeStack`         | `true`  | Include `stack`. Turn it off for anything a client will see                 |
-| `maxDepth`             | `8`     | How far down the `cause` chain to walk                                      |
-| `maxAggregatedErrors`  | `10`    | How many of an `AggregateError`'s `errors` to keep, across the whole output |
-| `includeOwnProperties` | `false` | Also copy the error's own enumerable fields                                 |
+| Option                 | Default  | What it does                                                                |
+| ---------------------- | -------- | --------------------------------------------------------------------------- |
+| `includeStack`         | `true`   | Include `stack`. Turn it off for anything a client will see                 |
+| `maxDepth`             | `8`      | How far down the `cause` chain to walk                                      |
+| `maxAggregatedErrors`  | `10`     | How many of an `AggregateError`'s `errors` to keep, across the whole output |
+| `includeOwnProperties` | `false`  | Also copy the error's own enumerable fields                                 |
+| `keepCause`            | keep all | Cuts the `cause` chain at the first cause it returns `false` for            |
 
 ### What to include where
 
@@ -73,6 +74,15 @@ JSON-safe does not mean safe to send to a client. `serializeError` does not reda
 `message`, `code` and `context` are written as given, and a stack normally repeats the message in
 its first line. Build a public response from fields you intend to expose instead of treating the
 serializer as an allowlist.
+
+`keepCause` cuts the chain where it stops being yours. Your own errors explain the failure; a
+driver's error below them often carries a query, a host name or a connection string. `maxDepth`
+cuts at a count, which is the wrong question when chains differ in length; this cuts at the first
+cause the predicate rejects, and leaves out everything below it:
+
+```ts
+response.json(serializeError(error, { includeStack: false, keepCause: isExtendedError }));
+```
 
 `includeOwnProperties` copies whatever else the error class assigned — a `statusCode`, a `request`,
 a `user`. What is in those fields is up to whoever threw, so this is for a log you control, not for

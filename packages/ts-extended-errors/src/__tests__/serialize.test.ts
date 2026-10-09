@@ -655,3 +655,72 @@ describe("describeValue", () => {
     expect(describeValue({ toJSON: () => undefined })).toBe("[object Object]");
   });
 });
+
+describe("serializeError with keepCause", () => {
+  const driverError = Object.assign(new Error("connection to db-7.internal:5432 reset"), {
+    code: "ECONNRESET",
+  });
+  const notMinted = new ExtendedError("link not minted", { cause: driverError });
+  const conflict = new ExtendedError("conflict", { cause: notMinted });
+
+  it("cuts the chain at the first cause it rejects", () => {
+    const serialized = serializeError(conflict, {
+      includeStack: false,
+      keepCause: (cause) => cause instanceof ExtendedError,
+    });
+
+    expect(serialized).toEqual({
+      name: "ExtendedError",
+      message: "conflict",
+      cause: { name: "ExtendedError", message: "link not minted" },
+    });
+  });
+
+  it("leaves out everything below the rejected cause, even causes it would keep", () => {
+    const wrapped = new ExtendedError("outer", {
+      cause: new Error("foreign", { cause: conflict }),
+    });
+
+    const serialized = serializeError(wrapped, {
+      keepCause: (cause) => cause instanceof ExtendedError,
+    });
+
+    expect(serialized.cause).toBeUndefined();
+    expect("cause" in serialized).toBe(false);
+  });
+
+  it("is asked about each cause in turn, not about the value itself", () => {
+    const asked: unknown[] = [];
+    serializeError(conflict, {
+      keepCause: (cause) => {
+        asked.push(cause);
+        return true;
+      },
+    });
+
+    expect(asked).toEqual([notMinted, driverError]);
+  });
+
+  it("is not asked about an AggregateError's errors", () => {
+    const asked: unknown[] = [];
+    const aggregate = new AggregateError([new Error("a")], "all failed");
+
+    const serialized = serializeError(aggregate, {
+      keepCause: (cause) => {
+        asked.push(cause);
+        return false;
+      },
+    });
+
+    expect(asked).toEqual([]);
+    expect(serialized.errors).toHaveLength(1);
+  });
+
+  it("lets its exceptions propagate", () => {
+    const keepCause = () => {
+      throw new Error("predicate failed");
+    };
+
+    expect(() => serializeError(conflict, { keepCause })).toThrow("predicate failed");
+  });
+});
