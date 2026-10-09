@@ -117,7 +117,7 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
 | --- | --- | --- |
 | `ExtendedError` | class | Base class: `name`, `code`, `context`, `cause`, `stack`, `toJSON()` |
 | `isExtendedError` | function | `value instanceof ExtendedError`, as a type guard |
-| `defineError` | function | `defineError(name, { code?, base?, message? })` returns a new error class |
+| `defineError` | function | `defineError(name, { code?, base?, message?, meta? })` returns a new error class; `meta` is per-class data such as an HTTP status, read as `Class.meta` or `error.meta` and inherited |
 | `causeChain` | function | `[error, error.cause, …]`, outermost first |
 | `rootCause` | function | The last value in the chain |
 | `findCause` | function | The first value in the chain that a predicate accepts |
@@ -134,7 +134,7 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
 | `SerializedErrorWithProperties` | type | `SerializedError` plus other fields, from `includeOwnProperties: true` |
 | `SerializeErrorOptions` | type | `{ maxDepth?, includeStack?, includeOwnProperties?, maxAggregatedErrors? }` |
 | `DeserializeErrorOptions` | type | `{ classes?, maxDepth? }` |
-| `DefineErrorOptions` | type | `{ code?, base? }` |
+| `DefineErrorOptions` | type | `{ code?, base?, meta? }` |
 | `ExtendedErrorConstructor` | type | The class `defineError` returns; its third type parameter is the literal type of `code` |
 | `MessageErrorConstructor` | type | The class `defineError` returns with `message`: `new Class({ context, cause })`. Its instances type `context` as present when the throw site must pass one |
 | `ExtendedErrorMembers` | type | `name`, `code`, `context` and `toJSON`, added to any `defineError` class |
@@ -174,6 +174,9 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
 - **A leaf can declare its own `context`.** `defineError<{ slug: string }>(name,
   { base: HttpError })`, or a `message` with its own parameter type. Under a base
   that declares a context, the leaf's must include it.
+- **`meta` is not serialized.** It belongs to the class: a leaf's is merged
+  over its base's, a key the base declares keeps its type, and a rebuilt error
+  reads it from its class.
 - **`code` is typed as a literal.** `defineError('X', { code: 'X_CODE' })` types
   `code` as `'X_CODE'` on the class and its instances, and a class without one
   takes its base's. Naming `Context` as a type argument widens it back to

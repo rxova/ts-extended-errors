@@ -1,3 +1,4 @@
+import { isObjectLike, readProperty } from "@rxova/ts-utils";
 import { ExtendedError, captureStack, superOptions } from "./ExtendedError";
 import { serializeError } from "./serialize";
 import type { ErrorContext, ExtendedErrorOptions, SerializedError } from "./types";
@@ -158,11 +159,55 @@ export interface MessageErrorConstructor<
   readonly code: Code;
 }
 
+/**
+ * The type a class's `meta` is checked against, and what a `Meta` type
+ * parameter stands for when nothing declared one: a key type of `string`
+ * means "undeclared", and adds nothing to the class's type.
+ */
+type ErrorMeta = Readonly<Record<string, unknown>>;
+
+/**
+ * A base's `meta` with the class's own laid over it, key by key, the way the
+ * runtime merges them.
+ */
+type MergeMeta<BaseMeta extends ErrorMeta, Meta extends ErrorMeta> = string extends keyof Meta
+  ? BaseMeta
+  : string extends keyof BaseMeta
+    ? Readonly<Meta>
+    : {
+        readonly [Key in keyof BaseMeta | keyof Meta]: Key extends keyof Meta
+          ? Meta[Key]
+          : BaseMeta[Key & keyof BaseMeta];
+      };
+
+/**
+ * `Instance`, with `meta` typed as `Meta` when one was declared. An instance
+ * that already has a `meta` — its base declared one — has it replaced, for the
+ * reason {@link WithCode} replaces `code`.
+ */
+type WithMeta<Instance, Meta extends ErrorMeta> = string extends keyof Meta
+  ? Instance
+  : Instance extends { readonly meta: unknown }
+    ? Omit<Instance, "meta"> & { readonly meta: Meta }
+    : Instance & { readonly meta: Meta };
+
+/** The class itself, with a static `meta` when one was declared. */
+type WithStaticMeta<Class, Meta extends ErrorMeta> = string extends keyof Meta
+  ? Class
+  : Class & { readonly meta: Meta };
+
+/** Where a base's `meta` is read from, so a class inherits its type. */
+interface MetaSource<BaseMeta extends ErrorMeta> {
+  readonly meta?: BaseMeta;
+}
+
 /** Options for {@link defineError}. */
 export interface DefineErrorOptions<
   Context extends object = ErrorContext,
   Code extends ErrorCode = ErrorCode,
   BaseCode extends ErrorCode = ErrorCode,
+  Meta extends ErrorMeta = ErrorMeta,
+  BaseMeta extends ErrorMeta = ErrorMeta,
 > {
   /**
    * The machine-readable discriminator for this class. Omit it and the class
@@ -174,6 +219,16 @@ export interface DefineErrorOptions<
    */
   readonly code?: Code;
   /**
+   * Fixed data about the class rather than one failure, such as the HTTP
+   * status a handler should answer with: `meta: { status: 404 }`. It is read
+   * as `Class.meta` or `error.meta`, merged over the base's `meta` key by key,
+   * and frozen.
+   *
+   * Not serialized: it belongs to the class, and a rebuilt error gets it back
+   * from its class.
+   */
+  readonly meta?: Meta & Partial<NoInfer<BaseMeta>>;
+  /**
    * The class to extend. Defaults to {@link ExtendedError}.
    *
    * This is what makes a taxonomy possible: derive `NotFoundError` from
@@ -183,9 +238,11 @@ export interface DefineErrorOptions<
    * A built-in error class works too — see the second {@link defineError}
    * overload.
    */
-  readonly base?:
+  readonly base?: (
     | ExtendedErrorConstructor<Context, ExtendedError<Context>, BaseCode>
-    | ExtendedErrorBase<NoInfer<Context>, BaseCode>;
+    | ExtendedErrorBase<NoInfer<Context>, BaseCode>
+  ) &
+    MetaSource<BaseMeta>;
 }
 
 /**
@@ -252,6 +309,42 @@ const extendBase = (base: ErrorClass, code: string | undefined) =>
       return serializeError(this);
     }
   };
+
+/**
+ * Gives `Defined` a static `meta`, the base's with `meta` laid over it, and
+ * its instances a `meta` that reads it.
+ *
+ * Only for a class that declares one: a class that does not inherits both
+ * through the prototype chain, and a foreign base is left as it was.
+ *
+ * The instance `meta` is an accessor on the prototype rather than a field, so
+ * it is not an own property: `serializeError` does not copy it and
+ * `console.log` does not print it. It reads `this.constructor.meta`, so a
+ * class-syntax subclass that declares a static `meta` of its own is seen. Its
+ * setter turns an assignment — a foreign base that keeps its own `meta` on the
+ * instance — into an own field, rather than a `TypeError` in that base's
+ * constructor.
+ */
+const defineMeta = (Defined: ErrorClass, base: ErrorClass, meta: object): void => {
+  const inherited = readProperty(base, "meta");
+  const merged = Object.freeze({ ...(isObjectLike(inherited) ? inherited : {}), ...meta });
+
+  Object.defineProperty(Defined, "meta", { value: merged, configurable: true });
+  Object.defineProperty(Defined.prototype, "meta", {
+    get(this: object): unknown {
+      return readProperty(this.constructor, "meta");
+    },
+    set(this: object, value: unknown) {
+      Object.defineProperty(this, "meta", {
+        value,
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+    },
+    configurable: true,
+  });
+};
 
 /**
  * A subclass of `Defined` that writes its message from the context.
@@ -328,12 +421,21 @@ export function defineError<
   Context extends object = ErrorContext,
   Code extends ErrorCode = ErrorCode,
   BaseCode extends ErrorCode = ErrorCode,
+  Meta extends ErrorMeta = ErrorMeta,
+  BaseMeta extends ErrorMeta = ErrorMeta,
 >(
   name: string,
-  options: DefineErrorOptions<NoInfer<Context>, Code, BaseCode> & {
+  options: DefineErrorOptions<NoInfer<Context>, Code, BaseCode, Meta, BaseMeta> & {
     readonly message: (context: Context) => string;
   },
-): MessageErrorConstructor<Context, ExtendedError<Context>, DeclaredCode<Code, BaseCode>>;
+): WithStaticMeta<
+  MessageErrorConstructor<
+    Context,
+    WithMeta<ExtendedError<Context>, MergeMeta<BaseMeta, Meta>>,
+    DeclaredCode<Code, BaseCode>
+  >,
+  MergeMeta<BaseMeta, Meta>
+>;
 /**
  * Declares an error class that writes its own message, on a base that is not
  * an {@link ExtendedError}, such as `RangeError`.
@@ -352,17 +454,26 @@ export function defineError<
   Context extends object = ErrorContext,
   Base extends Error = Error,
   Code extends ErrorCode = ErrorCode,
+  Meta extends ErrorMeta = ErrorMeta,
+  BaseMeta extends ErrorMeta = ErrorMeta,
 >(
   name: string,
   options: {
     readonly code?: Code;
-    readonly base: MessageFirstClass<Base>;
+    readonly meta?: Meta & Partial<NoInfer<BaseMeta>>;
+    readonly base: MessageFirstClass<Base> & MetaSource<BaseMeta>;
     readonly message: (context: Context) => string;
   },
-): MessageErrorConstructor<
-  Context,
-  Base & ExtendedErrorMembers<Context>,
-  DeclaredCode<Code, ErrorCode>
+): WithStaticMeta<
+  MessageErrorConstructor<
+    Context,
+    WithMeta<
+      Base & ExtendedErrorMembers<Context>,
+      string extends keyof Meta ? Meta : MergeMeta<BaseMeta, Meta>
+    >,
+    DeclaredCode<Code, ErrorCode>
+  >,
+  MergeMeta<BaseMeta, Meta>
 >;
 /**
  * Declares a subclass of a class that writes its own message. Without a
@@ -380,13 +491,23 @@ export function defineError<
   Instance extends Error = ExtendedError<Context>,
   Code extends ErrorCode = ErrorCode,
   BaseCode extends ErrorCode = ErrorCode,
+  Meta extends ErrorMeta = ErrorMeta,
+  BaseMeta extends ErrorMeta = ErrorMeta,
 >(
   name: string,
   options: {
     readonly code?: Code;
-    readonly base: MessageErrorConstructor<Context, Instance, BaseCode>;
+    readonly meta?: Meta & Partial<NoInfer<BaseMeta>>;
+    readonly base: MessageErrorConstructor<Context, Instance, BaseCode> & MetaSource<BaseMeta>;
   },
-): MessageErrorConstructor<Context, Instance, DeclaredCode<Code, BaseCode>>;
+): WithStaticMeta<
+  MessageErrorConstructor<
+    Context,
+    WithMeta<Instance, string extends keyof Meta ? Meta : MergeMeta<BaseMeta, Meta>>,
+    DeclaredCode<Code, BaseCode>
+  >,
+  MergeMeta<BaseMeta, Meta>
+>;
 /**
  * Declares an error class in one line.
  *
@@ -415,10 +536,19 @@ export function defineError<
   Context extends object = ErrorContext,
   Code extends ErrorCode = ErrorCode,
   BaseCode extends ErrorCode = ErrorCode,
+  Meta extends ErrorMeta = ErrorMeta,
+  BaseMeta extends ErrorMeta = ErrorMeta,
 >(
   name: string,
-  options?: DefineErrorOptions<Context, Code, BaseCode>,
-): ExtendedErrorConstructor<Context, ExtendedError<Context>, DeclaredCode<Code, BaseCode>>;
+  options?: DefineErrorOptions<Context, Code, BaseCode, Meta, BaseMeta>,
+): WithStaticMeta<
+  ExtendedErrorConstructor<
+    Context,
+    WithMeta<ExtendedError<Context>, MergeMeta<BaseMeta, Meta>>,
+    DeclaredCode<Code, BaseCode>
+  >,
+  MergeMeta<BaseMeta, Meta>
+>;
 /**
  * Declares an error class on a base that is not an {@link ExtendedError}: a
  * built-in class such as `RangeError`, or any error class whose constructor
@@ -446,18 +576,31 @@ export function defineError<
   Context extends object = ErrorContext,
   Base extends Error = Error,
   Code extends ErrorCode = ErrorCode,
+  Meta extends ErrorMeta = ErrorMeta,
+  BaseMeta extends ErrorMeta = ErrorMeta,
 >(
   name: string,
-  options: { readonly code?: Code; readonly base: MessageFirstClass<Base> },
-): ExtendedErrorConstructor<
-  Context,
-  Base & ExtendedErrorMembers<Context>,
-  DeclaredCode<Code, ErrorCode>
+  options: {
+    readonly code?: Code;
+    readonly meta?: Meta & Partial<NoInfer<BaseMeta>>;
+    readonly base: MessageFirstClass<Base> & MetaSource<BaseMeta>;
+  },
+): WithStaticMeta<
+  ExtendedErrorConstructor<
+    Context,
+    WithMeta<
+      Base & ExtendedErrorMembers<Context>,
+      string extends keyof Meta ? Meta : MergeMeta<BaseMeta, Meta>
+    >,
+    DeclaredCode<Code, ErrorCode>
+  >,
+  MergeMeta<BaseMeta, Meta>
 >;
 export function defineError(
   name: string,
   options: {
     readonly code?: string;
+    readonly meta?: object;
     readonly base?: MessageFirstClass;
     readonly message?: (context: object) => string;
   } = {},
@@ -481,6 +624,8 @@ export function defineError(
   // without this every class defined here would be called `Defined` — and that
   // name is what `new.target.name` copies onto `error.name`.
   Object.defineProperty(Defined, "name", { value: name, configurable: true });
+
+  if (options.meta !== undefined) defineMeta(Defined, base, options.meta);
 
   if (options.message === undefined) return Defined;
 

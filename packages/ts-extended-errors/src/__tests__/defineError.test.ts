@@ -770,3 +770,117 @@ describe("defineError with a message", () => {
     expect(wrongContext).toBeTypeOf("function");
   });
 });
+
+describe("defineError with meta", () => {
+  const ApiError = defineError("ApiError", { meta: { status: 500, retryable: false } });
+  const RateLimitError = defineError("RateLimitError", {
+    base: ApiError,
+    meta: { status: 429, retryable: true },
+  });
+  const MissingError = defineError("MissingError", { base: ApiError, meta: { status: 404 } });
+  const GoneMissingError = defineError("GoneMissingError", { base: MissingError });
+
+  it("puts meta on the class and its instances", () => {
+    expect(ApiError.meta).toEqual({ status: 500, retryable: false });
+    expect(new ApiError("boom").meta).toBe(ApiError.meta);
+  });
+
+  it("merges a class's meta over its base's, key by key", () => {
+    expect(RateLimitError.meta).toEqual({ status: 429, retryable: true });
+    expect(MissingError.meta).toEqual({ status: 404, retryable: false });
+    expect(new MissingError("boom").meta.status).toBe(404);
+  });
+
+  it("inherits meta when a class declares none", () => {
+    expect(GoneMissingError.meta).toBe(MissingError.meta);
+    expect(new GoneMissingError("boom").meta.status).toBe(404);
+  });
+
+  it("reads the constructed class's meta through a reference to the base", () => {
+    const error: InstanceType<typeof ApiError> = new MissingError("boom");
+
+    expect(error.meta.status).toBe(404);
+  });
+
+  it("freezes meta", () => {
+    expect(Object.isFrozen(ApiError.meta)).toBe(true);
+    expect(Object.isFrozen(MissingError.meta)).toBe(true);
+  });
+
+  it("leaves meta out of the instance's own fields and its serialized form", () => {
+    const error = new MissingError("boom");
+
+    expect(Object.keys(error)).not.toContain("meta");
+    expect("meta" in serializeError(error, { includeOwnProperties: true })).toBe(false);
+  });
+
+  it("gives a rebuilt error its meta from its class", () => {
+    const payload = JSON.parse(JSON.stringify(new MissingError("boom"))) as unknown;
+    const rebuilt = deserializeError(payload, { classes: [MissingError] });
+
+    expect(rebuilt).toBeInstanceOf(MissingError);
+    expect((rebuilt as InstanceType<typeof MissingError>).meta.status).toBe(404);
+  });
+
+  it("sees a static meta declared by a class-syntax subclass", () => {
+    class TeapotError extends ApiError {
+      static override readonly meta = { status: 418, retryable: false };
+    }
+
+    expect(new TeapotError("boom").meta.status).toBe(418);
+  });
+
+  it("works with message and on a built-in base", () => {
+    const ThrottledError = defineError("ThrottledError", {
+      base: ApiError,
+      meta: { status: 503 },
+      message: (context: { seconds: number }) => `retry in ${String(context.seconds)}s`,
+    });
+    const PageError = defineError("PageError", { base: RangeError, meta: { status: 400 } });
+
+    expect(new ThrottledError({ context: { seconds: 5 } }).meta).toEqual({
+      status: 503,
+      retryable: false,
+    });
+    expect(new PageError("page 0").meta.status).toBe(400);
+    expect(new PageError("page 0")).toBeInstanceOf(RangeError);
+  });
+
+  it("lets a foreign base keep a meta field of its own", () => {
+    class ClientError extends Error {
+      // Assigned rather than defined, as in a base compiled without class fields.
+      declare readonly meta: unknown;
+      constructor(message: string, options?: ErrorOptions) {
+        super(message, options);
+        this.meta = "set by the base";
+      }
+    }
+    const WrappedError = defineError("WrappedError", { base: ClientError, meta: { status: 502 } });
+
+    // Assigned in the base's constructor, before the class's accessor could
+    // answer: it becomes an own field rather than a TypeError.
+    expect(new WrappedError("boom").meta).toBe("set by the base");
+    expect(WrappedError.meta).toEqual({ status: 502 });
+  });
+
+  it("types meta from the option, merged over the base's", () => {
+    expectTypeOf(ApiError.meta).toEqualTypeOf<Readonly<{ status: number; retryable: boolean }>>();
+    expectTypeOf(new MissingError("boom").meta).toEqualTypeOf<{
+      readonly status: number;
+      readonly retryable: boolean;
+    }>();
+    expectTypeOf(new GoneMissingError("boom").meta.status).toEqualTypeOf<number>();
+  });
+
+  it("refuses a meta whose type differs from the base's for the same key", () => {
+    // @ts-expect-error: `status` is a number on the base
+    const wrongType = () => defineError("WrongError", { base: ApiError, meta: { status: "404" } });
+
+    expect(wrongType).toBeTypeOf("function");
+  });
+
+  it("adds no meta to the type of a class without one", () => {
+    expectTypeOf(defineError("Plain")).toEqualTypeOf<ExtendedErrorConstructor>();
+    expectTypeOf(new (defineError("Plain"))("boom")).not.toHaveProperty("meta");
+  });
+});

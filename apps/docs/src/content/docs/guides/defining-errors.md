@@ -105,6 +105,22 @@ const RecordError = defineError<{ id: number }>("RecordError");
 const FieldError = defineError<{ id: number; field: string }>("FieldError", { base: RecordError });
 ```
 
+## Class metadata
+
+`meta` is data about the class rather than one failure — the HTTP status a handler answers with,
+whether a message is safe to show. It is read as `Class.meta` or `error.meta`, merged over the
+base's key by key, and frozen:
+
+```ts
+const HttpError = defineError("HttpError", { code: "HTTP", meta: { status: 500 } });
+const NotFoundError = defineError("NotFoundError", { base: HttpError, meta: { status: 404 } });
+
+const respond = (error: InstanceType<typeof HttpError>) => error.meta.status; // 404 for a NotFoundError
+```
+
+A key the base declares keeps the base's type, so a handler typed against the family reads a value
+of the type it expects. `meta` is not serialized: a rebuilt error reads it from its class.
+
 ## Messages written from context
 
 Repeating the same sentence at every throw site is how messages drift apart. Give the class a

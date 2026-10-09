@@ -89,11 +89,15 @@ interface DefineErrorOptions<
   Context extends object = ErrorContext,
   Code extends ErrorCode = ErrorCode,
   BaseCode extends ErrorCode = ErrorCode,
+  Meta extends ErrorMeta = ErrorMeta,
+  BaseMeta extends ErrorMeta = ErrorMeta,
 > {
   readonly code?: Code;
-  readonly base?:
+  readonly meta?: Meta & Partial<NoInfer<BaseMeta>>;
+  readonly base?: (
     | ExtendedErrorConstructor<Context, ExtendedError<Context>, BaseCode>
-    | ExtendedErrorBase<NoInfer<Context>, BaseCode>;
+    | ExtendedErrorBase<NoInfer<Context>, BaseCode>
+  ) & { readonly meta?: BaseMeta };
 }
 ```
 
@@ -101,7 +105,10 @@ The options of `defineError` in its plain form. `Code` is inferred from the lite
 `code`, and `BaseCode` from the class passed as `base`; the class returned carries `Code` when one
 was declared and `BaseCode` otherwise, which is the runtime rule `code ?? base.code` on types.
 `ExtendedErrorBase`, not exported, is an `ExtendedError` class whose constructor accepts `Context`:
-it is what lets a leaf declare a context of its own, as long as it includes its base's. The
+it is what lets a leaf declare a context of its own, as long as it includes its base's. `Meta` and
+`BaseMeta` work like the codes: the class's `meta` type is the base's with its own laid over it, and
+`Partial<BaseMeta>` keeps a key the base declares at the base's type. `ErrorMeta`, not exported, is
+`Readonly<Record<string, unknown>>`, and stands for "none declared". The
 overloads that take a `message`, or a `base` that is not an `ExtendedError`, declare their own
 object types inline.
 

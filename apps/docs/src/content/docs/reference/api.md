@@ -88,11 +88,12 @@ function defineError<Context extends ErrorContext = ErrorContext>(
 ): ExtendedErrorConstructor<Context>;
 ```
 
-| Option    | Type                           | Effect                                                              |
-| --------- | ------------------------------ | ------------------------------------------------------------------- |
-| `code`    | `string`                       | The class's `code`. Omitted, it inherits the base's                 |
-| `base`    | an error class                 | The class to extend. Defaults to `ExtendedError`                    |
-| `message` | `(context: Context) => string` | Writes the message from context; the throw site passes only options |
+| Option    | Type                           | Effect                                                                               |
+| --------- | ------------------------------ | ------------------------------------------------------------------------------------ |
+| `code`    | `string`                       | The class's `code`. Omitted, it inherits the base's                                  |
+| `base`    | an error class                 | The class to extend. Defaults to `ExtendedError`                                     |
+| `message` | `(context: Context) => string` | Writes the message from context; the throw site passes only options                  |
+| `meta`    | an object                      | Fixed data about the class, as `Class.meta` and `error.meta`; merged over the base's |
 
 Four overloads cover the combinations: with and without `message`, on an `ExtendedError` base and on
 any other error class. With `message`, the returned class is a

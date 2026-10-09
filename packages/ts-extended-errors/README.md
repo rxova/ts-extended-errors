@@ -171,11 +171,12 @@ without one is typed with its base's. `error.code` above is `'HTTP_NOT_FOUND'`, 
 one. The `code` of a class that declares none and has no base to inherit from is
 `string | undefined`.
 
-| Option    | Type                  | Default           | Description                                               |
-| --------- | --------------------- | ----------------- | --------------------------------------------------------- |
-| `code`    | `string`              | the base's `code` | Copied to every instance                                  |
-| `base`    | error class           | `ExtendedError`   | The class to extend; see [other bases](#other-bases)      |
-| `message` | `(context) => string` | none              | Writes the message; see [fixed messages](#fixed-messages) |
+| Option    | Type                  | Default           | Description                                                       |
+| --------- | --------------------- | ----------------- | ----------------------------------------------------------------- |
+| `code`    | `string`              | the base's `code` | Copied to every instance                                          |
+| `base`    | error class           | `ExtendedError`   | The class to extend; see [other bases](#other-bases)              |
+| `message` | `(context) => string` | none              | Writes the message; see [fixed messages](#fixed-messages)         |
+| `meta`    | object                | the base's `meta` | Fixed data about the class; see [class metadata](#class-metadata) |
 
 The first type parameter types `context`. Any object type will do, an `interface` included:
 
@@ -231,6 +232,28 @@ own is defined with `defineError` and extended from there:
 `class TeapotError extends defineError('TeapotError', { base: HttpError, code: 'TEAPOT' }) {}`.
 Declaring a different `static override readonly code` on a class-syntax subclass is a type error,
 since the instance type it inherits already says `'HTTP'`.
+
+### Class metadata
+
+`meta` holds data about the class rather than one failure, such as the HTTP status a handler
+answers with. It is read from the class or from any instance, merged over the base's key by key,
+and frozen:
+
+```ts
+import { defineError, findCauseOf } from "ts-extended-errors";
+
+const HttpError = defineError("HttpError", { code: "HTTP", meta: { status: 500, expose: false } });
+const NotFoundError = defineError("NotFoundError", { base: HttpError, meta: { status: 404 } });
+
+NotFoundError.meta; // { status: 404, expose: false }
+
+const found = findCauseOf(new NotFoundError("no such user"), HttpError);
+found?.meta.status; // 404, typed as number
+```
+
+A key the base declares keeps its type: `meta: { status: '404' }` on `NotFoundError` is a type
+error. `meta` is not serialized, since it belongs to the class; a rebuilt error reads it from its
+class.
 
 ### Fixed messages
 
