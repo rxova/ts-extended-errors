@@ -90,6 +90,21 @@ new NotFoundError("no such user") instanceof HttpError; // true
 
 A handler written against `HttpError` catches the fifth subclass you add without being touched.
 
+A leaf can type a `context` of its own, from its type argument or its `message`. Under a family with
+the default context any type will do; under one that declares a context, the leaf's must include
+it, so every leaf is still a valid instance of its family:
+
+```ts
+const LinkError = defineError("LinkError", {
+  base: HttpError,
+  code: "HTTP_LINK",
+  message: (context: { slug: string }) => `no link "${context.slug}"`,
+});
+
+const RecordError = defineError<{ id: number }>("RecordError");
+const FieldError = defineError<{ id: number; field: string }>("FieldError", { base: RecordError });
+```
+
 ## Messages written from context
 
 Repeating the same sentence at every throw site is how messages drift apart. Give the class a

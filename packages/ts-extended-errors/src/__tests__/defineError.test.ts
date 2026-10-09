@@ -235,6 +235,67 @@ describe("defineError", () => {
     expectTypeOf(Exact.code).toEqualTypeOf<"RATE">();
   });
 
+  it("lets a leaf declare a context of its own under a family with the default one", () => {
+    const LinkError = defineError<{ slug: string }>("LinkError", { base: HttpError });
+    const error = new LinkError("no such link", { context: { slug: "abc" } });
+
+    // Typed as an ExtendedError, rather than as an `Error` on a foreign base.
+    expectTypeOf(LinkError).toEqualTypeOf<
+      ExtendedErrorConstructor<{ slug: string }, ExtendedError<{ slug: string }>>
+    >();
+    expectTypeOf(error.context).toEqualTypeOf<{ slug: string } | undefined>();
+    expect(error).toBeInstanceOf(HttpError);
+    expect(error).toBeInstanceOf(ExtendedError);
+    expect(error.code).toBe("HTTP");
+
+    // With a code of its own, which named type arguments have to name too.
+    const LinkGoneError = defineError<{ slug: string }, "LINK_GONE">("LinkGoneError", {
+      base: HttpError,
+      code: "LINK_GONE",
+    });
+
+    expectTypeOf(
+      new LinkGoneError("gone", { context: { slug: "abc" } }).code,
+    ).toEqualTypeOf<"LINK_GONE">();
+
+    // An interface, which has no index signature to match the default context's.
+    interface LinkContext {
+      slug: string;
+    }
+    const InterfaceError = defineError<LinkContext>("InterfaceError", { base: HttpError });
+
+    expectTypeOf(new InterfaceError("x").context).toEqualTypeOf<LinkContext | undefined>();
+  });
+
+  it("lets a message leaf declare a context of its own under a family", () => {
+    const LinkError = defineError("LinkError", {
+      base: HttpError,
+      code: "HTTP_LINK",
+      message: (context: { slug: string }) => `no link ${context.slug}`,
+    });
+    const error = new LinkError({ context: { slug: "abc" } });
+
+    expectTypeOf(error.context).toEqualTypeOf<{ slug: string }>();
+    expectTypeOf(error.code).toEqualTypeOf<"HTTP_LINK">();
+    expect(error).toBeInstanceOf(HttpError);
+    expect(error.message).toBe("no link abc");
+  });
+
+  it("lets a leaf widen the context of a family that declares one", () => {
+    const RecordError = defineError<{ id: number }>("RecordError");
+    const FieldError = defineError<{ id: number; field: string }>("FieldError", {
+      base: RecordError,
+    });
+
+    expectTypeOf(FieldError).toEqualTypeOf<
+      ExtendedErrorConstructor<
+        { id: number; field: string },
+        ExtendedError<{ id: number; field: string }>
+      >
+    >();
+    expect(new FieldError("bad")).toBeInstanceOf(RecordError);
+  });
+
   it("refuses a class-syntax subclass that declares a different code", () => {
     // The instance type of a subclass is fixed by its base, so a static `code`
     // that differs from the base's literal would make the instances lie.

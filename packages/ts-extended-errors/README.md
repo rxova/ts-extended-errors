@@ -192,6 +192,19 @@ new RateLimitError("slow down", { context: { retryAfter: 30 } }).context?.retryA
 new RateLimitError("slow down", { context: { retryAfter: "30" } });
 ```
 
+A class with a `base` can type a context of its own the same way, or through `message`. Under a base
+with the default context any type will do; under one that declares a context, it must include the
+base's, so every leaf is still a valid instance of its family:
+
+```ts
+import { defineError } from "ts-extended-errors";
+
+const HttpError = defineError("HttpError", { code: "HTTP" });
+const LinkError = defineError<{ slug: string }>("LinkError", { base: HttpError });
+
+new LinkError("no such link", { context: { slug: "abc" } }) instanceof HttpError; // true
+```
+
 TypeScript infers all of a call's type arguments or none, so naming `Context` leaves `code` typed
 as `string | undefined`. Name the second parameter as well to keep the literal:
 `defineError<{ retryAfter: number }, 'RATE_LIMIT'>('RateLimitError', { code: 'RATE_LIMIT' })`.

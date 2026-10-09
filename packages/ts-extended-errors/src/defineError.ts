@@ -183,8 +183,31 @@ export interface DefineErrorOptions<
    * A built-in error class works too — see the second {@link defineError}
    * overload.
    */
-  readonly base?: ExtendedErrorConstructor<Context, ExtendedError<Context>, BaseCode>;
+  readonly base?:
+    | ExtendedErrorConstructor<Context, ExtendedError<Context>, BaseCode>
+    | ExtendedErrorBase<NoInfer<Context>, BaseCode>;
 }
+
+/**
+ * An {@link ExtendedError} class that a class with `Context` can extend: one
+ * whose constructor accepts that context, so every leaf is still a valid
+ * instance of its family. A family with the default context accepts any, an
+ * `interface` included; one with `{ id: number }` accepts `{ id: number; slug:
+ * string }` and refuses `{ slug: string }`.
+ *
+ * What lets a leaf declare a context of its own, rather than inheriting its
+ * base's. `NoInfer` where it is used: the leaf's context comes from its own
+ * type argument or `message`, never from here.
+ */
+type ExtendedErrorBase<Context extends object, BaseCode extends ErrorCode> =
+  | ExtendedErrorConstructor<ErrorContext, ExtendedError, BaseCode>
+  | {
+      new (
+        message: string,
+        options: ExtendedErrorOptions<Context> & { readonly context: Context },
+      ): ExtendedError<object>;
+      readonly code: BaseCode;
+    };
 
 /** True for ExtendedError and its subclasses, whose constructor already does the work. */
 const isExtendedClass = (base: ErrorClass): base is typeof ExtendedError =>
@@ -307,7 +330,7 @@ export function defineError<
   BaseCode extends ErrorCode = ErrorCode,
 >(
   name: string,
-  options: DefineErrorOptions<Context, Code, BaseCode> & {
+  options: DefineErrorOptions<NoInfer<Context>, Code, BaseCode> & {
     readonly message: (context: Context) => string;
   },
 ): MessageErrorConstructor<Context, ExtendedError<Context>, DeclaredCode<Code, BaseCode>>;
