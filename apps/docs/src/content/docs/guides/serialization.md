@@ -108,10 +108,29 @@ With no serialized stack the result has none, rather than one pointing at `deser
 of at the failure. A real `Error` passes through untouched, and a value that is not error-shaped
 goes through [`toError`](./unknown-values.md).
 
-| Option     | Default | What it does                                                     |
-| ---------- | ------- | ---------------------------------------------------------------- |
-| `classes`  | `[]`    | Classes to rebuild by name, in addition to the built-ins         |
-| `maxDepth` | `8`     | How far down the chain to rebuild; below it, causes stay as sent |
+| Option     | Default | What it does                                                           |
+| ---------- | ------- | ---------------------------------------------------------------------- |
+| `classes`  | `[]`    | Classes to rebuild by name, in addition to the built-ins               |
+| `maxDepth` | `8`     | How far down the chain to rebuild; below it, causes stay as sent       |
+| `fallback` | none    | Picks a class for a name that matches none, from its `name` and `code` |
+
+`fallback` is for what a list of names cannot say: a `RemoteError` for everything another service
+sent, so one `instanceof` tells local failures from relayed ones, or a class chosen by `code` for a
+name this version does not know yet. Returning `undefined` keeps the default, and the rebuilt error
+keeps the serialized `name` either way.
+
+```ts
+import { defineError, deserializeError } from "ts-extended-errors";
+import { HttpError, NotFoundError } from "./errors.js";
+
+const RemoteError = defineError("RemoteError");
+
+const error = deserializeError(JSON.parse(line), {
+  classes: [HttpError, NotFoundError],
+  // A renamed class still carries its code; anything else is someone else's.
+  fallback: ({ code }) => (code === "HTTP_NOT_FOUND" ? NotFoundError : RemoteError),
+});
+```
 
 ### Trust
 

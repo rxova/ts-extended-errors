@@ -32,6 +32,20 @@ export interface DeserializeErrorOptions {
    */
   readonly classes?: readonly MessageFirstClass[];
   /**
+   * Picks a class for an error whose name matches none in `classes` or the
+   * built-ins, from its serialized `name` and `code`. Return `undefined` for
+   * the default, an {@link ExtendedError} that keeps the name.
+   *
+   * For what a list of names cannot say: a `RemoteError` for everything
+   * another service sent, or a class chosen by `code` for a name this version
+   * does not know yet. The rebuilt error keeps the serialized `name` either
+   * way. Exceptions it throws are not swallowed, as for `classes`.
+   */
+  readonly fallback?: (serialized: {
+    readonly name: string;
+    readonly code: string | number | undefined;
+  }) => MessageFirstClass | undefined;
+  /**
    * How far down the `cause` chain to rebuild. Below it, causes are left as
    * they came.
    *
@@ -144,7 +158,6 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
     path.add(current);
 
     const name = readString(current, "name") ?? "Error";
-    const Class = classes.get(name);
 
     // An AggregateError's `errors`, rebuilt the way a cause is. Read under that
     // name only: other classes keep other things there.
@@ -166,6 +179,14 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
       constructorOptions.context = context as ErrorContext;
     }
 
+    const code = readCode(current);
+    // An AggregateError that lists its errors is rebuilt as one without asking.
+    const Class =
+      classes.get(name) ??
+      (errors === undefined
+        ? (options.fallback?.({ name, code }) as ErrorClass | undefined)
+        : undefined);
+
     const error =
       Class !== undefined
         ? new Class(currentMessage, constructorOptions)
@@ -175,7 +196,6 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
 
     if (error.name !== name) restore(error, "name", name, false);
 
-    const code = readCode(current);
     if (code !== undefined) restore(error, "code", code, true);
 
     // A built-in class ignores `context` in its options.

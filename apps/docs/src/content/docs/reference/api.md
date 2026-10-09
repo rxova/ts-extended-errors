@@ -154,14 +154,16 @@ Accepts any value. A non-error is returned as `{ name: typeof value, message: de
 function deserializeError(value: unknown, options?: DeserializeErrorOptions): Error;
 ```
 
-| Option     | Type                    | Default | Effect                                         |
-| ---------- | ----------------------- | ------- | ---------------------------------------------- |
-| `classes`  | `readonly ErrorClass[]` | `[]`    | Classes to rebuild by name, plus the built-ins |
-| `maxDepth` | `number`                | `8`     | How far down the chain to rebuild              |
+| Option     | Type                                     | Default | Effect                                         |
+| ---------- | ---------------------------------------- | ------- | ---------------------------------------------- |
+| `classes`  | `readonly ErrorClass[]`                  | `[]`    | Classes to rebuild by name, plus the built-ins |
+| `maxDepth` | `number`                                 | `8`     | How far down the chain to rebuild              |
+| `fallback` | `({ name, code }) => class \| undefined` | none    | A class for a name that matches none           |
 
 `classes` also accepts a `message` class whose context is required. A real `Error` is returned
 untouched; a value that is not error-shaped goes through `toError`. An unmatched name becomes an
-`ExtendedError` keeping that name.
+instance of the class `fallback` returns for it, or else an `ExtendedError`, keeping that name
+either way.
 
 ## `toError(value)`
 
