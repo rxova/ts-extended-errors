@@ -1,5 +1,23 @@
 # ts-extended-errors
 
+## 1.1.0
+
+### Minor Changes
+
+- [#58](https://github.com/rxova/ts-extended-errors/pull/58) [`3380271`](https://github.com/rxova/ts-extended-errors/commit/33802710aa639ebc508ab7587f7c166d8fe8b0ab) - Add a `meta` option to `defineError`: fixed data about a class, such as the HTTP status a handler answers with. It is read as `Class.meta` or `error.meta`, merged over the base's `meta` key by key, frozen, and typed; a key the base declares keeps the base's type. It is not serialized, since a rebuilt error reads it from its class.
+
+- [#58](https://github.com/rxova/ts-extended-errors/pull/58) [`c33c63f`](https://github.com/rxova/ts-extended-errors/commit/c33c63fdc858c0736ded01cd25d97bad1ea92ef6) - Add a `fallback` option to `deserializeError`: called with the serialized `name` and `code` of an error whose name matches no class, it returns the class to rebuild it as, or `undefined` for the default `ExtendedError`. The rebuilt error keeps the serialized `name` either way.
+
+- [#58](https://github.com/rxova/ts-extended-errors/pull/58) [`b1ddd71`](https://github.com/rxova/ts-extended-errors/commit/b1ddd7162b05d9bb9398fba45811144d087cab5c) - A class defined on an `ExtendedError` base can declare a context of its own, through its first type argument or the parameter of `message`, as long as it includes the base's. `defineError<{ slug: string }>('LinkError', { base: HttpError })` is now typed as an `ExtendedError<{ slug: string }>` subclass, and with its own `code` it no longer fails to compile.
+
+- [#58](https://github.com/rxova/ts-extended-errors/pull/58) [`3545206`](https://github.com/rxova/ts-extended-errors/commit/3545206c6934d58403655def6858b3017a724f63) - Add a `keepCause` option to `serializeError`: a predicate asked about each `cause` in turn, which cuts the chain at the first cause it returns `false` for. `keepCause: isExtendedError` keeps your own errors and leaves out a foreign error below them, such as a database driver's, and everything under it.
+
+### Patch Changes
+
+- [#58](https://github.com/rxova/ts-extended-errors/pull/58) [`346544e`](https://github.com/rxova/ts-extended-errors/commit/346544ed8ddfc0e84c84c5cd65c9fbfb87968472) - A class defined with `message` now requires `context` through its `(message, options)` constructor as well, when the context type has required fields, so `new RateLimitError('slow down')` no longer compiles with an instance whose `context.retryAfter` is typed `number` but is `undefined`. Such a class is therefore no longer assignable to `ErrorClass`; `base` and `deserializeError`'s `classes` still accept it.
+
+- [#58](https://github.com/rxova/ts-extended-errors/pull/58) [`ba94bca`](https://github.com/rxova/ts-extended-errors/commit/ba94bca66a8f146fc7996e4a0fc61cb4cf59e7a2) - A class whose base declares a literal `code` and which declares its own, such as a `message` class on `HttpError` with `code: 'HTTP_TOO_MANY'`, no longer has an instance type of `never`. The base's `code` is replaced by the class's own instead of intersected with it.
+
 ## 1.0.1
 
 ### Patch Changes
