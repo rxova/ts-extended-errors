@@ -177,9 +177,10 @@ new InvalidDateError({ context: { value: '2026-02-30' } })
   `string | undefined` unless `Code` is named too:
   `defineError<Context, 'X_CODE'>(…)`. A class-syntax subclass cannot declare
   a different static `code`; define the leaf with `defineError` and extend that.
-- **A `message` class always has a `context` object.** The `(message, options)`
-  constructor `deserializeError` rebuilds through defaults it to `{}`, so a
-  payload that carried none produces `context: {}` rather than `undefined`.
+- **A `message` class always has a `context` object.** Both of its
+  constructors, `(options)` and `(message, options)`, require `context` when its
+  type has required fields. A payload `deserializeError` rebuilds without one
+  produces `context: {}` rather than `undefined`.
 - **`deserializeError` trusts the payload's `name`.** List in `classes` only the
   classes the payload is expected to contain.
 - **Class names are protocol keys.** Keep the custom names in `classes` stable

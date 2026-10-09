@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { findCauseOf } from "../chain";
 import { defineError, type ErrorClass, type ExtendedErrorConstructor } from "../defineError";
-import { deserializeError } from "../deserialize";
+import { deserializeError, type DeserializeErrorOptions } from "../deserialize";
 import { ExtendedError, isExtendedError } from "../ExtendedError";
 import { serializeError } from "../serialize";
 import type { ErrorContext, SerializedError } from "../types";
@@ -96,15 +96,36 @@ describe("defineError", () => {
   });
 
   it("keeps context present through the (message, options) overload", () => {
-    // The overload `deserializeError` rebuilds through. It cannot require a
-    // context without ceasing to be an `ErrorClass`, so it defaults one — the
-    // instance type promises a context, and this is what keeps that true.
-    const error = new InvalidDateError("sent from elsewhere");
+    const error = new InvalidDateError("sent from elsewhere", { context: { value: "x" } });
 
     expectTypeOf(error.context).toEqualTypeOf<{ value: string }>();
-    expect(error.context).toEqual({});
+    expect(error.context).toEqual({ value: "x" });
     expect(error.message).toBe("sent from elsewhere");
     expect("cause" in error).toBe(false);
+  });
+
+  it("requires context through the (message, options) overload too", () => {
+    // @ts-expect-error: `value` is required, whichever overload is called
+    const withoutOptions = () => new InvalidDateError("sent from elsewhere");
+    // @ts-expect-error: `value` is required
+    const withoutContext = () => new InvalidDateError("sent from elsewhere", {});
+
+    expect(withoutOptions).toBeTypeOf("function");
+    expect(withoutContext).toBeTypeOf("function");
+    // A class with no required context still takes a message alone.
+    expect(new ConfigMissingError("sent from elsewhere").message).toBe("sent from elsewhere");
+  });
+
+  it("defaults context to {} when a rebuild through ErrorClass passes none", () => {
+    // `deserializeError` calls every class as an `ErrorClass`, without the
+    // context a payload may lack. The instance type promises one, and this is
+    // what keeps that true.
+    const error = new (
+      InvalidDateError as unknown as ErrorClass<InstanceType<typeof InvalidDateError>>
+    )("sent from elsewhere");
+
+    expect(error.context).toEqual({});
+    expect(error.message).toBe("sent from elsewhere");
   });
 
   it("narrows context on a class defined on a built-in base too", () => {
@@ -120,11 +141,10 @@ describe("defineError", () => {
     expect(error).toBeInstanceOf(RangeError);
   });
 
-  it("stays an ErrorClass, so deserializeError can rebuild it", () => {
-    // Narrowing the instance must not cost the `(message, options)` signature:
-    // `classes` takes `ErrorClass`, and a class that no longer matched it would
-    // be a type error at every call site that lists one.
-    const classes: ErrorClass[] = [InvalidDateError, ConfigMissingError];
+  it("can be listed in deserializeError's classes, so it can be rebuilt", () => {
+    // A required context makes the options argument required, which `ErrorClass`
+    // does not allow; `classes` accepts such a class all the same.
+    const classes: DeserializeErrorOptions["classes"] = [InvalidDateError, ConfigMissingError];
     const rebuilt = deserializeError(
       { name: "InvalidDateError", message: '"x" is not a valid date', context: { value: "x" } },
       { classes },

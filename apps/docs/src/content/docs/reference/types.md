@@ -138,7 +138,9 @@ interface MessageErrorConstructor<
   ): WithCode<WithContext<Instance, Context>, Code>;
   new (
     message: string,
-    options?: ExtendedErrorOptions<Context>,
+    ...options: Partial<Context> extends Context
+      ? [options?: ExtendedErrorOptions<Context>]
+      : [options: ExtendedErrorOptions<Context> & { readonly context: Context }]
   ): WithCode<WithContext<Instance, Context>, Code>;
   readonly prototype: WithCode<WithContext<Instance, Context>, Code>;
   readonly code: Code;
@@ -147,8 +149,10 @@ interface MessageErrorConstructor<
 
 The class `defineError` returns when given a `message`. The conditional tuple is what makes
 `context` required when its type has required fields and the whole argument optional when it does
-not. The second signature keeps the class an `ErrorClass`, which is what lets `deserializeError`
-rebuild it and what lets it be the `base` of another class.
+not. The second signature takes the message first, under the same rule, which is what lets
+`deserializeError` rebuild it and what lets it be the `base` of another class. Where `context` is
+required, that makes the options argument required too, so such a class is not an `ErrorClass`;
+`base` and `deserializeError`'s `classes` accept it all the same.
 
 `WithContext` applies the same condition to the instance, so where the throw site has to pass a
 context the instance's is typed as present rather than `Context | undefined`:
@@ -159,9 +163,8 @@ found?.context.value; // string — no second `?.` for a case that cannot happen
 ```
 
 It is not exported; it exists so that the call site's guarantee and the instance type cannot drift
-apart. The `(message, options)` constructor is the one path that could build an instance without a
-context, and it defaults one to `{}` rather than requiring the argument — requiring it would stop
-the class being an `ErrorClass`. See
+apart. `deserializeError` is the one path that builds an instance without the type checking its
+context, and a payload that carries none is rebuilt with `{}`. See
 [Defining errors](../guides/defining-errors.md#messages-written-from-context).
 
 ## `ExtendedErrorMembers`
@@ -187,9 +190,9 @@ type ErrorClass<Instance extends Error = Error> = new (
 ) => Instance;
 ```
 
-Any error class whose constructor takes `(message, options)` the way the built-ins do. It is the
-type of `base` on the non-`ExtendedError` overloads, and of the entries in `deserializeError`'s
-`classes`.
+Any error class whose constructor takes `(message, options)` the way the built-ins do, with the
+options optional. `base` on the non-`ExtendedError` overloads and the entries in
+`deserializeError`'s `classes` accept one, and also a `message` class whose context is required.
 
 ## `ErrorCode`
 

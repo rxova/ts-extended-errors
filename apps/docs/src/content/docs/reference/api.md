@@ -158,8 +158,9 @@ function deserializeError(value: unknown, options?: DeserializeErrorOptions): Er
 | `classes`  | `readonly ErrorClass[]` | `[]`    | Classes to rebuild by name, plus the built-ins |
 | `maxDepth` | `number`                | `8`     | How far down the chain to rebuild              |
 
-A real `Error` is returned untouched; a value that is not error-shaped goes through `toError`. An
-unmatched name becomes an `ExtendedError` keeping that name.
+`classes` also accepts a `message` class whose context is required. A real `Error` is returned
+untouched; a value that is not error-shaped goes through `toError`. An unmatched name becomes an
+`ExtendedError` keeping that name.
 
 ## `toError(value)`
 
