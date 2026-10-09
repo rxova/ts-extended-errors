@@ -117,11 +117,11 @@ const found = findCauseOf(thrown, InvalidDateError);
 found?.context.value; // string — one `?.` for "was it found", and none for the context
 ```
 
-Such a class still accepts `(message, options)` when a string is passed first. That is what keeps it
-usable as a `base`, and what lets `deserializeError` rebuild it with the message that was actually
-sent rather than reformatting one from context that has been through JSON. That constructor cannot
-require a context without the class ceasing to be an `ErrorClass`, so it defaults one to `{}` — which
-is what keeps the instance type honest when a payload arrives carrying no `context` at all.
+Such a class still accepts `(message, options)` when a string is passed first, and requires
+`context` there the same way. That is what keeps it usable as a `base`, and what lets
+`deserializeError` rebuild it with the message that was actually sent rather than reformatting one
+from context that has been through JSON. A payload that arrives carrying no `context` at all is
+rebuilt with `{}`, so the instance still has one.
 
 If `message` throws, the error is still created — with the class name as its message and `context`
 intact. A formatter runs on data nobody has checked, usually inside a `catch` that is already

@@ -1,4 +1,4 @@
-import type { ErrorClass } from "./defineError";
+import type { ErrorClass, MessageFirstClass } from "./defineError";
 import { ExtendedError } from "./ExtendedError";
 import { AGGREGATE_FIELDS, DEFAULT_MAX_DEPTH, FIXED_FIELDS, readCode } from "./serialize";
 import {
@@ -30,7 +30,7 @@ export interface DeserializeErrorOptions {
    * from a sender that did not write it — falls back like an unknown name,
    * rather than becoming an AggregateError that claims there were none.
    */
-  readonly classes?: readonly ErrorClass[];
+  readonly classes?: readonly MessageFirstClass[];
   /**
    * How far down the `cause` chain to rebuild. Below it, causes are left as
    * they came.
@@ -109,7 +109,12 @@ export function deserializeError(value: unknown, options: DeserializeErrorOption
 
   // Later entries win, so a class of your own replaces a built-in of its name.
   const classes = new Map<string, ErrorClass>();
-  for (const Class of [...BUILT_IN_CLASSES, ...(options.classes ?? [])]) {
+  // Called as an ErrorClass: a class whose options are required is still built
+  // with a message and options, which is all the rebuild does.
+  for (const Class of [
+    ...BUILT_IN_CLASSES,
+    ...((options.classes ?? []) as readonly ErrorClass[]),
+  ]) {
     classes.set(Class.name, Class);
   }
 

@@ -12,6 +12,20 @@ export type ErrorClass<Instance extends Error = Error> = new (
 ) => Instance;
 
 /**
+ * An {@link ErrorClass}, or a class whose options argument is required: one
+ * {@link defineError} returns with a `message` whose context has required
+ * fields. This is what `base` and `deserializeError`'s `classes` accept.
+ *
+ * Internal: `never` accepts any options type, which is right for accepting a
+ * class and wrong for calling one, so the two call sites cast to
+ * {@link ErrorClass}, which describes how they call it.
+ */
+export type MessageFirstClass<Instance extends Error = Error> = new (
+  message: string,
+  options: never,
+) => Instance;
+
+/**
  * What every class {@link defineError} returns adds to its instances, whatever
  * it extends. An {@link ExtendedError} has all of it.
  */
@@ -95,6 +109,16 @@ type WithContext<Instance, Context extends object> =
   Partial<Context> extends Context ? Instance : Instance & { readonly context: Context };
 
 /**
+ * The options argument of a class {@link defineError} returns with a `message`:
+ * optional when `Context` has no required fields, and carrying a `context`
+ * when it has. The condition is the one {@link WithContext} uses.
+ */
+type MessageOptions<Context extends object> =
+  Partial<Context> extends Context
+    ? [options?: ExtendedErrorOptions<Context>]
+    : [options: ExtendedErrorOptions<Context> & { readonly context: Context }];
+
+/**
  * The class {@link defineError} returns when given a `message`. A throw site
  * passes only the options, `new InvalidDateError({ context: { value } })`, and
  * the class writes the message from `context`. `context` is required when its
@@ -105,24 +129,21 @@ type WithContext<Instance, Context extends object> =
  * {@link ExtendedErrorConstructor} types it.
  *
  * It also takes `(message, options)`, where a string first argument is the
- * message itself. That keeps it an {@link ErrorClass}: `deserializeError`
- * rebuilds it with the message the payload carried, and it can be the `base`
- * of another class. That overload cannot require a context without ceasing to be
- * an `ErrorClass`, so it defaults one instead — see {@link withMessage}.
+ * message itself, under the same rule for `context`. That keeps it an
+ * {@link ErrorClass}: `deserializeError` rebuilds it with the message the
+ * payload carried, and it can be the `base` of another class. A rebuild from a
+ * payload without a `context` gets an empty one rather than none — see
+ * {@link withMessage}.
  */
 export interface MessageErrorConstructor<
   Context extends object = ErrorContext,
   Instance extends Error = ExtendedError<Context>,
   Code extends ErrorCode = ErrorCode,
 > {
-  new (
-    ...options: Partial<Context> extends Context
-      ? [options?: ExtendedErrorOptions<Context>]
-      : [options: ExtendedErrorOptions<Context> & { readonly context: Context }]
-  ): WithCode<WithContext<Instance, Context>, Code>;
+  new (...options: MessageOptions<Context>): WithCode<WithContext<Instance, Context>, Code>;
   new (
     message: string,
-    options?: ExtendedErrorOptions<Context>,
+    ...options: MessageOptions<Context>
   ): WithCode<WithContext<Instance, Context>, Code>;
   readonly prototype: WithCode<WithContext<Instance, Context>, Code>;
   /** Inherited from the base class when this one does not declare its own. */
@@ -214,15 +235,11 @@ const withMessage = (Defined: ErrorClass, format: (context: object) => string) =
   class extends Defined {
     constructor(first?: unknown, second?: ExtendedErrorOptions) {
       if (typeof first === "string") {
-        // The only way to reach a class with a required context without passing
-        // one, and `deserializeError` takes it for every rebuild: a payload that
-        // carries no `context` would otherwise produce an instance whose type
-        // promises a context it does not have, and `error.context.key` would
-        // throw rather than read `undefined`.
-        //
-        // Requiring the argument here instead is not open: this overload is what
-        // makes the class an `ErrorClass`, which is what lets `deserializeError`
-        // accept it in `classes` and what lets it be another class's `base`.
+        // The types require a context here as they do for the options-only
+        // call, but `deserializeError` calls this through `ErrorClass`, which
+        // cannot: a payload that carries no `context` would otherwise produce an
+        // instance whose type promises a context it does not have, and
+        // `error.context.key` would throw rather than read `undefined`.
         //
         // Built as a variable rather than inline: `Defined` is an `ErrorClass`,
         // whose options parameter is the native `ErrorOptions`, and an object
@@ -308,7 +325,7 @@ export function defineError<
   name: string,
   options: {
     readonly code?: Code;
-    readonly base: ErrorClass<Base>;
+    readonly base: MessageFirstClass<Base>;
     readonly message: (context: Context) => string;
   },
 ): MessageErrorConstructor<
@@ -400,7 +417,7 @@ export function defineError<
   Code extends ErrorCode = ErrorCode,
 >(
   name: string,
-  options: { readonly code?: Code; readonly base: ErrorClass<Base> },
+  options: { readonly code?: Code; readonly base: MessageFirstClass<Base> },
 ): ExtendedErrorConstructor<
   Context,
   Base & ExtendedErrorMembers<Context>,
@@ -410,11 +427,11 @@ export function defineError(
   name: string,
   options: {
     readonly code?: string;
-    readonly base?: ErrorClass;
+    readonly base?: MessageFirstClass;
     readonly message?: (context: object) => string;
   } = {},
 ): ErrorClass {
-  const base = options.base ?? ExtendedError;
+  const base = (options.base ?? ExtendedError) as ErrorClass;
 
   // Falls back to the base's code, so a leaf that callers handle by
   // `instanceof` keeps its family's code instead of shadowing it with

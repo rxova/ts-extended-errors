@@ -268,10 +268,9 @@ new ConfigMissingError({ cause: new Error("ENOENT") }).cause; // Error: ENOENT
 ```
 
 A string first argument is still taken as the message: `new InvalidDateError('custom', { context })`.
-`deserializeError` uses that constructor, so a rebuilt error has the message it was sent with, and
-`message` is not called on context that went through JSON. That constructor cannot require a context
-without the class ceasing to be an `ErrorClass`, so it defaults one to `{}` — which is what keeps the
-instance type honest when a payload arrives carrying no `context` at all.
+It requires `context` the same way. `deserializeError` uses that constructor, so a rebuilt error has
+the message it was sent with, and `message` is not called on context that went through JSON. A
+payload that carries no `context` is rebuilt with `{}`, so the instance still has one.
 
 `message` works with `base`, including a built-in class. A class defined on one with `message` and no
 `message` of its own writes the message the same way, and takes the same options:
@@ -521,6 +520,9 @@ deserializeError({ name: "TypeError", message: "x is not a function" }) instance
 | ---------- | ----------------------- | ------- | ----------------------------------------------------------------- |
 | `classes`  | `readonly ErrorClass[]` | `[]`    | Classes to rebuild errors as, matched by their `name` property    |
 | `maxDepth` | `number`                | `8`     | How many `cause` levels to rebuild; deeper ones stay as they came |
+
+`classes` also accepts a class defined with `message` whose context is required, although such a
+class is not an `ErrorClass`: its options argument is not optional.
 
 The class is chosen by a `name` read from the payload, so list only the classes the payload is
 expected to contain. A payload from outside your system is untrusted: `deserializeError` does not
