@@ -658,6 +658,43 @@ describe("defineError with a message", () => {
     ).toEqualTypeOf<"INVALID_DATE">();
   });
 
+  it("replaces a base's literal code with its own, rather than intersecting them to never", () => {
+    // `'HTTP' & 'HTTP_TOO_MANY'` is `never`, and an instance type holding it
+    // reduced to `never` as a whole: every member read was an error.
+    const TooManyError = defineError("TooManyError", {
+      base: HttpError,
+      code: "HTTP_TOO_MANY",
+      message: (context: { retryAfter: number }) => `retry in ${String(context.retryAfter)}s`,
+    });
+    const error = new TooManyError({ context: { retryAfter: 5 } });
+
+    expectTypeOf(error).not.toBeNever();
+    expectTypeOf(error.code).toEqualTypeOf<"HTTP_TOO_MANY">();
+    expectTypeOf(error.context.retryAfter).toEqualTypeOf<number>();
+    expect(error.code).toBe("HTTP_TOO_MANY");
+    expect(error).toBeInstanceOf(HttpError);
+
+    const PastDateError = defineError("PastDateError", {
+      base: InvalidDateError,
+      code: "PAST_DATE",
+      message: (context: { value: string }) => `${context.value} is in the past`,
+    });
+
+    expectTypeOf(new PastDateError({ context: { value: "x" } })).not.toBeNever();
+    expectTypeOf(new PastDateError({ context: { value: "x" } }).code).toEqualTypeOf<"PAST_DATE">();
+
+    const PageError = defineError("PageError", { base: RangeError, code: "PAGE" });
+    const FirstPageError = defineError("FirstPageError", {
+      base: PageError,
+      code: "FIRST_PAGE",
+      message: (context: { page: number }) => `page ${String(context.page)}`,
+    });
+
+    expectTypeOf(new FirstPageError({ context: { page: 0 } })).not.toBeNever();
+    expectTypeOf(new FirstPageError({ context: { page: 0 } }).code).toEqualTypeOf<"FIRST_PAGE">();
+    expect(new FirstPageError({ context: { page: 0 } })).toBeInstanceOf(RangeError);
+  });
+
   it("types context from the parameter of message, and requires it when it has required fields", () => {
     expectTypeOf(new InvalidDateError({ context: { value: "x" } }).context).toEqualTypeOf<{
       value: string;

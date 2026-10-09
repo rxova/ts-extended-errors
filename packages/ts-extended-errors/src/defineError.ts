@@ -50,10 +50,18 @@ export type ErrorCode = string | undefined;
  * written with the `class` syntax, whose static field the instance type cannot
  * see. There the instance is left as it is rather than intersected with the
  * same type again.
+ *
+ * An `Instance` whose `code` is already narrowed — a base that declared its own
+ * — has that `code` replaced rather than intersected: `'HTTP' & 'HTTP_NOT_FOUND'`
+ * is `never`, and TypeScript reduces the whole instance type to `never` with it.
  */
 type WithCode<Instance, Code extends ErrorCode> = ErrorCode extends Code
   ? Instance
-  : Instance & { readonly code: Code };
+  : Instance extends { readonly code: infer BaseCode }
+    ? ErrorCode extends BaseCode
+      ? Instance & { readonly code: Code }
+      : Omit<Instance, "code"> & { readonly code: Code }
+    : Instance & { readonly code: Code };
 
 /**
  * The `code` a class {@link defineError} returns carries: its own when the
