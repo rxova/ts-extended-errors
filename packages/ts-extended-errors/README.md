@@ -533,7 +533,8 @@ error.stack === sent.stack; // true
   `RangeError`, `ReferenceError`, `SyntaxError`, `TypeError` and `URIError` are always available;
   classes in `classes` take precedence over them. Treat those names as protocol keys: keep them
   stable and unique. If the list contains the same name twice, the later class wins.
-- A name that matches no class produces an `ExtendedError` with that name.
+- A name that matches no class produces an `ExtendedError` with that name, or an instance of the
+  class `fallback` picks for it.
 - `code`, `context`, `stack` and any fields from `includeOwnProperties` are restored. Without a
   serialized `stack`, the result has no `stack`.
 - A payload named `AggregateError` with an `errors` list becomes an `AggregateError` whose `errors`
@@ -552,10 +553,29 @@ error instanceof ExtendedError; // true
 deserializeError({ name: "TypeError", message: "x is not a function" }) instanceof TypeError; // true
 ```
 
-| Option     | Type                    | Default | Description                                                       |
-| ---------- | ----------------------- | ------- | ----------------------------------------------------------------- |
-| `classes`  | `readonly ErrorClass[]` | `[]`    | Classes to rebuild errors as, matched by their `name` property    |
-| `maxDepth` | `number`                | `8`     | How many `cause` levels to rebuild; deeper ones stay as they came |
+| Option     | Type                                     | Default | Description                                                               |
+| ---------- | ---------------------------------------- | ------- | ------------------------------------------------------------------------- |
+| `classes`  | `readonly ErrorClass[]`                  | `[]`    | Classes to rebuild errors as, matched by their `name` property            |
+| `maxDepth` | `number`                                 | `8`     | How many `cause` levels to rebuild; deeper ones stay as they came         |
+| `fallback` | `({ name, code }) => class \| undefined` | none    | Picks a class for a name that matches none; `undefined` keeps the default |
+
+`fallback` covers what a list of names cannot: one class for every error another service sent, or
+a class chosen by `code` for a name this version does not know yet. The rebuilt error keeps the
+serialized `name`.
+
+```ts
+import { defineError, deserializeError } from "ts-extended-errors";
+
+const RemoteError = defineError("RemoteError");
+
+const error = deserializeError(
+  { name: "PaymentError", message: "card declined" },
+  { fallback: () => RemoteError },
+);
+
+error instanceof RemoteError; // true
+error.name; // 'PaymentError'
+```
 
 `classes` also accepts a class defined with `message` whose context is required, although such a
 class is not an `ErrorClass`: its options argument is not optional.
@@ -563,8 +583,8 @@ class is not an `ErrorClass`: its options argument is not optional.
 The class is chosen by a `name` read from the payload, so list only the classes the payload is
 expected to contain. A payload from outside your system is untrusted: `deserializeError` does not
 validate its `code`, `context` or other restored fields. A getter or proxy trap that throws is
-treated as an inaccessible field; an exception from a class in `classes` still propagates because
-that constructor is caller-provided behavior.
+treated as an inaccessible field; an exception from a class in `classes` or from `fallback` still
+propagates because that is caller-provided behavior.
 
 ## `toError(value)`
 

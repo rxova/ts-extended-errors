@@ -361,3 +361,101 @@ describe("deserializeError with an AggregateError", () => {
     expect(Reflect.get(back, "errors")).toEqual(["email is required"]);
   });
 });
+
+describe("deserializeError with a fallback", () => {
+  const RemoteError = defineError("RemoteError");
+
+  it("rebuilds a name no class matches as the class it picks, keeping the name", () => {
+    const back = expectInstance(
+      deserializeError(
+        { name: "PaymentError", message: "declined", code: "CARD", context: { last4: "4242" } },
+        { fallback: () => RemoteError },
+      ),
+      RemoteError,
+    );
+
+    expect(back.name).toBe("PaymentError");
+    expect(back.code).toBe("CARD");
+    expect(back.context).toEqual({ last4: "4242" });
+  });
+
+  it("is given the serialized name and code", () => {
+    const seen: unknown[] = [];
+    deserializeError(
+      { name: "PaymentError", message: "declined", code: 402 },
+      {
+        fallback: (serialized) => {
+          seen.push(serialized);
+          return undefined;
+        },
+      },
+    );
+
+    expect(seen).toEqual([{ name: "PaymentError", code: 402 }]);
+  });
+
+  it("can pick a class by code", () => {
+    const back = deserializeError(
+      { name: "NotFoundErrorV2", message: "gone", code: "HTTP_NOT_FOUND" },
+      { fallback: ({ code }) => (code === "HTTP_NOT_FOUND" ? NotFoundError : undefined) },
+    );
+
+    expect(back).toBeInstanceOf(NotFoundError);
+    expect(back.name).toBe("NotFoundErrorV2");
+  });
+
+  it("keeps the default when it returns undefined", () => {
+    const back = deserializeError(
+      { name: "PaymentError", message: "declined" },
+      { fallback: () => undefined },
+    );
+
+    expect(back).toBeInstanceOf(ExtendedError);
+    expect(back.name).toBe("PaymentError");
+  });
+
+  it("is not asked about a name a class or a built-in matches", () => {
+    const asked: string[] = [];
+    const fallback = ({ name }: { readonly name: string }) => {
+      asked.push(name);
+      return RemoteError;
+    };
+
+    expect(
+      deserializeError({ name: "TypeError", message: "x" }, { classes, fallback }),
+    ).toBeInstanceOf(TypeError);
+    expect(
+      deserializeError({ name: "NotFoundError", message: "x" }, { classes, fallback }),
+    ).toBeInstanceOf(NotFoundError);
+    expect(
+      deserializeError(
+        { name: "AggregateError", message: "x", errors: [{ name: "Error", message: "y" }] },
+        { fallback },
+      ),
+    ).toBeInstanceOf(AggregateError);
+    expect(asked).toEqual([]);
+  });
+
+  it("is asked for every cause down the chain", () => {
+    const back = deserializeError(
+      {
+        name: "GatewayError",
+        message: "upstream failed",
+        cause: { name: "DriverError", message: "connection reset" },
+      },
+      { fallback: () => RemoteError },
+    );
+
+    expect(causeChain(back).map((error) => error instanceof RemoteError)).toEqual([true, true]);
+  });
+
+  it("lets its exceptions propagate", () => {
+    const fallback = () => {
+      throw new Error("no fallback for you");
+    };
+
+    expect(() => deserializeError({ name: "X", message: "y" }, { fallback })).toThrow(
+      "no fallback for you",
+    );
+  });
+});
