@@ -14,6 +14,13 @@ allowBuilds:
 overrides:
   undici: ">=8.12.2 <9"
 
+  # Not a security pin: @astrojs/astro2tsx accepts `^1.7.1 || 2.0.0-beta.2 ||
+  # 2.0.0-beta.3` and pnpm takes the highest, pairing a 2.0 prerelease runtime
+  # with a stable @emnapi/core, which makes `astro check` die on
+  # `this.bridge.setLastError is not a function`. Hold the stable line; drop
+  # once astro2tsx stops offering the prereleases.
+  "@emnapi/runtime": "^1.11.3"
+
 # The advisory lookup in `audit:check` is the one request whose answer is
 # optional, and pnpm's defaults (60s timeout, two retries) turn a registry outage
 # into minutes of waiting. One short retry is enough. These are pnpm settings, so
