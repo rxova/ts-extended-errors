@@ -5,6 +5,15 @@ allowBuilds:
   esbuild: true
   sharp: true
 
+# GHSA-2m5v-pch6-74hx, GHSA-qrxm-fqhp-jwvm and two siblings: undici below 8.12.2
+# drops TLS options in Agent (certificate validation bypass), mishandles TLS 1.2
+# renegotiation and excessive content-encodings (DoS), and poisons its cache
+# across cross-origin redirects. All high, so `audit:check` turns main red.
+# Reached only through unifont > astro in the docs build, which pins an older 8.x
+# and has no release to bump to. Drop once astro depends on >=8.12.2 itself.
+overrides:
+  undici: ">=8.12.2 <9"
+
 # The advisory lookup in `audit:check` is the one request whose answer is
 # optional, and pnpm's defaults (60s timeout, two retries) turn a registry outage
 # into minutes of waiting. One short retry is enough. These are pnpm settings, so
